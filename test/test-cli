@@ -1,0 +1,15 @@
+#! /bin/sh
+
+set -xe
+cd ..
+
+./mat --help
+./mat --version
+./mat --debug /dev/null
+./mat <> /dev/null
+! ./mat --does-not-exist
+! ./mat /does-not-exist
+! ./mat /does-not-exist/very/very/very/very/very/very/long/file/name
+
+# Plugins path tests
+AT_PLUGINS_PATH="/does-not-exist" ./src/mat /dev/null

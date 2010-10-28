@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+pkgincludedir=${includedir}/@PACKAGE_NAME@
+
+Name: MeeGo AT daemon
+Description: AT commands interpreter
+Version: @PACKAGE_VERSION@
+Cflags: -I${pkgincludedir} @DBUS_CFLAGS@
+Libs: -L${libdir} -lmatd -lpthread
+Libs.private: -ldl -lrt @DBUS_LIBS@

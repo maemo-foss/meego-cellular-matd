@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testdefinition version="0.1">
+  <suite domain='Cellular' type='Functional' name='mat-tests' timeout='600' level='Component' requirement='18456,156900'>
+    <description>mat-tests</description>
+    <set feature='AT modem' name='mat-tests'>
+      <description>mat-tests</description>
+      <case name='mat-tests'>
+        <step expected_result='0'>@testdir@/mat-tests</step>
+      </case>
+      <case name='mat-tests:backlight'>
+        <step expected_result='0'>@testdir@/mat-tests backlight</step>
+      </case>
+      <case name='mat-tests:charset'>
+        <step expected_result='0'>@testdir@/mat-tests charset</step>
+      </case>
+      <case name='mat-tests:clock'>
+        <step expected_result='0'>@testdir@/mat-tests clock</step>
+      </case>
+      <case name='mat-tests:cmec'>
+        <step expected_result='0'>@testdir@/mat-tests cmec</step>
+      </case>
+      <case name='mat-tests:cmee'>
+        <step expected_result='0'>@testdir@/mat-tests cmee</step>
+      </case>
+      <case name='mat-tests:event-report'>
+        <step expected_result='0'>@testdir@/mat-tests event-report</step>
+      </case>
+      <case name='mat-tests:keypad'>
+        <step expected_result='0'>@testdir@/mat-tests keypad</step>
+      </case>
+      <case name='mat-tests:list'>
+        <step expected_result='0'>@testdir@/mat-tests list</step>
+      </case>
+      <case name='mat-tests:parser'>
+        <step expected_result='0'>@testdir@/mat-tests parser</step>
+      </case>
+      <case name='mat-tests:product'>
+        <step expected_result='0'>@testdir@/mat-tests product</step>
+      </case>
+      <case name='mat-tests:quiet'>
+        <step expected_result='0'>@testdir@/mat-tests quiet</step>
+      </case>
+      <case name='mat-tests:screen-size'>
+        <step expected_result='0'>@testdir@/mat-tests screen-size</step>
+      </case>
+      <case name='mat-tests:setting'>
+        <step expected_result='0'>@testdir@/mat-tests setting</step>
+      </case>
+      <case name='mat-tests:speaker'>
+        <step expected_result='0'>@testdir@/mat-tests speaker</step>
+      </case>
+      <case name='mat-tests:touchscreen'>
+        <step expected_result='0'>@testdir@/mat-tests touchscreen</step>
+      </case>
+      <case name='mat-tests:vendor'>
+        <step expected_result='0'>@testdir@/mat-tests vendor</step>
+      </case>
+      <case name='mat-tests:verbose'>
+        <step expected_result='0'>@testdir@/mat-tests verbose</step>
+      </case>
+      <case name='mat-tests:version'>
+        <step expected_result='0'>@testdir@/mat-tests version</step>
+      </case>
+      <environments>
+        <scratchbox>false</scratchbox>
+        <hardware>true</hardware>
+      </environments>
+    </set>
+  </suite>
+</testdefinition>
