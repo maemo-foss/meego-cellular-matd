@@ -56,23 +56,21 @@ static at_error_t fail_generic (at_modem_t *m, const char *req, void *data)
 	return AT_ERROR;
 }
 
-static at_error_t fail_alpha (at_modem_t *m, char cmd, unsigned value,
-                              void *data)
+static at_error_t fail_alpha (at_modem_t *m, unsigned value, void *data)
 {
-	(void) m; (void) cmd; (void) value; (void) data;
+	(void) m; (void) value; (void) data;
 	return AT_ERROR;
 }
 
-static at_error_t fail_set (at_modem_t *m, unsigned s, unsigned value,
-                            void *data)
+static at_error_t fail_set (at_modem_t *m, unsigned value, void *data)
 {
-	(void) m; (void) s; (void) value; (void) data;
+	(void) m; (void) value; (void) data;
 	return AT_ERROR;
 }
 
-static at_error_t fail_get (at_modem_t *m, unsigned s, void *data)
+static at_error_t fail_get (at_modem_t *m, void *data)
 {
-	(void) m; (void) s; (void) data;
+	(void) m; (void) data;
 	return AT_ERROR;
 }
 

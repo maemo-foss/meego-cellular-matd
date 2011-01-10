@@ -52,11 +52,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static at_error_t alpha_nothing (at_modem_t *modem, char cmd, unsigned value,
+static at_error_t alpha_nothing (at_modem_t *modem, unsigned value,
                                  void *data)
 {
 	(void) modem;
-	(void) cmd;
 	(void) value;
 	(void) data;
 	return AT_OK;

@@ -312,8 +312,8 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 				goto unknown;
 
 			if (op == '?')
-				return bank->cmd.s[x].get (m, x, bank->cmd.s[x].opaque);
-			return bank->cmd.s[x].set (m, x, value, bank->cmd.s[x].opaque);
+				return bank->cmd.s[x].get (m, bank->cmd.s[x].opaque);
+			return bank->cmd.s[x].set (m, value, bank->cmd.s[x].opaque);
 		}
 
 		/* AT + other latin letter */
@@ -324,7 +324,7 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		unsigned value;
 		if (sscanf (req, "%*c %u", &value) != 1)
 			value = 0;
-		return bank->cmd.alpha[x].handler (m, c, value,
+		return bank->cmd.alpha[x].handler (m, value,
 		                                   bank->cmd.alpha[x].opaque);
 	}
 
@@ -344,7 +344,7 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		unsigned value;
 		if (sscanf (req, "&%*c %u", &value) != 1)
 			value = 0;
-		return bank->cmd.ampersand[x].handler (m, x + 'A', value,
+		return bank->cmd.ampersand[x].handler (m, value,
 		                                       bank->cmd.ampersand[x].opaque);
 	}
 

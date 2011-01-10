@@ -222,10 +222,8 @@ static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
 
 /*** ATH ***/
 
-static at_error_t handle_hangup (at_modem_t *modem, char cmd,
-                                 unsigned val, void *data)
+static at_error_t handle_hangup (at_modem_t *modem, unsigned val, void *data)
 {
-	(void) cmd;
 	if (val)
 		return AT_CME_ENOTSUP;
 	/* We don't do alternating calls, so ATH is the same as AT+CHUP */

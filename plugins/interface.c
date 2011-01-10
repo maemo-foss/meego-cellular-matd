@@ -53,7 +53,7 @@
 
 /*** AT&C (DCD line mode) ***/
 
-static at_error_t handle_dcd (at_modem_t *modem, char cmd, unsigned value,
+static at_error_t handle_dcd (at_modem_t *modem, unsigned value,
                               void *opaque)
 {
 	switch (value)
@@ -66,14 +66,14 @@ static at_error_t handle_dcd (at_modem_t *modem, char cmd, unsigned value,
 			return AT_ERROR;
 	}
 
-	(void) modem; (void) cmd; (void) opaque;
+	(void) modem; (void) opaque;
 	return AT_OK;
 }
 
 
 /*** AT&D (DTR line mode) ***/
 
-static at_error_t handle_dtr (at_modem_t *modem, char cmd, unsigned value,
+static at_error_t handle_dtr (at_modem_t *modem, unsigned value,
                               void *opaque)
 {
 	struct termios tp;
@@ -100,7 +100,7 @@ static at_error_t handle_dtr (at_modem_t *modem, char cmd, unsigned value,
 	if (at_set_attr (modem, &tp))
 		return AT_ERROR;
 
-	(void) cmd; (void) opaque;
+	(void) opaque;
 	return AT_OK;
 }
 

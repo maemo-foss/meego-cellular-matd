@@ -53,20 +53,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-static at_error_t handle_bool (at_modem_t *modem, char cmd, unsigned val,
-                               void *data)
+static at_error_t handle_bool (at_modem_t *modem, unsigned val, void *data)
 {
 	void (*setter) (at_modem_t *, bool) = data;
 
 	if (val >= 2)
 		return AT_ERROR;
 	setter (modem, val);
-	(void) cmd;
 	return AT_OK;
 }
 
-static at_error_t handle_set (at_modem_t *modem, unsigned param, unsigned val,
-                              void *data)
+static at_error_t handle_set (at_modem_t *modem, unsigned val, void *data)
 {
 	/* We only accept our own default value: */
 	unsigned good_val = (uintptr_t)data;
@@ -74,27 +71,24 @@ static at_error_t handle_set (at_modem_t *modem, unsigned param, unsigned val,
 	if (val != good_val)
 		return AT_ERROR;
 	(void) modem;
-	(void) param;
 	return AT_OK;
 }
 
-static at_error_t handle_get (at_modem_t *modem, unsigned param, void *data)
+static at_error_t handle_get (at_modem_t *modem, void *data)
 {
 	/* We only accept our own default value: */
 	unsigned val = (uintptr_t)data;
 
 	at_intermediate (modem, "\r\n%03u\r\n", val);
-	(void) param;
 	return AT_OK;
 }
 
 
-static at_error_t handle_info (at_modem_t *modem, char cmd, unsigned i,
-                               void *data)
+static at_error_t handle_info (at_modem_t *modem, unsigned i, void *data)
 {
 	static const char reqs[4][3] = { "MI", "SN", "MR", "MM" };
 
-	(void) cmd; (void) data;
+	(void) data;
 
 	if (i > sizeof (reqs) / sizeof (reqs[0]))
 		return AT_ERROR;
@@ -105,11 +99,9 @@ static at_error_t handle_info (at_modem_t *modem, char cmd, unsigned i,
 
 
 /* AT&F */
-static at_error_t handle_reset (at_modem_t *modem, char cmd, unsigned value,
-                                void *data)
+static at_error_t handle_reset (at_modem_t *modem, unsigned value, void *data)
 {
 	at_reset (modem);
-	(void) cmd;
 	(void) value;
 	(void) data;
 	return AT_OK;

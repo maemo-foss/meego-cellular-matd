@@ -177,15 +177,12 @@ int at_register (at_commands_t *set, const char *name,
  * Callback prototype to execute an AT alpha or ampersand command
  * (except for ATD and ATS).
  * @param m AT modem object
- * @param cmd command upper case alpha character,
- *            e.g. 'H' for ATH, 'F' for AT&F
  * @param value integer value specified, or 0 by default
  * @param ctx opaque pointer,
  *            as provided to at_register_alpha() or at_register_ampersand()
  * @return the AT command result
  */
-typedef at_error_t (*at_alpha_cb) (at_modem_t *m, char cmd, unsigned value,
-                                   void *ctx);
+typedef at_error_t (*at_alpha_cb) (at_modem_t *m, unsigned value, void *ctx);
 
 /**
  * Registers a handler for an alpha AT command.
@@ -225,22 +222,19 @@ int at_register_dial (at_commands_t *set,
 /**
  * Callback prototype to execute an ATS setting command
  * @param m AT modem object
- * @param param S-parameter number
  * @param value S-parameter requested value
  * @param ctx opaque pointer, as provided to at_register_s()
  * @return the AT command result
  */
-typedef at_error_t (*at_set_s_cb) (at_modem_t *m, unsigned param,
-                                   unsigned value, void *ctx);
+typedef at_error_t (*at_set_s_cb) (at_modem_t *m, unsigned value, void *ctx);
 
 /**
  * Callback prototype to execute an ATS query command
  * @param m AT modem object
- * @param param S-parameter number
  * @param ctx opaque pointer, as provided to at_register_s()
  * @return the AT command result
  */
-typedef at_error_t (*at_get_s_cb) (at_modem_t *m, unsigned param, void *ctx);
+typedef at_error_t (*at_get_s_cb) (at_modem_t *m, void *ctx);
 
 /**
  * Registers handlers for an S-parameter.
