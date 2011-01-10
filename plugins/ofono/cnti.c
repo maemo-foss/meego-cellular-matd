@@ -153,7 +153,7 @@ out:
 
 	if (tech == NULL)
 		return AT_CME_UNKNOWN;
-	at_intermediate (modem, "\r\n*CNTI: 0,%s", tech);
+	at_intermediate (modem, "\r\n*CNTI: 1,%s", tech);
 	return AT_OK;
 }
 
