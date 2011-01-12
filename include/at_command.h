@@ -212,11 +212,12 @@ int at_register_ampersand (at_commands_t *set, char cmd,
  * Registers a handler for the dial AT command (ATD).
  *
  * @param set AT commands list to register in
+ * @param voice true for voice call, false for data call
  * @param req AT command execution callback (cannot be NULL)
  * @param opaque data pointer for the callback
  * @return 0 on success, an error code otherwise
  */
-int at_register_dial (at_commands_t *set,
+int at_register_dial (at_commands_t *set, bool voice,
                       at_request_cb req, void *opaque);
 
 /**

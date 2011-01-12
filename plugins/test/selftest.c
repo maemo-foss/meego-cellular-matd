@@ -89,8 +89,8 @@ static at_error_t handle_error (at_modem_t *m, const char *req, void *data)
 void *at_plugin_register (at_commands_t *set)
 {
 	/* Duplicate entries */
-	at_register_dial (set, fail_generic, NULL);
-	if (at_register_dial (set, fail_generic, NULL) == 0)
+	at_register_dial (set, false, fail_generic, NULL);
+	if (at_register_dial (set, false, fail_generic, NULL) == 0)
 		abort ();
 	at_register_alpha (set, 'Y', fail_alpha, NULL);
 	if (at_register_alpha (set, 'Y', fail_alpha, NULL) == 0)

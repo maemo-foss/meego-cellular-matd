@@ -90,7 +90,7 @@ struct at_commands
 		{
 			at_request_cb handler;
 			void *opaque;
-		} dial; /**< D command */
+		} dial[2]; /**< D command */
 		struct
 		{
 			at_set_s_cb set;
@@ -114,7 +114,8 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 		bank->cmd.alpha[i].handler = NULL;
 	for (size_t i = 0; i < 26; i++)
 		bank->cmd.ampersand[i].handler = NULL;
-	bank->cmd.dial.handler = NULL;
+	for (size_t i = 0; i < 2; i++)
+		bank->cmd.dial[i].handler = NULL;
 	for (size_t i = 0; i <= AT_MAX_S; i++)
 		bank->cmd.s[i].set = NULL;
 	bank->cmd.extended = NULL;
@@ -232,15 +233,17 @@ int at_register_ampersand (at_commands_t *bank, char cmd, at_alpha_cb req,
 	return 0;
 }
 
-int at_register_dial (at_commands_t *bank, at_request_cb req, void *opaque)
+int at_register_dial (at_commands_t *bank, bool voice, at_request_cb req,
+                      void *opaque)
 {
-	if (bank->cmd.dial.handler != NULL)
+	if (bank->cmd.dial[voice].handler != NULL)
 	{
-		warning ("Duplicate registration for ATD");
+		warning ("Duplicate registration for ATD (%s)",
+		         voice ? "voice" : "data");
 		return EALREADY;
 	}
-	bank->cmd.dial.handler = req;
-	bank->cmd.dial.opaque = opaque;
+	bank->cmd.dial[voice].handler = req;
+	bank->cmd.dial[voice].opaque = opaque;
 	return 0;
 }
 
@@ -283,9 +286,12 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		/* ATD */
 		if (c == 'D')
 		{
-			if (bank->cmd.dial.handler == NULL)
-				goto unknown;
-			return bank->cmd.dial.handler (m, req, bank->cmd.dial.opaque);
+			bool voice = strchr (req, ';') == NULL;
+			at_request_cb cb = bank->cmd.dial[voice].handler;
+
+			if (cb == NULL)
+				return AT_NO_DIALTONE;
+			return cb (m, req + 1, bank->cmd.dial[voice].opaque);
 		}
 
 		/* ATS */
