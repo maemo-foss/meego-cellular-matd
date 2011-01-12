@@ -80,7 +80,7 @@ struct at_commands
 		{
 			at_alpha_cb handler;
 			void *opaque;
-		} alpha[26]; /**< single character commands (except S) */
+		} alpha[26]; /**< single character commands (except D & S) */
 		struct
 		{
 			at_alpha_cb handler;
