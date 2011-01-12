@@ -54,6 +54,64 @@
 #include <at_log.h>
 #include "ofono.h"
 
+static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
+{
+	plugin_t *p = data;
+	char buf[256], *num;
+	const char *callerid = "";
+
+	for (num = buf; *str; str++)
+	{
+		char c = *str;
+
+		if ((c >= '0' && c <= '9') || c == '*' || c == '#' || c == '+'
+		 || (c >= 'A' && c <= 'C'))
+		{
+			*(num++) = c;
+			if (num >= (buf + sizeof (buf)))
+				return AT_ERROR;
+		}
+		else if (c == 'I')
+			callerid = "enabled";
+		else if (c == 'i')
+			callerid = "disabled";
+		else if (c == 'G' || c == 'g')
+			return AT_CME_ENOTSUP; /* XXX? */
+		else if (c == '>')
+			return AT_CME_ENOENT; /* phonebook -> reject */
+	}
+	*num = '\0';
+
+	int canc = at_cancel_disable ();
+	at_error_t ret = AT_CME_ENOMEM;;
+	DBusMessage *msg = modem_req_new (p, "VoiceCallManager",
+	                                  "Dial");
+	if (msg == NULL)
+		goto out;
+
+	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &num,
+	                                    DBUS_TYPE_STRING, &callerid,
+	                                    DBUS_TYPE_INVALID))
+	{
+		dbus_message_unref (msg);
+		goto out;
+	}
+
+	msg = ofono_query (msg, &ret);
+	if (msg == NULL)
+		goto out;
+
+	/* FIXME TODO: wait for call progress */
+	dbus_message_unref (msg);
+	ret = AT_OK;
+
+out:	
+	at_cancel_enable (canc);
+	(void) modem;
+	return ret;
+}
+
+
 static DBusMessage *get_calls (plugin_t *p, at_error_t *ret)
 {
 	DBusMessage *msg = modem_req_new (p, "VoiceCallManager", "GetCalls");
@@ -293,6 +351,7 @@ static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CLCC", handle_clcc, p);
+	at_register_dial (set, true, handle_dial, p);
 	at_register (set, "+CHUP", handle_chup, p);
 	at_register_alpha (set, 'H', handle_hangup, p);
 	at_register (set, "+CMOD", handle_cmod, p);
