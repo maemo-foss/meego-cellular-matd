@@ -384,9 +384,11 @@ static at_error_t handle_clac (at_modem_t *m, const char *req, void *data)
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	at_commands_t *bank = data;
 
-	if (bank->cmd.dial.handler != NULL)
-		at_intermediate (m, "\r\nD");
-	for (unsigned i = 0; i < 26; i++)
+	for (unsigned i = 0; i < 4; i++)
+		if (bank->cmd.alpha[i].handler != NULL)
+			at_intermediate (m, "\r\n%c", 'A' + i);
+	at_intermediate (m, "\r\nD");
+	for (unsigned i = 5; i < 26; i++)
 		if (bank->cmd.alpha[i].handler != NULL)
 			at_intermediate (m, "\r\n%c", 'A' + i);
 	for (unsigned i = 0; i < 26; i++)
