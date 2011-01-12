@@ -57,6 +57,7 @@ static const char at_errmsgs[][12] = {
 	"RING",
 	"NO CARRIER",
 	"ERROR",
+	"ERROR", /* impossible value */
 	"NO DIALTONE",
 	"BUSY",
 	"NO ANSWER",
