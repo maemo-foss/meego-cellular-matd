@@ -131,7 +131,35 @@ static at_error_t handle_clir (at_modem_t *modem, const char *req,
 	return at_setting (modem, req, data, set_clir, get_clir, list_clir);
 }
 
+
+/*** AT+COLR ***/
+
+static at_error_t do_colr (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	char *str;
+	unsigned m = 2;
+
+	str = modem_prop_get_string (p, "CallSettings",
+	                             "ConnectedLineRestriction");
+	if (str != NULL)
+	{
+		if (!strcmp (str, "disabled"))
+			m = 0;
+		else if (!strcmp (str, "enabled"))
+			m = 1;
+		free (str);
+	}
+
+	at_intermediate (modem, "\r\n+COLR: %u", m);
+	(void) req;
+	return AT_OK;
+}
+
+
+
 void call_settings_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CLIR", handle_clir, p);
+	at_register (set, "+COLR", do_colr, p);
 }
