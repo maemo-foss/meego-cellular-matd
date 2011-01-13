@@ -77,6 +77,7 @@ int ofono_prop_find_bool (DBusMessage *msg, const char *name)
 
 /* Command handlers */
 void modem_register (at_commands_t *, plugin_t *);
+void call_settings_register (at_commands_t *, plugin_t *);
 void gprs_register (at_commands_t *, plugin_t *);
 void sim_register (at_commands_t *, plugin_t *);
 void voicecallmanager_register (at_commands_t *, plugin_t *);
