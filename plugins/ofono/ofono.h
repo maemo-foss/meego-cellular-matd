@@ -46,6 +46,8 @@ DBusMessage *modem_req_new (const plugin_t *, const char *, const char *);
 DBusMessage *modem_props_get (const plugin_t *, const char *);
 char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);
+at_error_t modem_prop_set_string (const plugin_t *, const char *,
+                                  const char *, const char *);
 at_error_t modem_prop_set_bool (const plugin_t *, const char *,
                                 const char *, bool);
 

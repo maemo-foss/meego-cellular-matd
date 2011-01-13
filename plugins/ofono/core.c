@@ -262,6 +262,12 @@ out:
 	return ret;
 }
 
+at_error_t modem_prop_set_string (const plugin_t *p, const char *iface,
+                                  const char *name, const char *value)
+{
+	return modem_prop_set (p, iface, name, DBUS_TYPE_STRING, &value);
+}
+
 at_error_t modem_prop_set_bool (const plugin_t *p, const char *iface,
                                 const char *name, bool value)
 {
