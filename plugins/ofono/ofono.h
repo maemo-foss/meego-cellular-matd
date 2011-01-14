@@ -51,6 +51,8 @@ at_error_t modem_prop_set_string (const plugin_t *, const char *,
                                   const char *, const char *);
 at_error_t modem_prop_set_bool (const plugin_t *, const char *,
                                 const char *, bool);
+at_error_t modem_prop_set_u16 (const plugin_t *, const char *,
+                               const char *, unsigned);
 
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);

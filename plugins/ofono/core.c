@@ -294,6 +294,13 @@ at_error_t modem_prop_set_bool (const plugin_t *p, const char *iface,
 	return modem_prop_set (p, iface, name, DBUS_TYPE_BOOLEAN, &b);
 }
 
+at_error_t modem_prop_set_u16 (const plugin_t *p, const char *iface,
+                               const char *name, unsigned value)
+{
+	dbus_uint16_t u = value;
+	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT16, &u);
+}
+
 
 /*** Modem manager ***/
 static char *manager_find_modem (char **pname)
