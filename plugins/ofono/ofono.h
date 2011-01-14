@@ -43,6 +43,9 @@ typedef struct plugin plugin_t;
 
 /* D-Bus */
 DBusMessage *modem_req_new (const plugin_t *, const char *, const char *);
+at_error_t modem_request (const plugin_t *, const char *, const char *,
+                          int, ...);
+
 DBusMessage *modem_props_get (const plugin_t *, const char *);
 char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);

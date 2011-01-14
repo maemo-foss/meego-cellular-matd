@@ -180,6 +180,32 @@ DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
 	return dbus_message_new_method_call (p->name, p->objpath, iface, method);
 }
 
+at_error_t modem_request (const plugin_t *p, const char *subif,
+                          const char *method, int first, ...)
+{
+	at_error_t ret;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *msg = modem_req_new (p, subif, method);
+	if (msg != NULL)
+	{
+		va_list ap;
+
+		va_start (ap, first);
+		if (dbus_message_append_args_valist (msg, first, ap))
+			msg = ofono_query (msg, &ret);
+		va_end (ap);
+
+		if (msg != NULL)
+			dbus_message_unref (msg);
+	}
+	else
+		ret = AT_CME_ENOMEM;
+
+	at_cancel_enable (canc);
+	return ret;
+}
+
 DBusMessage *modem_props_get (const plugin_t *p, const char *iface)
 {
 	DBusMessage *msg = modem_req_new (p, iface, "GetProperties");
