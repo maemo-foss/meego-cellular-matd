@@ -55,6 +55,7 @@ libofono_at_la_SOURCES = \
 	ofono/ofono.h \
 	ofono/cnti.c \
 	ofono/modem.c \
+	ofono/callforwarding.c \
 	ofono/callsettings.c \
 	ofono/gprs.c \
 	ofono/sim.c \
