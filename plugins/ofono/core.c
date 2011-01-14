@@ -228,6 +228,25 @@ int modem_prop_get_bool (const plugin_t *p, const char *iface,
 	return ret;
 }
 
+int modem_prop_get_u16 (const plugin_t *p, const char *iface, const char *name)
+{
+	int ret = -1;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *props = modem_props_get (p, iface);
+	if (props != NULL)
+	{
+		dbus_uint16_t val;
+
+		if (!ofono_prop_find_basic (props, name, DBUS_TYPE_UINT16, &val))
+			ret = val;
+		dbus_message_unref (props);
+	}
+
+	at_cancel_enable (canc);
+	return ret;
+}
+
 static at_error_t modem_prop_set (const plugin_t *p, const char *iface,
                                   const char *name, int type, void *value)
 {
