@@ -81,34 +81,14 @@ static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 			return AT_CME_ENOENT; /* phonebook -> reject */
 	}
 	*num = '\0';
+	num = buf;
 
-	int canc = at_cancel_disable ();
-	at_error_t ret = AT_CME_ENOMEM;;
-	DBusMessage *msg = modem_req_new (p, "VoiceCallManager",
-	                                  "Dial");
-	if (msg == NULL)
-		goto out;
-
-	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &num,
-	                                    DBUS_TYPE_STRING, &callerid,
-	                                    DBUS_TYPE_INVALID))
-	{
-		dbus_message_unref (msg);
-		goto out;
-	}
-
-	msg = ofono_query (msg, &ret);
-	if (msg == NULL)
-		goto out;
-
-	/* FIXME TODO: wait for call progress */
-	dbus_message_unref (msg);
-	ret = AT_OK;
-
-out:	
-	at_cancel_enable (canc);
 	(void) modem;
-	return ret;
+
+	/* FIXME TODO: signal call progress asynchronously */
+	return modem_request (p, "VoiceCallManager", "Dial",
+	                      DBUS_TYPE_STRING, &num, DBUS_TYPE_STRING, &callerid,
+	                      DBUS_TYPE_INVALID);
 }
 
 
@@ -257,21 +237,12 @@ static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
 {
 	plugin_t *p = data;
 	at_error_t ret;
-	int canc = at_cancel_disable ();
 
-	DBusMessage *msg = modem_req_new (p, "VoiceCallManager",
-	                                  "ReleaseAndAnswer");
-	if (msg != NULL)
-	{
-		msg = ofono_query (msg, &ret);
-		if (msg != NULL)
-			dbus_message_unref (msg);
-		if (ret == AT_CME_ERROR_0)
-			ret = AT_OK; /* there was no ongoing call */
-	}
-	else
-		ret = AT_CME_ENOMEM;
-	at_cancel_enable (canc);
+	ret = modem_request (p, "VoiceCallManager", "ReleaseAndAnswer",
+	                     DBUS_TYPE_INVALID);
+	if (ret == AT_CME_ERROR_0)
+		ret = AT_OK; /* there was no ongoing call */
+
 	(void) modem;
 	(void) req;
 	return ret;

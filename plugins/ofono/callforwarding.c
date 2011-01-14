@@ -49,7 +49,6 @@
 #include <stdlib.h>
 
 #include <at_command.h>
-#include <at_thread.h>
 #include <dbus/dbus.h>
 #include "ofono.h"
 
@@ -148,31 +147,9 @@ static at_error_t cf_erase (plugin_t *p, unsigned reason)
 	if (prop != NULL)
 		return modem_prop_set_string (p, "CallForwarding", prop, "");
 
-	at_error_t ret;
-	int canc = at_cancel_disable ();
-
-	DBusMessage *msg = modem_req_new (p, "CallForwarding", "DisableAll");
-	if (msg == NULL)
-	{
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
-
 	const char *type = (reason == 4) ? "all" : "conditional";
-	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &type,
-		                                DBUS_TYPE_INVALID))
-	{
-		dbus_message_unref (msg);
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
-
-	msg = ofono_query (msg, &ret);
-	if (msg != NULL)
-		dbus_message_unref (msg);
-out:
-	at_cancel_enable (canc);
-	return ret;
+	return modem_request (p, "CallForwarding", "DisableAll",
+	                      DBUS_TYPE_STRING, &type, DBUS_TYPE_INVALID);
 }
 
 

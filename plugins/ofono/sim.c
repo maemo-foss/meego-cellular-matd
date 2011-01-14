@@ -295,24 +295,12 @@ static at_error_t handle_cpin (at_modem_t *modem, const char *req, void *data)
 static at_error_t lock_pin (plugin_t *p, const char *type,
                             const char *pass, bool lock)
 {
-	DBusMessage *msg = modem_req_new (p, "SimManager",
-	                                  lock ? "LockPin" : "UnlockPin");
-	if (msg == NULL)
-		return AT_CME_ENOMEM;
-
-	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &type,
-	                                    DBUS_TYPE_STRING, &pass,
-	                                    DBUS_TYPE_INVALID))
-	{
-		dbus_message_unref (msg);
-		return AT_CME_ENOMEM;
-	}
-
 	at_error_t ret;
-	msg = ofono_query (msg, &ret);
-	if (msg != NULL)
-		dbus_message_unref (msg);
-	else if (ret == AT_CME_ERROR (0)) 
+
+	ret = modem_request (p, "SimManager", lock ? "LockPin" : "UnlockPin",
+	                     DBUS_TYPE_STRING, &type, DBUS_TYPE_STRING, &pass,
+	                     DBUS_TYPE_INVALID);
+	if (ret == AT_CME_ERROR (0)) 
 		ret = AT_CME_ERROR (16); /* bad password */
 	return ret;
 }
@@ -378,14 +366,14 @@ static at_error_t set_clck (at_modem_t *modem, const char *req, void *data)
 	if (type == NULL)
 		return AT_CME_ENOTSUP;
 
-	at_error_t ret;
-	int canc = at_cancel_disable ();
 	if (mode == 2)
-		ret = query_pin (data, type, modem);
-	else
-		ret = lock_pin (data, type, pwd, mode);
-	at_cancel_enable (canc);
-	return ret;
+	{
+		int canc = at_cancel_disable ();
+		at_error_t ret = query_pin (data, type, modem);
+		at_cancel_enable (canc);
+		return ret;
+	}
+	return lock_pin (data, type, pwd, mode);
 }
 
 
@@ -426,33 +414,16 @@ static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
 	if (type == NULL)
 		return AT_CME_ENOTSUP;
 
-	at_error_t ret = AT_OK;
-	int canc = at_cancel_disable ();
-
-	DBusMessage *msg = modem_req_new (data, "SimManager", "ChangePin");
-	if (msg == NULL)
-	{
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
 	const char *oldpin = oldpwd, *newpin = newpwd;
-	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &type,
-	                                    DBUS_TYPE_STRING, &oldpin,
-	                                    DBUS_TYPE_STRING, &newpin,
-	                                    DBUS_TYPE_INVALID))
-	{
-		dbus_message_unref (msg);
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
-	msg = ofono_query (msg, &ret);
-	if (msg != NULL)
-		dbus_message_unref (msg);
-	else if (ret == AT_CME_ERROR (0))
+	at_error_t ret;
+
+	ret = modem_request (data, "SimManager", "ChangePin",
+	                     DBUS_TYPE_STRING, &type, DBUS_TYPE_STRING, &oldpin,
+	                     DBUS_TYPE_STRING, &newpin, DBUS_TYPE_INVALID);
+	if (ret == AT_CME_ERROR (0))
 		ret = AT_CME_ERROR (16);
-out:
-	at_cancel_enable (canc);
-	(void)modem;
+
+	(void) modem;
 	return ret;
 }
 
