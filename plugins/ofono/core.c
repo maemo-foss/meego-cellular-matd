@@ -125,13 +125,6 @@ DBusMessage *ofono_query (DBusMessage *req, at_error_t *err)
 	return reply;
 }
 
-static inline DBusMessage *ofono_req_reply (DBusMessage *req)
-{
-	at_error_t dummy;
-	return ofono_query (req, &dummy);
-}
-
-
 int ofono_prop_find (DBusMessage *msg, const char *name, int type,
                      DBusMessageIter *it)
 {
@@ -211,9 +204,11 @@ DBusMessage *modem_props_get (const plugin_t *p, const char *iface)
 	DBusMessage *msg = modem_req_new (p, iface, "GetProperties");
 	if (msg == NULL)
 		return NULL;
-	msg = ofono_req_reply (msg);
+
+	at_error_t err;
+	msg = ofono_query (msg, &err);
 	if (msg == NULL)
-		warning ("Cannot get oFono %s properties", iface);
+		warning ("Cannot get oFono %s properties (error %u)", iface, err);
 	return msg;
 }
 
@@ -338,10 +333,11 @@ static char *manager_find_modem (char **pname)
 	if (msg == NULL)
 		return NULL;
 
-	msg = ofono_req_reply (msg);
+	at_error_t err;
+	msg = ofono_query (msg, &err);
 	if (msg == NULL)
 	{
-		error ("oFono manager not present");
+		error ("oFono manager not present (error %u)", err);
 		return NULL;
 	}
 
