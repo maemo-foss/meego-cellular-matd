@@ -286,7 +286,7 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		/* ATD */
 		if (c == 'D')
 		{
-			bool voice = strchr (req, ';') == NULL;
+			bool voice = strchr (req, ';') != NULL;
 			at_request_cb cb = bank->cmd.dial[voice].handler;
 
 			if (cb == NULL)
