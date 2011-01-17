@@ -53,12 +53,8 @@
 #include <at_dbus.h>
 
 #include "ofono.h"
+#include "core.h"
 
-struct plugin
-{
-	char *name;
-	char *objpath;
-};
 
 /*** DBus oFono helpers ***/
 DBusMessage *ofono_query (DBusMessage *req, at_error_t *err)
