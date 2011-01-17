@@ -323,6 +323,84 @@ static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_zero, get_cvmod, list_cvmod);
 }
 
+/*** AT+CHLD ***/
+
+static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
+{
+	plugin_t *p = data;
+	at_error_t ret = AT_CME_ENOTSUP;
+	const char *method = NULL;
+
+	value += strspn (value, " ");
+
+	if (!*value)
+		return AT_CME_ENOTSUP;
+
+	/* 1x/2x not supported yet. */
+	if (value[1])
+		return AT_CME_ENOTSUP;
+
+	switch (*value) {
+		case '1':
+			method = "ReleaseAndAnswer";
+			break;
+		case '2':
+			method = "SwapCalls";
+			break;
+		case '3':
+			method = "CreateMultiparty";
+			break;
+		case '4':
+			method = "Transfer";
+			break;
+		default:
+			return AT_CME_ENOTSUP;
+	}
+
+	int canc = at_cancel_disable ();
+
+	DBusMessage *msg = modem_req_new (p,
+					  "VoiceCallManager",
+					  method);
+
+	if (!msg)
+	{
+		ret = AT_CME_ENOMEM;
+		goto out;
+	}
+
+	msg = ofono_query (msg, &ret);
+	if (msg)
+		dbus_message_unref (msg);
+
+out:
+	at_cancel_enable (canc);
+
+	(void)modem;
+	return ret;
+}
+
+static at_error_t get_chld (at_modem_t *modem, void *data)
+{
+	(void)modem;
+	(void)data;
+
+	return AT_CME_EINVAL;
+}
+
+static at_error_t list_chld (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CHLD: (1,2,3,4)");
+
+	(void)data;
+	return AT_OK;
+}
+
+static at_error_t handle_chld (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_chld, get_chld, list_chld);
+}
+
 
 /*** AT+CVHU ***/
 
@@ -377,6 +455,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_alpha (set, 'H', handle_hangup, p);
 	at_register (set, "+CMOD", handle_cmod, p);
 	at_register (set, "+CVMOD", handle_cvmod, p);
+	at_register (set, "+CHLD", handle_chld, p);
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 }
