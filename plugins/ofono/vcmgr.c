@@ -44,7 +44,7 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <dbus/dbus.h>
@@ -53,6 +53,7 @@
 #include <at_thread.h>
 #include <at_log.h>
 #include "ofono.h"
+#include "core.h"
 
 static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 {
@@ -316,6 +317,49 @@ static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_zero, get_cvmod, list_cvmod);
 }
 
+
+/*** AT+CVHU ***/
+
+/* Contrary to 3GPP TS 27.007, OK is not returned on DTR drop.
+ * We can typically not write "OK" to the serial line when DTR is low,
+ * and the DTE would probably ignore any data we send. */
+
+static at_error_t set_cvhu (at_modem_t *modem, const char *req, void *data)
+{
+	unsigned char *pvhu = data;
+	unsigned char mode;
+
+	if (sscanf (req, " %"SCNu8, &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 2)
+		return AT_CME_ENOTSUP;
+
+	*pvhu = mode;
+
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cvhu (at_modem_t *modem, void *data)
+{
+	unsigned char *pvhu = data;
+
+	at_intermediate (modem, "\r\n+CVHU: %"PRIu8, *pvhu);
+	return AT_OK;
+}
+
+static at_error_t list_cvhu (at_modem_t *modem, void *data)
+{
+	(void) data;
+
+	at_intermediate (modem, "\r\n+CMOD: (0-2)");
+	return AT_OK;
+}
+
+static at_error_t handle_cvhu (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cvhu, get_cvhu, list_cvhu);
+}
 
 /*** Registration ***/
 
