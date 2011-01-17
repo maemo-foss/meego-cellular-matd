@@ -207,39 +207,27 @@ static at_error_t set_cpin (at_modem_t *modem, const char *req, void *data)
 	else if (!strcmp (type, "none"))
 		ret = AT_CME_EINVAL; /* No PIN is required!  */
 	dbus_message_unref (msg);
-
-	if (ret != AT_OK)
-		goto out;
-
-	/* Enter the PIN */
-	msg = modem_req_new (p, "SimManager", unblock ? "ResetPin" : "EnterPin");
-	if (msg == NULL)
-	{
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
-	if (!dbus_message_append_args (msg, DBUS_TYPE_STRING, &type,
-	                                    DBUS_TYPE_STRING, &pin,
-	                                    DBUS_TYPE_INVALID)
-	 || (unblock
-	  && !dbus_message_append_args (msg, DBUS_TYPE_STRING, &newpin,
-	                                     DBUS_TYPE_INVALID)))
-	{
-		ret = AT_CME_ENOMEM;
-		dbus_message_unref (msg);
-		goto out;
-	}
-
-	msg = ofono_query (msg, &ret);
-	if (msg == NULL)
-	{
-		if (ret == AT_CME_ERROR (0)) /* failed? */
-			ret = AT_CME_ERROR (16); /* bad password! */
-		goto out;
-	}
-	dbus_message_unref (msg);
 out:
 	at_cancel_enable (canc);
+
+	if (ret != AT_OK)
+		return ret;
+
+	/* Enter the PIN */
+	if (unblock)
+		ret = modem_request (p, "SimManager", "ResetPin",
+		                     DBUS_TYPE_STRING, &type,
+		                     DBUS_TYPE_STRING, &pin,
+		                     DBUS_TYPE_STRING, &newpin,
+		                     DBUS_TYPE_INVALID);
+	else
+		ret = modem_request (p, "SimManager", "EnterPin",
+		                     DBUS_TYPE_STRING, &type,
+		                     DBUS_TYPE_STRING, &pin,
+		                     DBUS_TYPE_INVALID);
+
+	if (ret == AT_CME_ERROR (0)) /* failed? */
+		ret = AT_CME_ERROR (16); /* bad password! */
 	(void) modem;
 	return ret;
 }
