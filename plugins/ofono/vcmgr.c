@@ -244,7 +244,7 @@ static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
 	if (ret == AT_CME_ERROR_0)
 		ret = AT_OK; /* there was no ongoing call */
 
-	(void) modem;
+	(void) modem; /* maybe NULL with AT+CVHU=2 */
 	(void) req;
 	return ret;
 }
@@ -254,8 +254,14 @@ static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
 
 static at_error_t handle_hangup (at_modem_t *modem, unsigned val, void *data)
 {
-	if (val)
+	plugin_t *p = data;
+
+	if (val != 0)
 		return AT_CME_ENOTSUP;
+
+	if (p->vhu == 1)
+		return AT_OK; /* ignore ATH */
+
 	/* We don't do alternating calls, so ATH is the same as AT+CHUP */
 	return handle_chup (modem, "+CHUP", data) ? AT_ERROR : AT_OK;
 }
@@ -371,4 +377,12 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_alpha (set, 'H', handle_hangup, p);
 	at_register (set, "+CMOD", handle_cmod, p);
 	at_register (set, "+CVMOD", handle_cvmod, p);
+	p->vhu = 0;
+	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
+}
+
+void voicecallmanager_unregister (plugin_t *p)
+{
+	if (p->vhu == 2)
+		handle_chup (NULL, "+CHUP", p);
 }

@@ -413,6 +413,8 @@ void at_plugin_unregister (void *opaque)
 
 	if (p == NULL)
 		return;
+
+	voicecallmanager_unregister (p);
 	free (p->name);
 	free (p->objpath);
 	free (p);
