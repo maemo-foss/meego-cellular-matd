@@ -328,8 +328,7 @@ static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
 static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 {
 	plugin_t *p = data;
-	at_error_t ret = AT_CME_ENOTSUP;
-	const char *method = NULL;
+	const char *method;
 
 	value += strspn (value, " ");
 
@@ -357,27 +356,9 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 			return AT_CME_ENOTSUP;
 	}
 
-	int canc = at_cancel_disable ();
-
-	DBusMessage *msg = modem_req_new (p,
-					  "VoiceCallManager",
-					  method);
-
-	if (!msg)
-	{
-		ret = AT_CME_ENOMEM;
-		goto out;
-	}
-
-	msg = ofono_query (msg, &ret);
-	if (msg)
-		dbus_message_unref (msg);
-
-out:
-	at_cancel_enable (canc);
-
 	(void)modem;
-	return ret;
+
+	return modem_request (p, "VoiceCallManager", method, DBUS_TYPE_INVALID);
 }
 
 static at_error_t get_chld (at_modem_t *modem, void *data)
