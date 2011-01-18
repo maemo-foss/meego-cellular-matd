@@ -426,6 +426,87 @@ static at_error_t handle_cvhu (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_cvhu, get_cvhu, list_cvhu);
 }
 
+/*** AT+VTS ***/
+
+static at_error_t set_vts (at_modem_t *m, const char *req, void *data)
+{
+	plugin_t *p = data;
+
+	char buf[256];
+	char *tones = buf;
+
+	while (*req)
+	{
+		int len = -1;
+		int len_wc = -1;
+		unsigned dur;
+		char ch;
+
+		if (sscanf (req, " { %c , %u } %n, %n",
+		            &ch, &dur, &len, &len_wc) >= 2)
+		{
+			if (dur != 0)
+				return AT_CME_ENOTSUP;
+		}
+		else if (sscanf (req, " %c %n, %n", &ch, &len, &len_wc) < 1)
+			return AT_CME_EINVAL;
+
+		if (len == -1)
+			return AT_CME_EINVAL;
+
+		if ((ch >= '0' && ch <= '9') ||
+		    (ch >= 'A' && ch <= 'D') ||
+		    ch == '#' || ch == '*')
+		{
+			*(tones++) = ch;
+			if (tones >= (buf + sizeof (buf)))
+				return AT_ERROR;
+		} else
+			return AT_CME_EINVAL;
+
+		if (len_wc != -1)
+		{
+			req += len_wc;
+			if (!*req)
+				return AT_CME_EINVAL;
+		}
+		else
+		{
+			req += len;
+			if (*req)
+				return AT_CME_EINVAL;
+		}
+	}
+	*tones = '\0';
+	tones = buf;
+
+	(void)m;
+	return modem_request (p, "VoiceCallManager", "SendTones",
+	                      DBUS_TYPE_STRING, &tones,
+	                      DBUS_TYPE_INVALID);
+}
+
+static at_error_t get_vts (at_modem_t *m, void *data)
+{
+	(void)m;
+	(void)data;
+
+	return AT_CME_EINVAL;
+}
+
+static at_error_t list_vts (at_modem_t *modem, void *data)
+{
+	(void)data;
+
+	at_intermediate (modem, "\r\n+VTS: (0-9,#,*,A-D),(),(0)");
+	return AT_OK;
+}
+
+static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_vts, get_vts, list_vts);
+}
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -439,6 +520,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CHLD", handle_chld, p);
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
+	at_register (set, "+VTS", handle_vts, p);
 }
 
 void voicecallmanager_unregister (plugin_t *p)
