@@ -262,6 +262,7 @@ void *at_plugin_register (at_commands_t *set)
 	at_register (set, "+GMI", redirect_cellular, (void *)"+CGMI");
 	at_register (set, "+GMM", redirect_cellular, (void *)"+CGMM");
 	at_register (set, "+GMR", redirect_cellular, (void *)"+CGMR");
+	at_register (set, "+GSN", redirect_cellular, (void *)"+CGSN");
 
 	at_register (set, "+FCLASS", handle_fclass, NULL);
 	return NULL;
