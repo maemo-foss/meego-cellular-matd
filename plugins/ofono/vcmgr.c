@@ -448,6 +448,9 @@ static at_error_t set_vts (at_modem_t *m, const char *req, void *data)
 			if (dur != 0)
 				return AT_CME_ENOTSUP;
 		}
+		else if (sscanf (req, " [ %*u , %*u , %u ] %n, %n",
+		                 &dur, &len, &len_wc) >= 1)
+			return AT_CME_ENOTSUP;
 		else if (sscanf (req, " %c %n, %n", &ch, &len, &len_wc) < 1)
 			return AT_CME_EINVAL;
 
