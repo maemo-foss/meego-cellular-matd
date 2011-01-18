@@ -394,15 +394,19 @@ static at_error_t handle_clac (at_modem_t *m, const char *req, void *data)
 		if (bank->cmd.alpha[i].handler != NULL)
 			at_intermediate (m, "\r\n%c", 'A' + i);
 	at_intermediate (m, "\r\nD");
-	for (unsigned i = 4; i < 26; i++)
+	for (unsigned i = 4; i < 18; i++)
 		if (bank->cmd.alpha[i].handler != NULL)
 			at_intermediate (m, "\r\n%c", 'A' + i);
-	for (unsigned i = 0; i < 26; i++)
-		if (bank->cmd.ampersand[i].handler != NULL)
-			at_intermediate (m, "\r\n&%c", 'A' + i);
 	for (unsigned i = 0; i <= AT_MAX_S; i++)
 		if (bank->cmd.s[i].set != NULL)
 			at_intermediate (m, "\r\nS%u", i);
+	for (unsigned i = 19; i < 26; i++)
+		if (bank->cmd.alpha[i].handler != NULL)
+			at_intermediate (m, "\r\n%c", 'A' + i);
+
+	for (unsigned i = 0; i < 26; i++)
+		if (bank->cmd.ampersand[i].handler != NULL)
+			at_intermediate (m, "\r\n&%c", 'A' + i);
 
 	pthread_mutex_lock (&lock);
 #ifndef NDEBUG
