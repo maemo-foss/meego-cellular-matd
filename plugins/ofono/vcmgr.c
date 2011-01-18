@@ -417,7 +417,7 @@ static at_error_t list_cvhu (at_modem_t *modem, void *data)
 {
 	(void) data;
 
-	at_intermediate (modem, "\r\n+CMOD: (0-2)");
+	at_intermediate (modem, "\r\n+CVHU: (0-2)");
 	return AT_OK;
 }
 
