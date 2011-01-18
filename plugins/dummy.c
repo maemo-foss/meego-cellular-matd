@@ -61,10 +61,21 @@ static at_error_t alpha_nothing (at_modem_t *modem, unsigned value,
 	return AT_OK;
 }
 
+static at_error_t alpha_no_carrier (at_modem_t *modem, unsigned value,
+                                    void *data)
+{
+	(void) modem;
+	(void) value;
+	(void) data;
+	return AT_NO_CARRIER;
+}
+
 void *at_plugin_register (at_commands_t *set)
 {
 	/* speaker loudness */
 	at_register_alpha (set, 'L', alpha_nothing, NULL);
+	/* return to data mode */
+	at_register_alpha (set, 'O', alpha_no_carrier, NULL);
 	/* speaker mode */
 	at_register_alpha (set, 'M', alpha_nothing, NULL);
 	/* pulse dialing */
