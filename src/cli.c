@@ -67,7 +67,13 @@ static int usage (const char *cmd)
 	const char fmt[] =
 "Usage: %s [-d] [-p] [TTY node]\n"
 "Provides AT commands emulation through a given terminal device\n"
-"(by default, standard input and output are used).\n";
+"(by default, standard input and output are used).\n"
+"\n"
+"  -d, --debug   enable debug messages\n"
+"  -h, --help    print this help and exit\n"
+"  -p, --pts     create a pseudo-terminal and print the slave name\n"
+"  -V, --version print version informations and exit\n";
+
 	return (printf (fmt, cmd) >= 0) ? 0 : 1;
 }
 
