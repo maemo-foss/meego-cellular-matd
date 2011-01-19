@@ -220,13 +220,13 @@ out:
 	if (unblock)
 		ret = modem_request (p, "SimManager", "ResetPin",
 		                     DBUS_TYPE_STRING, &type,
-		                     DBUS_TYPE_STRING, &pin,
-		                     DBUS_TYPE_STRING, &newpin,
+		                     DBUS_TYPE_STRING, &(const char *){ pin },
+		                     DBUS_TYPE_STRING, &(const char *){ newpin },
 		                     DBUS_TYPE_INVALID);
 	else
 		ret = modem_request (p, "SimManager", "EnterPin",
 		                     DBUS_TYPE_STRING, &type,
-		                     DBUS_TYPE_STRING, &pin,
+		                     DBUS_TYPE_STRING, &(const char *){ pin },
 		                     DBUS_TYPE_INVALID);
 
 	if (ret == AT_CME_ERROR (0)) /* failed? */
