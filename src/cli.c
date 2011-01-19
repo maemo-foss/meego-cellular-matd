@@ -65,7 +65,7 @@
 static int usage (const char *cmd)
 {
 	const char fmt[] =
-"Usage: %s [-d] [TTY node]\n"
+"Usage: %s [-d] [-p] [TTY node]\n"
 "Provides AT commands emulation through a given terminal device\n"
 "(by default, standard input and output are used).\n";
 	return (printf (fmt, cmd) >= 0) ? 0 : 1;
@@ -115,18 +115,20 @@ int main (int argc, char *argv[])
 
 	int logopts = LOG_PID;
 	int logmask = LOG_UPTO(LOG_NOTICE);
+	bool pts = false;
 
 	static const struct option opts[] =
 	{
 		{ "debug",   no_argument, NULL, 'd' },
 		{ "help",    no_argument, NULL, 'h' },
+		{ "pts",     no_argument, NULL, 'p' },
 		{ "version", no_argument, NULL, 'V' },
 		{ NULL,      no_argument, NULL, '\0'}
 	};
 
 	for (;;)
 	{
-		switch (getopt_long (argc, argv, "dhV", opts, NULL))
+		switch (getopt_long (argc, argv, "dhpV", opts, NULL))
 		{
 			case -1:
 				goto done;
@@ -136,6 +138,9 @@ int main (int argc, char *argv[])
 				break;
 			case 'h':
 				return usage (argv[0]);
+			case 'p':
+				pts = true;
+				break;
 			case 'V':
 				return version ();
 			case '?':
@@ -151,6 +156,26 @@ done:
 
 	int fd;
 
+	if (pts)
+	{
+		fd = posix_openpt (O_RDWR|O_NOCTTY|O_CLOEXEC);
+		if (fd == -1)
+		{
+			syslog (LOG_CRIT, "Cannot open %s: %m", "pseudo terminal");
+			return 1;
+		}
+
+		char *name = ptsname (fd);
+		if (name == NULL)
+		{
+			close (fd);
+			return 1;
+		}
+		unlockpt (fd);
+		puts (name);
+		fflush (stdout);
+	}
+	else
 	if (optind < argc)
 	{
 		char *path = argv[optind++];
