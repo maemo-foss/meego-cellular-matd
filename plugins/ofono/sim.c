@@ -177,7 +177,10 @@ static at_error_t set_cpin (at_modem_t *modem, const char *req, void *data)
 	char pin[9], newpin[9];
 	bool unblock = false;
 
-	switch (sscanf (req, "%8[0-9] , %8[0-9]", pin, newpin))
+	int c = sscanf (req, " \"%8[0-9]\" , \"%8[0-9]\"", pin, newpin);
+	if (c < 1)
+		c = sscanf (req, " %8[0-9] , %8[0-9]", pin, newpin);
+	switch (c)
 	{
 		case 2:
 			unblock = true;
