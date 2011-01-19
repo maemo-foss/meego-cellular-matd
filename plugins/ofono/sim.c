@@ -209,25 +209,22 @@ static at_error_t set_cpin (at_modem_t *modem, const char *req, void *data)
 		ret = AT_CME_UNKNOWN;
 	else if (!strcmp (type, "none"))
 		ret = AT_CME_EINVAL; /* No PIN is required!  */
-	dbus_message_unref (msg);
-out:
-	at_cancel_enable (canc);
-
-	if (ret != AT_OK)
-		return ret;
-
-	/* Enter the PIN */
-	if (unblock)
+	else if (unblock)
+		/* Unblock the PIN */
 		ret = modem_request (p, "SimManager", "ResetPin",
 		                     DBUS_TYPE_STRING, &type,
 		                     DBUS_TYPE_STRING, &(const char *){ pin },
 		                     DBUS_TYPE_STRING, &(const char *){ newpin },
 		                     DBUS_TYPE_INVALID);
 	else
+		/* Enter the PIN */
 		ret = modem_request (p, "SimManager", "EnterPin",
 		                     DBUS_TYPE_STRING, &type,
 		                     DBUS_TYPE_STRING, &(const char *){ pin },
 		                     DBUS_TYPE_INVALID);
+	dbus_message_unref (msg);
+out:
+	at_cancel_enable (canc);
 
 	if (ret == AT_CME_ERROR (0)) /* failed? */
 		ret = AT_CME_ERROR (16); /* bad password! */
