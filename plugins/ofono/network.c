@@ -53,6 +53,18 @@
 #include <dbus/dbus.h>
 #include "ofono.h"
 
+/*** AT+GCAP ***/
+/* This does not really belong here. It's just related to +WS46. */
+
+static at_error_t handle_gcap (at_modem_t *modem, const char *req, void *data)
+{
+	(void) req;
+	(void) data;
+
+	at_intermediate (modem, "\r\n+GCAP: +CGSM,+W");
+	return AT_OK;
+}
+
 /*** AT+WS46 ***/
 
 static at_error_t set_ws46 (at_modem_t *modem, const char *req, void *data)
@@ -121,5 +133,6 @@ static at_error_t handle_ws46 (at_modem_t *modem, const char *req, void *data)
 
 void network_register (at_commands_t *set, plugin_t *p)
 {
+	at_register (set, "+GCAP", handle_gcap, p);
 	at_register (set, "+WS46", handle_ws46, p);
 }
