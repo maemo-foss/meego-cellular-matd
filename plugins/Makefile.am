@@ -58,6 +58,7 @@ libofono_at_la_SOURCES = \
 	ofono/callforwarding.c \
 	ofono/callsettings.c \
 	ofono/gprs.c \
+	ofono/network.c \
 	ofono/sim.c \
 	ofono/vcmgr.c \
 	ofono/core.c
