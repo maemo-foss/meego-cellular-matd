@@ -45,4 +45,5 @@ struct plugin
 	char *name;
 	char *objpath;
 	unsigned char vhu; /**< AT+CVHU */
+	unsigned char cops; /**< AT+COPS */
 };
