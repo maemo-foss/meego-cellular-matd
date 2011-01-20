@@ -58,48 +58,29 @@
 
 static at_error_t list_active (at_modem_t *modem, plugin_t *p)
 {
-	const char *tech = NULL;
-	int canc = at_cancel_disable ();
+	char *tech = modem_prop_get_string (p, "ConnectionManager",
+	                                    "Bearer");
+	const char *name = "";
 
-	DBusMessage *props = modem_props_get (p, "NetworkRegistration");
-	if (props == NULL)
-		goto out;
-
-	tech = ofono_prop_find_string (props, "Technology");
-	if (tech == NULL)
+	if (tech == NULL || !strcmp (tech, "none"))
 		;
 	else if (!strcmp (tech, "gsm"))
-	{
-		tech = "GSM";
-
-		if (modem_prop_get_bool (p, "ConnectionManager", "Attached") == 1)
-			tech = "GPRS";
-	}
+		name = "GSM";
 	else if (!strcmp (tech, "edge"))
-		tech = "EDGE";
+		name = "EDGE";
 	else if (!strcmp (tech, "umts"))
-		tech = "UMTS";
-	/* XXX: oFono always return "hspa" w/o distinction currently */
+		name = "UMTS";
 	else if (!strcmp (tech, "hsdpa"))
-		tech = "HSDPA";
+		name = "HSDPA";
 	else if (!strcmp (tech, "hsupa") || !strcmp (tech, "hspa"))
-		tech = "HSUPA";
-#if 0
+		name = "HSUPA";
 	else if (!strcmp (tech, "lte"))
-		tech = "LTE";
-#endif
+		name = "LTE";
 	else
-	{
 		warning ("Unknown radio access data technology \"%s\"", tech);
-		tech = NULL;
-	}
-	dbus_message_unref (props);
-out:
-	at_cancel_enable (canc);
+	free (tech);
 
-	if (tech == NULL)
-		return AT_CME_UNKNOWN;
-	at_intermediate (modem, "\r\n*CNTI: 0,%s", tech);
+	at_intermediate (modem, "\r\n*CNTI: 0,%s", name);
 	return AT_OK;
 }
 
