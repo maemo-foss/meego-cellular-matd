@@ -580,6 +580,59 @@ static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_vts, get_vts, list_vts);
 }
 
+
+/*** AT+CTFR ***/
+
+static at_error_t do_ctfr (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	char number[21], subaddr[24];
+	unsigned type, satype;
+
+	switch (sscanf (req, " \"%20[^\"]\" , %u , \"%23[^\"]\" , %u",
+	                number, &type, subaddr, &satype))
+	{
+		case 4:
+		case 3:
+			return AT_CME_ENOTSUP;
+		case 2:
+			if (type != (number[0] == '+') ? 145 : 129)
+				return AT_CME_ENOTSUP;
+		case 1:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	int id = find_call_by_state (p, "incoming", &(at_error_t){ 0 });
+	if (id == -1)
+		return AT_CME_ENOENT;
+
+	(void) modem;
+	return voicecall_request (p, id, "Deflect",
+	                          DBUS_TYPE_STRING, &(const char *){ number },
+	                          DBUS_TYPE_INVALID);
+}
+
+static at_error_t get_ctfr (at_modem_t *modem, void *data)
+{
+	(void) modem; (void) data;
+	return AT_CME_EINVAL;
+}
+
+static at_error_t list_ctfr (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CTFR: ");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_ctfr (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, do_ctfr, get_ctfr, list_ctfr);
+}
+
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -595,6 +648,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
+	at_register (set, "+CTFR", handle_ctfr, p);
 }
 
 void voicecallmanager_unregister (plugin_t *p)
