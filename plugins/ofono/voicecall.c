@@ -46,6 +46,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <at_command.h>
@@ -398,37 +399,56 @@ static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
 static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 {
 	plugin_t *p = data;
-	const char *method;
-
-	value += strspn (value, " ");
-
-	if (!*value)
-		return AT_CME_ENOTSUP;
-
-	/* 1x/2x not supported yet. */
-	if (value[1])
-		return AT_CME_ENOTSUP;
-
-	switch (*value) {
-		case '1':
-			method = "ReleaseAndAnswer";
-			break;
-		case '2':
-			method = "SwapCalls";
-			break;
-		case '3':
-			method = "CreateMultiparty";
-			break;
-		case '4':
-			method = "Transfer";
-			break;
-		default:
-			return AT_CME_ENOTSUP;
-	}
 
 	(void)modem;
 
-	return modem_request (p, "VoiceCallManager", method, DBUS_TYPE_INVALID);
+	value += strspn (value, " ");
+	if (!*value)
+		return AT_CME_EINVAL;
+
+	char op = *(value++);
+	char *end;
+	unsigned id = strtoul (value, &end, 10);
+
+	if (end == value)
+	{
+		const char *method;
+
+		switch (op)
+		{
+			//case '0': TODO: release help
+
+			case '1':
+				method = "ReleaseAndAnswer";
+				break;
+			case '2':
+				method = "SwapCalls";
+				break;
+			case '3':
+				method = "CreateMultiparty";
+				break;
+			case '4':
+				method = "Transfer";
+				break;
+			default:
+				return AT_CME_ENOTSUP;
+		}
+		return modem_request (p, "VoiceCallManager", method,
+		                      DBUS_TYPE_INVALID);
+	}
+	else
+	{
+		switch (op)
+		{
+			case '1':
+				return voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
+
+			//case '2': TODO: private chat
+
+			default:
+				return AT_CME_ENOTSUP;
+		}
+	}
 }
 
 static at_error_t get_chld (at_modem_t *modem, void *data)
@@ -441,7 +461,7 @@ static at_error_t get_chld (at_modem_t *modem, void *data)
 
 static at_error_t list_chld (at_modem_t *modem, void *data)
 {
-	at_intermediate (modem, "\r\n+CHLD: (1,2,3,4)");
+	at_intermediate (modem, "\r\n+CHLD: (1,1x,2,3,4)");
 
 	(void)data;
 	return AT_OK;
