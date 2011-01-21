@@ -140,6 +140,23 @@ out:
 }
 
 
+/*** ATA ***/
+
+/* NOTE: It is assumed incoming data calls are not supported */
+static at_error_t handle_answer (at_modem_t *modem, unsigned val, void *data)
+{
+	plugin_t *p = data;
+
+	int id = find_call_by_state (p, "incoming", &(at_error_t){ 0 });
+	if (id == -1)
+		return AT_NO_CARRIER;
+
+	(void) modem;
+	(void) val;
+	return voicecall_request (p, id, "Answer", DBUS_TYPE_INVALID);
+}
+
+
 /*** ATD ***/
 
 static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
@@ -567,7 +584,7 @@ static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 {
-	//at_register_alpha (set, 'A', handle_answer, p);
+	at_register_alpha (set, 'A', handle_answer, p);
 	at_register_dial (set, true, handle_dial, p);
 	at_register (set, "+CLCC", handle_clcc, p);
 	at_register (set, "+CHUP", handle_chup, p);
