@@ -60,7 +60,7 @@ libofono_at_la_SOURCES = \
 	ofono/gprs.c \
 	ofono/network.c \
 	ofono/sim.c \
-	ofono/vcmgr.c \
+	ofono/voicecall.c \
 	ofono/core.c
 libofono_at_la_CFLAGS = $(DBUS_CFLAGS)
 libofono_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
