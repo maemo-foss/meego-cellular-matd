@@ -55,43 +55,6 @@
 #include "ofono.h"
 #include "core.h"
 
-static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
-{
-	plugin_t *p = data;
-	char buf[256], *num;
-	const char *callerid = "";
-
-	for (num = buf; *str; str++)
-	{
-		char c = *str;
-
-		if ((c >= '0' && c <= '9') || c == '*' || c == '#' || c == '+'
-		 || (c >= 'A' && c <= 'C'))
-		{
-			*(num++) = c;
-			if (num >= (buf + sizeof (buf)))
-				return AT_ERROR;
-		}
-		else if (c == 'I')
-			callerid = "enabled";
-		else if (c == 'i')
-			callerid = "disabled";
-		else if (c == 'G' || c == 'g')
-			return AT_CME_ENOTSUP; /* XXX? */
-		else if (c == '>')
-			return AT_CME_ENOENT; /* phonebook -> reject */
-	}
-	*num = '\0';
-	num = buf;
-
-	(void) modem;
-
-	/* FIXME TODO: signal call progress asynchronously */
-	return modem_request (p, "VoiceCallManager", "Dial",
-	                      DBUS_TYPE_STRING, &num, DBUS_TYPE_STRING, &callerid,
-	                      DBUS_TYPE_INVALID);
-}
-
 
 static DBusMessage *get_calls (plugin_t *p, at_error_t *ret,
                                DBusMessageIter *calls)
@@ -174,6 +137,46 @@ static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
 out:
 	at_cancel_enable (canc);
 	return id;
+}
+
+
+/*** ATD ***/
+
+static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
+{
+	plugin_t *p = data;
+	char buf[256], *num;
+	const char *callerid = "";
+
+	for (num = buf; *str; str++)
+	{
+		char c = *str;
+
+		if ((c >= '0' && c <= '9') || c == '*' || c == '#' || c == '+'
+		 || (c >= 'A' && c <= 'C'))
+		{
+			*(num++) = c;
+			if (num >= (buf + sizeof (buf)))
+				return AT_ERROR;
+		}
+		else if (c == 'I')
+			callerid = "enabled";
+		else if (c == 'i')
+			callerid = "disabled";
+		else if (c == 'G' || c == 'g')
+			return AT_CME_ENOTSUP; /* XXX? */
+		else if (c == '>')
+			return AT_CME_ENOENT; /* phonebook -> reject */
+	}
+	*num = '\0';
+	num = buf;
+
+	(void) modem;
+
+	/* FIXME TODO: signal call progress asynchronously */
+	return modem_request (p, "VoiceCallManager", "Dial",
+	                      DBUS_TYPE_STRING, &num, DBUS_TYPE_STRING, &callerid,
+	                      DBUS_TYPE_INVALID);
 }
 
 
@@ -564,8 +567,9 @@ static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CLCC", handle_clcc, p);
+	//at_register_alpha (set, 'A', handle_answer, p);
 	at_register_dial (set, true, handle_dial, p);
+	at_register (set, "+CLCC", handle_clcc, p);
 	at_register (set, "+CHUP", handle_chup, p);
 	at_register_alpha (set, 'H', handle_hangup, p);
 	at_register (set, "+CMOD", handle_cmod, p);
