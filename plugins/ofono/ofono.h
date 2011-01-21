@@ -57,6 +57,9 @@ at_error_t modem_prop_set_bool (const plugin_t *, const char *,
 at_error_t modem_prop_set_u16 (const plugin_t *, const char *,
                                const char *, unsigned);
 
+at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
+                              int, ...);
+
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 int ofono_prop_find_basic (DBusMessage *, const char *, int, void *);

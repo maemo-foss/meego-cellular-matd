@@ -44,6 +44,7 @@
 # include <config.h>
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -316,6 +317,41 @@ at_error_t modem_prop_set_u16 (const plugin_t *p, const char *iface,
 {
 	dbus_uint16_t u = value;
 	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT16, &u);
+}
+
+
+/*** Voice call helper ***/
+at_error_t voicecall_request (const plugin_t *p, unsigned callid,
+                              const char *method, int first, ...)
+{
+	size_t len = strlen (p->objpath) + sizeof ("/voicecall99");
+	char path[len];
+
+	snprintf (path, len, "%s/voicecall%02u", p->objpath, callid);
+
+	DBusMessage *msg;
+	at_error_t ret;
+	int canc = at_cancel_disable ();
+
+	msg = dbus_message_new_method_call (p->name, path,
+	                                    "org.ofono.VoiceCall", method);
+	if (msg != NULL)
+	{
+		va_list ap;
+
+		va_start (ap, first);
+		if (dbus_message_append_args_valist (msg, first, ap))
+			msg = ofono_query (msg, &ret);
+		va_end (ap);
+
+		if (msg != NULL)
+			dbus_message_unref (msg);
+	}
+	else
+		ret = AT_CME_ENOMEM;
+
+	at_cancel_enable (canc);
+	return ret;
 }
 
 
