@@ -93,13 +93,32 @@ static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 }
 
 
-static DBusMessage *get_calls (plugin_t *p, at_error_t *ret)
+static DBusMessage *get_calls (plugin_t *p, at_error_t *ret,
+                               DBusMessageIter *calls)
 {
 	DBusMessage *msg = modem_req_new (p, "VoiceCallManager", "GetCalls");
 	if (msg == NULL)
+	{
 		*ret = AT_CME_ENOMEM;
-	else
-		msg = ofono_query (msg, ret);
+		return NULL;
+	}
+
+	msg = ofono_query (msg, ret);
+	if (msg == NULL)
+		return NULL;
+
+	DBusMessageIter args;
+
+	if (!dbus_message_iter_init (msg, &args)
+	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
+	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
+	{
+		dbus_message_unref (msg);
+		*ret = AT_CME_ERROR_0;
+		return NULL;
+	}
+
+	dbus_message_iter_recurse (&args, calls);
 	return msg;
 }
 
@@ -123,23 +142,12 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 	plugin_t *p = data;
 	at_error_t ret;
 	int canc = at_cancel_disable ();
+	DBusMessageIter array;
 
-	DBusMessage *msg = get_calls (p, &ret);
+	DBusMessage *msg = get_calls (p, &ret, &array);
 	if (msg == NULL)
 		goto out;
 
-	DBusMessageIter args, array;
-
-	if (!dbus_message_iter_init (msg, &args)
-	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
-	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
-	{
-		dbus_message_unref (msg);
-		ret = AT_CME_ERROR_0;
-		goto out;
-	}
-
-	dbus_message_iter_recurse (&args, &array);
 	while (dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID)
 	{
 		const char *path, *number = NULL;
