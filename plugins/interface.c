@@ -104,6 +104,20 @@ static at_error_t handle_dtr (at_modem_t *modem, unsigned value,
 	return AT_OK;
 }
 
+/* AT&K */
+static at_error_t redirect_flow (at_modem_t *modem, unsigned value, void *data)
+{
+	(void)data;
+
+	if (value == 3)
+		value = 2;
+	else if (value == 4)
+		value = 1;
+	else if (value != 0)
+		return AT_CME_EINVAL;
+
+	return at_execute (modem, "+IFC=%u,%u", value, value);
+}
 
 /*** AT+IPR (command data rate) ***/
 
@@ -415,6 +429,7 @@ void *at_plugin_register (at_commands_t *set)
 {
 	at_register_ampersand (set, 'C', handle_dcd, NULL);
 	at_register_ampersand (set, 'D', handle_dtr, NULL);
+	at_register_ampersand (set, 'K', redirect_flow, NULL);
 	at_register (set, "+IPR", handle_rate, NULL);
 	at_register (set, "+ICF", handle_framing, NULL);
 	at_register (set, "+ILRR", handle_rate_report, NULL);
