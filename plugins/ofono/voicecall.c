@@ -47,9 +47,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include <dbus/dbus.h>
 
 #include <at_command.h>
+#include <at_dbus.h>
 #include <at_thread.h>
 #include <at_log.h>
 #include "ofono.h"
@@ -131,6 +131,48 @@ static int get_call_id (const char *call)
 		error ("Cannot assign number for call %s", call);
 		return -1;
 	}
+	return id;
+}
+
+static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
+{
+	int id = -1;
+	int canc = at_cancel_disable ();
+	DBusMessageIter calls;
+
+	DBusMessage *msg = get_calls (p, err, &calls);
+	if (msg == NULL)
+		goto out;
+
+	while (dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID)
+	{
+		const char *callpath, *callstate;
+		DBusMessageIter call, prop;
+
+		dbus_message_iter_recurse (&calls, &call);
+		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_OBJECT_PATH)
+			continue;
+		dbus_message_iter_get_basic (&call, &callpath);
+
+		dbus_message_iter_next (&call);
+		if (at_dbus_dict_lookup_string (&call, "State", &prop)
+		 || dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_STRING)
+			continue;
+
+		dbus_message_iter_get_basic (&prop, &callstate);
+		if (!strcmp (state, callstate))
+		{
+			id = get_call_id (callpath);
+			break;
+		}
+
+		dbus_message_iter_next (&calls);
+	}
+	dbus_message_unref (msg);
+
+	assert (*err == AT_OK);
+out:
+	at_cancel_enable (canc);
 	return id;
 }
 
