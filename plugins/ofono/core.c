@@ -327,6 +327,8 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 	size_t len = strlen (p->objpath) + sizeof ("/voicecall99");
 	char path[len];
 
+	if (callid > 99)
+		return AT_CME_ENOENT;
 	snprintf (path, len, "%s/voicecall%02u", p->objpath, callid);
 
 	DBusMessage *msg;
