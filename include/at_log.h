@@ -3,7 +3,7 @@
  * @brief Logging and tracing helper API
  * @ingroup logging
  *
- * @defgroup helpers Convenience and helper functions
+ * @ingroup helpers
  * @{
  */
 

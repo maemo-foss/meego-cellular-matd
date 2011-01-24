@@ -53,6 +53,7 @@ extern "C" {
 #ifdef __GNUC__
 # define AT_FORMAT(f,p) __attribute__ ((format(printf,f,p)))
 #else
+/** Marker for printf-style functions */
 # define AT_FORMAT(f,p)
 #endif
 
@@ -188,19 +189,19 @@ typedef at_error_t (*at_alpha_cb) (at_modem_t *m, unsigned value, void *ctx);
  * Registers a handler for an alpha AT command.
  *
  * @param set AT commands list to register in
- * @param alpha upper case alphabetic character of the AT command
+ * @param cmd upper case alphabetic character of the AT command
  * @param req AT command execution callback (cannot be NULL)
  * @param opaque data pointer for the callback
  * @return 0 on success, an error code otherwise
  */
-int at_register_alpha (at_commands_t *modem, char cmd,
+int at_register_alpha (at_commands_t *set, char cmd,
                        at_alpha_cb req, void *opaque);
 
 /**
  * Registers a handler for an alpha AT command.
  *
  * @param set AT commands list to register in
- * @param alpha upper case alphabetic character of the AT command
+ * @param cmd upper case alphabetic character of the AT command
  * @param req AT command execution callback (cannot be NULL)
  * @param opaque data pointer for the callback
  * @return 0 on success, an error code otherwise
@@ -341,7 +342,6 @@ void at_connect_mtu (at_modem_t *, int fd, size_t mtu);
 /**
  * Execute a command (from within another one).
  * This is used to chain plugins.
- * @param fmt format string of the command (<b>without</b> the AT prefix)
  * @param str the command
  * @return command result, or AT_ERROR on failure.
  */
@@ -369,11 +369,33 @@ at_error_t at_executev (at_modem_t *, const char *fmt, va_list);
  * @{
  */
 
+/**
+ * Callback prototype for extended AT commands setter (e.g. AT+FOO=bar)
+ */
 typedef at_error_t (*at_set_t) (at_modem_t *, const char *, void *);
+
+/**
+ * Callback prototype for extended AT commands getter (e.g. AT+FOO?)
+ */
 typedef at_error_t (*at_get_t) (at_modem_t *, void *);
+
+/**
+ * Callback prototype for extended AT commands feature test (e.g. AT+FOO=?)
+ */
 typedef at_error_t (*at_list_t) (at_modem_t *, void *);
 
-at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
+/**
+ * Helper for extended AT commands with set, get and test operations.
+ * This function dispatches an extended command to one of three callbacks
+ * depending on the operations.
+ * @param req commands to parse and dispatch
+ * @param opaque data pointer for the callbacks
+ * @param set set operation callback (e.g. AT+FOO=bar)
+ * @param get get operation callback (e.g. AT+FOO?)
+ * @param list test operation callback (e.g. AT+FOO=?)
+ * @return command result, or AT_ERROR on syntax error.
+ */
+at_error_t at_setting (at_modem_t *, const char *req, void *opaque,
                        at_set_t set, at_get_t get, at_list_t list);
 
 /** @} */
@@ -391,7 +413,6 @@ struct termios;
 
 /**
  * Sets the attributes of the underlying serial line (if supported).
- * @param cmd AT command that triggered the change of attribute
  * @param tp serial line attribute in termios format
  * @return 0 on success, an error code otherwise
  */

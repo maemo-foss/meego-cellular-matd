@@ -1,5 +1,5 @@
 /**
- * @file mat.c
+ * @file cli.c
  * @brief Command line interface for the AT command parser
  */
 

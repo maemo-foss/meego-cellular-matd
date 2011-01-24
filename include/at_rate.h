@@ -1,6 +1,6 @@
 /**
  * @file at_rate.h
- * @brief baud rate conversion table
+ * @brief Baud rate conversion table
  * @ingroup helpers
  * @{
  */
@@ -44,12 +44,18 @@
 
 #include <termios.h>
 
+/**
+ * Serial line rate mapping
+ */
 struct rate
 {
-	unsigned rate;
-	speed_t  speed;
+	unsigned rate; /**< Bauds rate */
+	speed_t  speed; /**< POSIX terminal speed */
 };
 
+/**
+ * Table of serial line rates
+ */
 static const struct rate rates[] =
 {
 	{      50,      B50 },
@@ -84,6 +90,9 @@ static const struct rate rates[] =
 	{ 4000000, B4000000 },
 };
 
-const size_t n_rate = sizeof (rates) / sizeof (rates[0]);
+/**
+ * Number of supported rates in @ref rates.
+ */
+static const size_t n_rate = sizeof (rates) / sizeof (rates[0]);
 
 /** @} */
