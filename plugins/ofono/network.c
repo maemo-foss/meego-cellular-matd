@@ -51,6 +51,7 @@
 
 #include <at_command.h>
 #include <at_thread.h>
+#include <at_dbus.h>
 #include <dbus/dbus.h>
 #include "ofono.h"
 #include "core.h"
@@ -143,6 +144,160 @@ static const char *technologies[] = {
 	"lte"
 };
 
+static int strconcatcmp (const char *a, const char *b1, const char *b2)
+{
+	if (!a && !b1 && !b2)
+		return 1;
+	if (!a || !b1 || !b2)
+		return 0;
+
+	while (*a && *b1)
+		if (*(a++) != *(b1++))
+			return 0;
+
+	while (*a && *b2)
+		if (*(a++) != *(b2++))
+			return 0;
+
+	return !*a && !*b1 && !*b2;
+}
+
+static const char *find_oper (unsigned format, const char *data,
+			      DBusMessage *msg)
+{
+	DBusMessageIter args;
+	DBusMessageIter array;
+
+	if (!dbus_message_iter_init (msg, &args)
+	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
+	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
+		return NULL;
+
+	for (dbus_message_iter_recurse (&args, &array);
+	     dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
+	     dbus_message_iter_next (&array))
+	{
+		const char *path;
+		DBusMessageIter network;
+
+		dbus_message_iter_recurse (&array, &network);
+		if (dbus_message_iter_get_arg_type (&network) != DBUS_TYPE_OBJECT_PATH)
+			continue;
+		dbus_message_iter_get_basic (&network, &path);
+		dbus_message_iter_next (&network);
+
+
+		if (dbus_message_iter_get_arg_type (&network) != DBUS_TYPE_ARRAY
+		 || dbus_message_iter_get_element_type (&network) != DBUS_TYPE_DICT_ENTRY)
+			continue;
+
+		if (format == 0)
+		{
+			DBusMessageIter val;
+			DBusMessageIter name;
+
+			if (at_dbus_dict_lookup_string (&network, "Name",
+							&val)
+			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
+				continue;
+			dbus_message_iter_recurse (&val, &name);
+			if (dbus_message_iter_get_arg_type (&name) != DBUS_TYPE_STRING)
+				continue;
+
+			const char *namestring;
+			dbus_message_iter_get_basic (&name, &namestring);
+			if (!strcmp (namestring, data))
+				return path;
+		}
+		else
+		{
+			DBusMessageIter val;
+			DBusMessageIter mcc;
+			DBusMessageIter mnc;
+
+			if (at_dbus_dict_lookup_string (&network,
+							"MobileCountryCode",
+							&val)
+			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
+				continue;
+			dbus_message_iter_recurse (&val, &mcc);
+			if (dbus_message_iter_get_arg_type (&mcc) != DBUS_TYPE_STRING
+			 || at_dbus_dict_lookup_string (&network,
+							"MobileNetworkCode",
+							&val)
+			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
+				continue;
+			dbus_message_iter_recurse (&val, &mnc);
+			if (dbus_message_iter_get_arg_type (&mnc) != DBUS_TYPE_STRING)
+				continue;
+
+			const char *mccstring;
+			const char *mncstring;
+
+			dbus_message_iter_get_basic (&mcc, &mccstring);
+			dbus_message_iter_get_basic (&mnc, &mncstring);
+
+			if (strconcatcmp (data, mccstring, mncstring))
+				return path;
+		}
+	}
+
+	return NULL;
+}
+
+static at_error_t change_oper (unsigned format, const char *data, plugin_t *p)
+{
+	int canc = at_cancel_disable ();
+	at_error_t ret = AT_OK;
+	DBusMessage *msg = modem_req_new (p, "NetworkRegistration",
+					  "GetOperators");
+	if (!msg)
+	{
+		ret = AT_CME_ENOMEM;
+		goto out;
+	}
+
+	msg = ofono_query (msg, &ret);
+	if (ret != AT_OK)
+		goto out;
+
+	const char *oper_path = find_oper (format, data, msg);
+
+	if (!oper_path)
+	{
+		dbus_message_unref (msg);
+		msg = modem_req_new (p, "NetworkRegistration",
+				     "Scan");
+		if (!msg)
+		{
+			ret = AT_CME_ENOMEM;
+			goto out;
+		}
+
+		msg = ofono_query (msg, &ret);
+		if (ret != AT_OK)
+			goto out;
+
+		oper_path = find_oper (format, data, msg);
+		if (!oper_path)
+		{
+			ret = AT_CME_ENOENT;
+			goto out;
+		}
+	}
+
+	ret = ofono_request (p, oper_path, "NetworkOperator", "Register",
+				 DBUS_TYPE_INVALID);
+
+	/* FIXME: We should wait for actual result of the selection. */
+
+out:
+	if (msg)
+		dbus_message_unref (msg);
+	at_cancel_enable (canc);
+	return ret;
+}
+
 static at_error_t set_cops (at_modem_t *modem, const char *req, void *data)
 {
 	plugin_t *p = data;
@@ -151,7 +306,6 @@ static at_error_t set_cops (at_modem_t *modem, const char *req, void *data)
 	char buf[32];
 	unsigned tech;
 
-	/* FIXME: Actual network changing. */
 	(void)modem;
 
 	int c = sscanf (req, " %u , %u , \"%31[^\"]\" , %u",
@@ -161,6 +315,13 @@ static at_error_t set_cops (at_modem_t *modem, const char *req, void *data)
 
 	switch (mode)
 	{
+	case 0:
+	/* FIXME: How do we change back to automatic? */
+		return AT_CME_ENOTSUP;
+	case 1:
+		if (c < 3)
+			return AT_CME_EINVAL;
+		return change_oper (format, buf, p);
 	case 3:
 		if (c < 2)
 			return AT_CME_EINVAL;
