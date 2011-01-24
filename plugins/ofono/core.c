@@ -157,34 +157,29 @@ int ofono_prop_find_basic (DBusMessage *msg, const char *name,
 	return 0;
 }
 
-
-/*** Modem D-Bus helpers ***/
-DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
-                            const char *method)
+DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
+				const char *subif, const char *method)
 {
 	size_t len = strlen (subif);
 	char iface[11 + len];
 
 	memcpy (iface, "org.ofono.", 10);
 	strcpy (iface + 10, subif);
-	return dbus_message_new_method_call (p->name, p->objpath, iface, method);
+	return dbus_message_new_method_call (p->name, path, iface, method);
 }
 
-at_error_t modem_request (const plugin_t *p, const char *subif,
-                          const char *method, int first, ...)
+static at_error_t ofono_request_va (const plugin_t *p, const char *path,
+					const char *subif, const char *method,
+					int first, va_list ap)
 {
 	at_error_t ret;
 	int canc = at_cancel_disable ();
 
-	DBusMessage *msg = modem_req_new (p, subif, method);
+	DBusMessage *msg = ofono_req_new (p, path, subif, method);
 	if (msg != NULL)
 	{
-		va_list ap;
-
-		va_start (ap, first);
 		if (dbus_message_append_args_valist (msg, first, ap))
 			msg = ofono_query (msg, &ret);
-		va_end (ap);
 
 		if (msg != NULL)
 			dbus_message_unref (msg);
@@ -193,6 +188,42 @@ at_error_t modem_request (const plugin_t *p, const char *subif,
 		ret = AT_CME_ENOMEM;
 
 	at_cancel_enable (canc);
+
+	return ret;
+}
+
+at_error_t ofono_request (const plugin_t *p, const char *path,
+			      const char *subif, const char *method,
+			      int first, ...)
+{
+	at_error_t ret;
+	va_list ap;
+
+	va_start (ap, first);
+	ret = ofono_request_va (p, path, subif, method, first, ap);
+	va_end (ap);
+
+	return ret;
+}
+
+/*** Modem D-Bus helpers ***/
+
+DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
+                            const char *method)
+{
+	return ofono_req_new (p, p->objpath, subif, method);
+}
+
+at_error_t modem_request (const plugin_t *p, const char *subif,
+                          const char *method, int first, ...)
+{
+	at_error_t ret;
+	va_list ap;
+
+	va_start (ap, first);
+	ret = ofono_request_va (p, p->objpath, subif, method, first, ap);
+	va_end (ap);
+
 	return ret;
 }
 

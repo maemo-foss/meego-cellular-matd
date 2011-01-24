@@ -63,6 +63,12 @@ at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 int ofono_prop_find_basic (DBusMessage *, const char *, int, void *);
+DBusMessage *ofono_req_new (const plugin_t *, const char *,
+				const char *, const char *);
+at_error_t ofono_request (const plugin_t *, const char *,
+			      const char *, const char *,
+			      int, ...);
+
 
 static inline
 const char *ofono_prop_find_string (DBusMessage *msg, const char *name)
