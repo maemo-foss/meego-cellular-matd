@@ -111,7 +111,7 @@ static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
 	while (dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID)
 	{
 		const char *callpath, *callstate;
-		DBusMessageIter call, prop;
+		DBusMessageIter call;
 
 		dbus_message_iter_recurse (&calls, &call);
 		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_OBJECT_PATH)
@@ -119,12 +119,8 @@ static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
 		dbus_message_iter_get_basic (&call, &callpath);
 
 		dbus_message_iter_next (&call);
-		if (at_dbus_dict_lookup_string (&call, "State", &prop)
-		 || dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_STRING)
-			continue;
-
-		dbus_message_iter_get_basic (&prop, &callstate);
-		if (!strcmp (state, callstate))
+		callstate = ofono_dict_find_string (&call, "State");
+		if (callstate != NULL && !strcmp (state, callstate))
 		{
 			id = get_call_id (callpath);
 			break;
@@ -211,12 +207,15 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 	if (msg == NULL)
 		goto out;
 
+	static const char states[][9] = {
+		"active", "held", "dialing", "alerting", "incoming", "waiting",
+	};
+
 	while (dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID)
 	{
-		const char *path, *number = NULL;
+		const char *path, *number, *state;
 		unsigned id;
-		int stat = -1;
-		dbus_bool_t orig = 0, mpty = 0;
+		int stat = -1, orig, mpty;
 
 		DBusMessageIter call;
 		dbus_message_iter_recurse (&array, &call);
@@ -226,63 +225,29 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 		id = get_call_id (path);
 
 		dbus_message_iter_next (&call);
-		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_ARRAY
-		 || dbus_message_iter_get_element_type (&call) != DBUS_TYPE_DICT_ENTRY)
-			continue;
-
-		DBusMessageIter props;
-		dbus_message_iter_recurse (&call, &props);
-
-		while (dbus_message_iter_get_arg_type (&props) != DBUS_TYPE_INVALID)
+		number = ofono_dict_find_string (&call, "LineIdentification");
+		orig = ofono_dict_find_bool (&call, "Originated");
+		mpty = ofono_dict_find_bool (&call, "Multiparty");
+		state = ofono_dict_find_string (&call, "State");
+		if (orig == -1 || mpty == -1 || state == NULL)
 		{
-			DBusMessageIter prop, value;
-			const char *key;
-
-			dbus_message_iter_recurse (&props, &prop);
-			if (dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_STRING)
-				break; /* wrong dictionary key type */
-			dbus_message_iter_get_basic (&prop, &key);
-			dbus_message_iter_next (&prop);
-			if (dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_VARIANT)
-				break;
-			dbus_message_iter_recurse (&prop, &value);
-
-			if (!strcmp (key, "LineIdentification")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-				dbus_message_iter_get_basic (&value, &number);
-			else
-			if (!strcmp (key, "Originated")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_BOOLEAN)
-				dbus_message_iter_get_basic (&value, &orig);
-			else
-			if (!strcmp (key, "Multiparty")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_BOOLEAN)
-				dbus_message_iter_get_basic (&value, &mpty);
-			else
-			if (!strcmp (key, "State")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-			{
-				const char *state;
-
-				dbus_message_iter_get_basic (&value, &state);
-				if (!strcmp (state, "active"))
-					stat = 0;
-				else if (!strcmp (state, "held"))
-					stat = 1;
-				else if (!strcmp (state, "dialing"))
-					stat = 2;
-				else if (!strcmp (state, "alerting"))
-					stat = 3;
-				else if (!strcmp (state, "incoming"))
-					stat = 4;
-				else if (!strcmp (state, "waiting"))
-					stat = 5;
-			}
-			dbus_message_iter_next (&props);
+			ret = AT_CME_UNKNOWN;
+			goto out;
 		}
 
+		for (size_t i = 0; i < sizeof (states) / sizeof (*states); i++)
+			if (!strcmp (state, states[i]))
+			{
+				stat = 0;
+				break;
+			}
+
 		if (stat == -1)
-			continue;
+		{
+			error ("Unknown call state \"%s\"", state);
+			ret = AT_CME_UNKNOWN;
+			goto out;
+		}
 
 		if (number != NULL && strcmp (number, "withheld"))
 			at_intermediate (modem, "\r\n+CLCC: %u,%u,%d,0,%u,\"%s\",%u", id,

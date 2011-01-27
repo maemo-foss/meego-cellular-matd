@@ -52,7 +52,7 @@
 #include <at_command.h>
 #include <at_thread.h>
 #include <at_dbus.h>
-#include <dbus/dbus.h>
+#include <at_log.h>
 #include "ofono.h"
 #include "core.h"
 
@@ -133,7 +133,7 @@ static at_error_t handle_ws46 (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+COPS ***/
 
-static const char *technologies[] = {
+static const char tes[][6] = {
 	"gsm",
 	"",
 	"umts",
@@ -186,58 +186,19 @@ static const char *find_oper (unsigned format, const char *data,
 		dbus_message_iter_get_basic (&network, &path);
 		dbus_message_iter_next (&network);
 
-
-		if (dbus_message_iter_get_arg_type (&network) != DBUS_TYPE_ARRAY
-		 || dbus_message_iter_get_element_type (&network) != DBUS_TYPE_DICT_ENTRY)
-			continue;
-
 		if (format == 0)
 		{
-			DBusMessageIter val;
-			DBusMessageIter name;
-
-			if (at_dbus_dict_lookup_string (&network, "Name",
-							&val)
-			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
-				continue;
-			dbus_message_iter_recurse (&val, &name);
-			if (dbus_message_iter_get_arg_type (&name) != DBUS_TYPE_STRING)
-				continue;
-
-			const char *namestring;
-			dbus_message_iter_get_basic (&name, &namestring);
-			if (!strcmp (namestring, data))
+			const char *name = ofono_dict_find_string (&network, "Name");
+			if (name != NULL && !strcmp (name, data))
 				return path;
 		}
 		else
 		{
-			DBusMessageIter val;
-			DBusMessageIter mcc;
-			DBusMessageIter mnc;
+			const char *mcc, *mnc;
 
-			if (at_dbus_dict_lookup_string (&network,
-							"MobileCountryCode",
-							&val)
-			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
-				continue;
-			dbus_message_iter_recurse (&val, &mcc);
-			if (dbus_message_iter_get_arg_type (&mcc) != DBUS_TYPE_STRING
-			 || at_dbus_dict_lookup_string (&network,
-							"MobileNetworkCode",
-							&val)
-			 || dbus_message_iter_get_arg_type (&val) != DBUS_TYPE_VARIANT)
-				continue;
-			dbus_message_iter_recurse (&val, &mnc);
-			if (dbus_message_iter_get_arg_type (&mnc) != DBUS_TYPE_STRING)
-				continue;
-
-			const char *mccstring;
-			const char *mncstring;
-
-			dbus_message_iter_get_basic (&mcc, &mccstring);
-			dbus_message_iter_get_basic (&mnc, &mncstring);
-
-			if (strconcatcmp (data, mccstring, mncstring))
+			mcc = ofono_dict_find_string (&network,	"MobileCountryCode");
+			mnc = ofono_dict_find_string (&network, "MobileNetworkCode");
+			if (strconcatcmp (data, mcc, mnc))
 				return path;
 		}
 	}
@@ -387,10 +348,9 @@ static at_error_t get_cops (at_modem_t *modem, void *data)
 
 	if ((tec = ofono_prop_find_string (msg, "Technology")))
 	{
-		unsigned i;
-		for (i = 0; i < sizeof (technologies) / sizeof (*technologies); i++)
+		for (size_t i = 0; i < sizeof (tes) / sizeof (*tes); i++)
 		{
-			if (!strcmp (tec, technologies[i]))
+			if (!strcmp (tec, tes[i]))
 			{
 				tech = i;
 				break;
@@ -448,7 +408,7 @@ static at_error_t list_cops (at_modem_t *modem, void *data)
 	if (ret != AT_OK)
 		goto end;
 
-	static const char *statuses[] = {
+	static const char sts[][10] = {
 		"unknown",
 		"available",
 		"current",
@@ -472,105 +432,59 @@ static at_error_t list_cops (at_modem_t *modem, void *data)
 	     dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
 	     dbus_message_iter_next (&array))
 	{
-		const char *name = "";
-		const char *mcc = "";
-		const char *mnc = "";
+		DBusMessageIter network, techs;
+		const char *name, *mcc, *mnc, *st;
 		int status = -1;
-		unsigned techs = 0;
 
-		DBusMessageIter network;
 		dbus_message_iter_recurse (&array, &network);
 		if (dbus_message_iter_get_arg_type (&network) != DBUS_TYPE_OBJECT_PATH)
 			continue;
 
 		dbus_message_iter_next (&network);
-		if (dbus_message_iter_get_arg_type (&network) != DBUS_TYPE_ARRAY
-		 || dbus_message_iter_get_element_type (&network) != DBUS_TYPE_DICT_ENTRY)
+
+		name = ofono_dict_find_string (&network, "Name");
+		mcc = ofono_dict_find_string (&network, "MobileCountryCode");
+		mnc = ofono_dict_find_string (&network, "MobileNetworkCode");
+		st = ofono_dict_find_string (&network, "Status");
+		if (name == NULL)
+			name = "";
+		if (mcc == NULL || mnc == NULL || st == NULL)
 			continue;
 
-		DBusMessageIter props;
-
-		for (dbus_message_iter_recurse (&network, &props);
-		     dbus_message_iter_get_arg_type (&props) != DBUS_TYPE_INVALID;
-		     dbus_message_iter_next (&props))
+		for (size_t i = 0; i < sizeof (sts) / sizeof (*sts); i++)
 		{
-			DBusMessageIter prop, value;
-			const char *key;
-
-			dbus_message_iter_recurse (&props, &prop);
-			if (dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_STRING)
-				break; /* wrong dictionary key type */
-			dbus_message_iter_get_basic (&prop, &key);
-			dbus_message_iter_next (&prop);
-			if (dbus_message_iter_get_arg_type (&prop) != DBUS_TYPE_VARIANT)
+			if (!strcmp (st, sts[i]))
+			{
+				status = i;
 				break;
-			dbus_message_iter_recurse (&prop, &value);
-
-			if (!strcmp (key, "Name")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-				dbus_message_iter_get_basic (&value, &name);
-			else
-			if (!strcmp (key, "MobileCountryCode")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-				dbus_message_iter_get_basic (&value, &mcc);
-			else
-			if (!strcmp (key, "MobileNetworkCode")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-				dbus_message_iter_get_basic (&value, &mnc);
-			else
-			if (!strcmp (key, "Status")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_STRING)
-			{
-				const char *st;
-				dbus_message_iter_get_basic (&value, &st);
-
-				unsigned i;
-
-				for (i = 0; i < sizeof (statuses) / sizeof (*statuses); i++)
-				{
-					if (!strcmp (st, statuses[i]))
-					{
-						status = i;
-						break;
-					}
-				}
-			}
-			else
-			if (!strcmp (key, "Technologies")
-			 && dbus_message_iter_get_arg_type (&value) == DBUS_TYPE_ARRAY
-			 && dbus_message_iter_get_element_type (&value) == DBUS_TYPE_STRING)
-			{
-				DBusMessageIter tech;
-
-				for (dbus_message_iter_recurse (&value, &tech);
-				     dbus_message_iter_get_arg_type (&tech) != DBUS_TYPE_INVALID;
-				     dbus_message_iter_next (&tech))
-				{
-					const char *tec;
-					dbus_message_iter_get_basic (&tech, &tec);
-
-					unsigned i;
-
-					for (i = 0; i < sizeof (technologies) / sizeof (*technologies); i++)
-					{
-						if (!strcmp (tec, technologies[i]))
-						{
-							techs |= 1 << i;
-							break;
-						}
-					}
-				}
 			}
 		}
-		if (status > -1)
+		if (status == -1)
 		{
-			unsigned i = 0;
-			for (i = 0; techs; techs >>= 1, i++)
-			{
-				if (!(techs & 1))
-					continue;
+			warning ("Unknown network status \"%s\"", st);
+			continue;
+		}
 
-				at_intermediate (modem, "(%u,\"%s\",,\"%s%s\",%u),", status, name, mcc, mnc, i);
+		if (ofono_dict_find (&network, "Technologies", DBUS_TYPE_ARRAY, &techs)
+		 || dbus_message_iter_get_element_type (&techs) != DBUS_TYPE_STRING)
+			continue;
+
+		DBusMessageIter tech;
+		for (dbus_message_iter_recurse (&techs, &tech);
+		     dbus_message_iter_get_arg_type (&tech) != DBUS_TYPE_INVALID;
+		     dbus_message_iter_next (&tech))
+		{
+			const char *str;
+
+			dbus_message_iter_get_basic (&tech, &str);
+			for (size_t i = 0; i < sizeof (tes) / sizeof (*tes); i++)
+			{
+				if (!strcmp (str, tes[i]))
+				{
+					at_intermediate (modem, "(%d,\"%s\",,\"%s%s\",%zu),",
+					                 status, name, mcc, mnc, i);
+					break;
+				}
 			}
 		}
 	}
