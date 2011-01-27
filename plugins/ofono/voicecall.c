@@ -228,13 +228,13 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 		dbus_message_iter_next (&call);
 		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_ARRAY
 		 || dbus_message_iter_get_element_type (&call) != DBUS_TYPE_DICT_ENTRY)
-                continue;
+			continue;
 
 		DBusMessageIter props;
-        dbus_message_iter_recurse (&call, &props);
+		dbus_message_iter_recurse (&call, &props);
 
-        while (dbus_message_iter_get_arg_type (&props) != DBUS_TYPE_INVALID)
-        {
+		while (dbus_message_iter_get_arg_type (&props) != DBUS_TYPE_INVALID)
+		{
 			DBusMessageIter prop, value;
 			const char *key;
 
