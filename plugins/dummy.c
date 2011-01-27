@@ -70,17 +70,55 @@ static at_error_t alpha_no_carrier (at_modem_t *modem, unsigned value,
 	return AT_NO_CARRIER;
 }
 
+
+/*** AT+FLCASS ***/
+static at_error_t set_fclass (at_modem_t *m, const char *req, void *data)
+{
+	unsigned fclass;
+
+	if (sscanf (req, " %u", &fclass) < 1)
+		return AT_CME_EINVAL;
+	if (fclass != 0)
+		return AT_CME_ENOTSUP;
+
+	(void)data;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t get_fclass (at_modem_t *m, void *data)
+{
+	at_intermediate (m, "\r\n0");
+
+	(void)data;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t handle_fclass (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data,
+	                   set_fclass, get_fclass, get_fclass);
+}
+
+
+/*** Plugin registration ***/
 void *at_plugin_register (at_commands_t *set)
 {
 	/* speaker loudness */
 	at_register_alpha (set, 'L', alpha_nothing, NULL);
-	/* return to data mode */
-	at_register_alpha (set, 'O', alpha_no_carrier, NULL);
 	/* speaker mode */
 	at_register_alpha (set, 'M', alpha_nothing, NULL);
+
 	/* pulse dialing */
 	at_register_alpha (set, 'P', alpha_nothing, NULL);
 	/* tone dialing */
 	at_register_alpha (set, 'T', alpha_nothing, NULL);
+
+	/* return to data mode */
+	at_register_alpha (set, 'O', alpha_no_carrier, NULL);
+
+	at_register (set, "+FCLASS", handle_fclass, NULL);
+
 	return NULL;
 }

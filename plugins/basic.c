@@ -207,35 +207,6 @@ static at_error_t handle_cscs (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_cscs, get_cscs, list_cscs);
 }
 
-static at_error_t set_fclass (at_modem_t *m, const char *req, void *data)
-{
-	unsigned fclass;
-
-	if (sscanf (req, " %u", &fclass) < 1)
-		return AT_CME_EINVAL;
-	if (fclass != 0)
-		return AT_CME_ENOTSUP;
-
-	(void)data;
-	(void)m;
-	return AT_OK;
-}
-
-static at_error_t get_fclass (at_modem_t *m, void *data)
-{
-	at_intermediate (m, "\r\n0");
-
-	(void)data;
-	(void)m;
-	return AT_OK;
-}
-
-static at_error_t handle_fclass (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data,
-	                   set_fclass, get_fclass, get_fclass);
-}
-
 
 void *at_plugin_register (at_commands_t *set)
 {
@@ -263,7 +234,5 @@ void *at_plugin_register (at_commands_t *set)
 	at_register (set, "+GMM", redirect_cellular, (void *)"+CGMM");
 	at_register (set, "+GMR", redirect_cellular, (void *)"+CGMR");
 	at_register (set, "+GSN", redirect_cellular, (void *)"+CGSN");
-
-	at_register (set, "+FCLASS", handle_fclass, NULL);
 	return NULL;
 }
