@@ -84,57 +84,33 @@ static at_error_t list_active (at_modem_t *modem, plugin_t *p)
 	return AT_OK;
 }
 
-/* FIXME: We list what we use, not what is available. Wrong. */
 static at_error_t list_available (at_modem_t *modem, plugin_t *p)
 {
-	const char *tech = NULL;
-	int canc = at_cancel_disable ();
+	const char *name = "";
 
-	DBusMessage *props = modem_props_get (p, "NetworkRegistration");
-	if (props == NULL)
-		goto out;
-
-	tech = ofono_prop_find_string (props, "Technology");
+	char *tech = modem_prop_get_string (p, "NetworkRegistration",
+	                                    "Technology");
 	if (tech == NULL)
 		;
 	else if (!strcmp (tech, "gsm"))
-	{
-		tech = "GSM";
-
-		DBusMessage *gprs_props = modem_props_get (p, "ConnectionManager");
-		if (gprs_props != NULL)
-		{
-			if (ofono_prop_find_bool (gprs_props, "Attached") == 1)
-				tech = "GSM,GPRS";
-			dbus_message_unref (gprs_props);
-		}
-	}
+		name = "GSM";
 	else if (!strcmp (tech, "edge"))
-		tech = "GSM,GPRS,EDGE";
+		name = "GSM,GPRS,EDGE";
 	else if (!strcmp (tech, "umts"))
-		tech = "UMTS";
+		name = "UMTS";
 	else if (!strcmp (tech, "hsdpa"))
-		tech = "UMTS,HSDPA";
+		name = "UMTS,HSDPA";
 	else if (!strcmp (tech, "hsupa"))
-		tech = "UMTS,HSUPA";
+		name = "UMTS,HSUPA";
 	else if (!strcmp (tech, "hspa"))
-		tech = "UMTS,HSDPA,HSUPA";
-#if 0
+		name = "UMTS,HSDPA,HSUPA";
 	else if (!strcmp (tech, "lte"))
-		tech = "LTE";
-#endif
+		name = "LTE";
 	else
-	{
 		warning ("Unknown radio access data technology \"%s\"", tech);
-		tech = NULL;
-	}
-	dbus_message_unref (props);
-out:
-	at_cancel_enable (canc);
+	free (tech);
 
-	if (tech == NULL)
-		return AT_CME_UNKNOWN;
-	at_intermediate (modem, "\r\n*CNTI: 1,%s", tech);
+	at_intermediate (modem, "\r\n*CNTI: 1,%s", name);
 	return AT_OK;
 }
 
