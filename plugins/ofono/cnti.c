@@ -49,9 +49,8 @@
 #include <string.h>
 
 #include <at_command.h>
-#include <at_thread.h>
 #include <at_log.h>
-#include <at_dbus.h>
+#include <dbus/dbus.h>
 #include "ofono.h"
 
 /*** AT*CNTI ***/
