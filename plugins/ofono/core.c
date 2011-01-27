@@ -122,23 +122,21 @@ DBusMessage *ofono_query (DBusMessage *req, at_error_t *err)
 	return reply;
 }
 
-int ofono_prop_find (DBusMessage *msg, const char *name, int type,
-                     DBusMessageIter *it)
+int ofono_dict_find (DBusMessageIter *dict, const char *name, int type,
+                     DBusMessageIter *value)
 {
-	DBusMessageIter args;
-	DBusMessageIter dict;
+	DBusMessageIter entry;
 
 	at_cancel_assert (false);
 
-	if (!dbus_message_iter_init (msg, &args)
-	 || at_dbus_dict_lookup_string (&args, name, &dict)
-	 || dbus_message_iter_get_arg_type (&dict) != DBUS_TYPE_VARIANT)
+	if (at_dbus_dict_lookup_string (dict, name, &entry)
+	 || dbus_message_iter_get_arg_type (&entry) != DBUS_TYPE_VARIANT)
 	{
 		warning ("Property %s not found", name);
 		return -1;
 	}
-	dbus_message_iter_recurse (&dict, it);
-	if (dbus_message_iter_get_arg_type (it) != type)
+	dbus_message_iter_recurse (&entry, value);
+	if (dbus_message_iter_get_arg_type (value) != type)
 	{
 		warning ("Property %s type wrong", name);
 		return -1;
@@ -146,15 +144,73 @@ int ofono_prop_find (DBusMessage *msg, const char *name, int type,
 	return 0;
 }
 
-int ofono_prop_find_basic (DBusMessage *msg, const char *name,
-                           int type, void *buf)
+static int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
+                                  int type, void *buf)
 {
-	DBusMessageIter args;
+	DBusMessageIter value;
 
-	if (ofono_prop_find (msg, name, type, &args))
+	if (ofono_dict_find (dict, name, type, &value))
 		return -1;
-	dbus_message_iter_get_basic (&args, buf);
+	dbus_message_iter_get_basic (&value, buf);
 	return 0;
+}
+
+const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name)
+{
+	const char *value;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_STRING, &value))
+		return NULL;
+	return value;
+}
+
+int ofono_dict_find_bool (DBusMessageIter *dict, const char *name)
+{
+	dbus_bool_t b;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BOOLEAN, &b))
+		return -1;
+	return b;
+}
+
+
+int ofono_prop_find (DBusMessage *msg, const char *name, int type,
+                     DBusMessageIter *value)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find (&dict, name, type, value);
+}
+
+const char *ofono_prop_find_string (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return NULL;
+	return ofono_dict_find_string (&dict, name);
+}
+
+int ofono_prop_find_bool (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find_bool (&dict, name);
+}
+
+static int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+	dbus_uint16_t val;
+
+	if (!dbus_message_iter_init (msg, &dict)
+	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT16, &val))
+		return -1;
+	return val;
 }
 
 DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
@@ -279,19 +335,14 @@ int modem_prop_get_bool (const plugin_t *p, const char *iface,
 
 int modem_prop_get_u16 (const plugin_t *p, const char *iface, const char *name)
 {
-	int ret = -1;
+	int ret;
 	int canc = at_cancel_disable ();
 
 	DBusMessage *props = modem_props_get (p, iface);
 	if (props != NULL)
-	{
-		dbus_uint16_t val;
-
-		if (!ofono_prop_find_basic (props, name, DBUS_TYPE_UINT16, &val))
-			ret = val;
-		dbus_message_unref (props);
-	}
-
+		ret = ofono_prop_find_u16 (props, name);
+	else
+		ret = -1;
 	at_cancel_enable (canc);
 	return ret;
 }

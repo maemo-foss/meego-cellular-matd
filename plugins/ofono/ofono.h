@@ -61,34 +61,18 @@ at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
                               int, ...);
 
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
-int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
-int ofono_prop_find_basic (DBusMessage *, const char *, int, void *);
 DBusMessage *ofono_req_new (const plugin_t *, const char *,
 				const char *, const char *);
 at_error_t ofono_request (const plugin_t *, const char *,
 			      const char *, const char *,
 			      int, ...);
 
-
-static inline
-const char *ofono_prop_find_string (DBusMessage *msg, const char *name)
-{
-	char *str;
-
-	if (ofono_prop_find_basic (msg, name, DBUS_TYPE_STRING, &str))
-		return NULL;
-	return str;
-}
-
-static inline
-int ofono_prop_find_bool (DBusMessage *msg, const char *name)
-{
-	dbus_bool_t b;
-
-	if (ofono_prop_find_basic (msg, name, DBUS_TYPE_BOOLEAN, &b))
-		return -1;
-	return b;
-}
+int ofono_dict_find (DBusMessageIter *, const char *, int, DBusMessageIter *);
+const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name);
+int ofono_dict_find_bool (DBusMessageIter *dict, const char *name);
+int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
+const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
+int ofono_prop_find_bool (DBusMessage *msg, const char *name);
 
 /* Command handlers */
 void modem_register (at_commands_t *, plugin_t *);
