@@ -619,6 +619,81 @@ static at_error_t handle_ctfr (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CPAS ***/
+
+static at_error_t show_cpas (at_modem_t *modem, plugin_t *p)
+{
+	unsigned pas = 2; /* unknown */
+	at_error_t dummy;
+
+	int canc = at_cancel_disable ();
+
+	DBusMessageIter calls;
+	DBusMessage *msg = get_calls (p, &dummy, &calls);
+	if (msg == NULL)
+	{
+		if (modem_prop_get_bool (p, "Modem", "Powered") == 0)
+			pas = 5; /* asleep */
+	}
+	else
+	{
+		pas = 0; /* ready */
+
+		for (;
+			dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID;
+			dbus_message_iter_next (&calls))
+		{
+			const char *state;
+			DBusMessageIter call;
+
+			dbus_message_iter_recurse (&calls, &call);
+			dbus_message_iter_next (&call);
+			state = ofono_dict_find_string (&call, "State");
+			if (state == NULL)
+				continue;
+			if (!strcmp (state, "ringing"))
+			{
+				pas = 3; /* ringing */
+				break;
+			}
+			if (!strcmp (state, "active") || !strcmp (state, "alerting"))
+			{
+				pas = 4; /* call in progress */
+				break;
+			}
+		}
+		dbus_message_unref (msg);
+	}
+	at_cancel_enable (canc);
+
+	at_intermediate (modem, "\r\n+CPAS: %u", pas);
+	return AT_OK;
+}
+
+static at_error_t list_cpas (at_modem_t *modem)
+{
+	at_intermediate (modem, "\r\n+CPAS: (0-5)");
+	return AT_OK;
+}
+
+static at_error_t handle_cpas (at_modem_t *modem, const char *req, void *data)
+{
+	assert (strlen (req) >= 5);
+	req += 5;
+	req += strspn (req, " ");
+	if (*req == '=')
+	{
+		req++;
+		req += strspn (req, " ");
+		if (*req == '?')
+			return list_cpas (modem);
+	}
+	else if (*req == '\0')
+		return show_cpas (modem, data);
+	return AT_CME_EINVAL;
+}
+
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -635,6 +710,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
 	at_register (set, "+CTFR", handle_ctfr, p);
+	at_register (set, "+CPAS", handle_cpas, p);
 }
 
 void voicecallmanager_unregister (plugin_t *p)
