@@ -108,7 +108,9 @@ static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
 	if (msg == NULL)
 		goto out;
 
-	while (dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID)
+	for (;
+		dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID;
+		dbus_message_iter_next (&calls))
 	{
 		const char *callpath, *callstate;
 		DBusMessageIter call;
@@ -125,8 +127,6 @@ static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
 			id = get_call_id (callpath);
 			break;
 		}
-
-		dbus_message_iter_next (&calls);
 	}
 	dbus_message_unref (msg);
 
@@ -211,7 +211,9 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 		"active", "held", "dialing", "alerting", "incoming", "waiting",
 	};
 
-	while (dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID)
+	for (;
+		dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
+		dbus_message_iter_next (&array))
 	{
 		const char *path, *number, *state;
 		unsigned id;
@@ -256,7 +258,6 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 		else
 			at_intermediate (modem, "\r\n+CLCC: %u,%u,%u,0,%u", id,
 			                 !orig, stat, mpty);
-		dbus_message_iter_next (&array);
 	}
 
 	ret = AT_OK;
