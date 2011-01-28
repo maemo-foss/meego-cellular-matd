@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = \
 	no-dist-gzip \
 	-Wall
 
-SUBDIRS = src plugins . test
+SUBDIRS = src plugins . usb test
 EXTRA_DIST = Doxyfile.in matd.pc.in
 MOSTLYCLEANFILES = $(noinst_SCRIPTS) $(pkgconfig_DATA) stamp-lcov
 SUFFIXES = .pc .pc.in -raw.info .info

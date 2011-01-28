@@ -10,6 +10,7 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 	plugins/Makefile
+	usb/Makefile
 	test/Makefile
 ])
 
