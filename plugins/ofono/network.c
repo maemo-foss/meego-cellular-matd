@@ -422,12 +422,20 @@ static at_error_t list_cops (at_modem_t *modem, void *data)
 	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
 	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
 	{
-		dbus_message_unref (msg);
 		ret = AT_CME_ERROR_0;
-		goto end;
+		goto err;
 	}
 
-	at_intermediate (modem, "\r\n+COPS: ");
+	char *buf;
+	size_t len;
+	FILE *out = open_memstream (&buf, &len);
+	if (out == NULL)
+	{
+		ret = AT_CME_ENOMEM;
+		goto err;
+	}
+
+	fputs ("\r\n+COPS: ", out);
 	for (dbus_message_iter_recurse (&args, &array);
 	     dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
 	     dbus_message_iter_next (&array))
@@ -481,17 +489,19 @@ static at_error_t list_cops (at_modem_t *modem, void *data)
 			{
 				if (!strcmp (str, tes[i]))
 				{
-					at_intermediate (modem, "(%d,\"%s\",,\"%s%s\",%zu),",
-					                 status, name, mcc, mnc, i);
+					fprintf (out, "(%d,\"%s\",,\"%s%s\",%zu),",
+					         status, name, mcc, mnc, i);
 					break;
 				}
 			}
 		}
 	}
-	at_intermediate (modem, ",(0,1,3),(0,2)");
-
+	fputs (",(0,1,3),(0,2)", out);
+	fclose (out);
+	at_intermediate_blob (modem, buf, len);
+	free (buf);
+err:
 	dbus_message_unref (msg);
-
 end:
 	at_cancel_enable (canc);
 	return ret;
