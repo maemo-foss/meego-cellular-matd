@@ -202,7 +202,7 @@ int ofono_prop_find_bool (DBusMessage *msg, const char *name)
 	return ofono_dict_find_bool (&dict, name);
 }
 
-static int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
+int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
 {
 	DBusMessageIter dict;
 	dbus_uint16_t val;
@@ -210,6 +210,18 @@ static int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
 	if (!dbus_message_iter_init (msg, &dict)
 	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT16, &val))
 		return -1;
+	return val;
+}
+
+unsigned ofono_prop_find_u32 (DBusMessage *msg, const char *name,
+			      unsigned fallback)
+{
+	DBusMessageIter dict;
+	dbus_uint32_t val;
+
+	if (!dbus_message_iter_init (msg, &dict)
+	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT32, &val))
+		return fallback;
 	return val;
 }
 

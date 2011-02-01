@@ -73,6 +73,9 @@ int ofono_dict_find_bool (DBusMessageIter *dict, const char *name);
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
 int ofono_prop_find_bool (DBusMessage *msg, const char *name);
+int ofono_prop_find_u16 (DBusMessage *msg, const char *name);
+unsigned ofono_prop_find_u32 (DBusMessage *msg, const char *name,
+			      unsigned fallback);
 
 typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
 typedef struct ofono_watch ofono_watch_t;
