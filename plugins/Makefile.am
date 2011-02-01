@@ -50,6 +50,10 @@ libuinput_at_la_SOURCES = uinput.c keymap.h
 libuinput_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libuinput_at.la
 
+libtimezone_at_la_SOURCES = timezone.c
+libtimezone_at_la_LIBADD = $(AM_LIBADD) -lpthread
+plugins_LTLIBRARIES += libtimezone_at.la
+
 # oFono plugin
 libofono_at_la_SOURCES = \
 	ofono/ofono.h \
