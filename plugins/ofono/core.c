@@ -496,6 +496,133 @@ static char *manager_find_modem (char **pname)
 	return ret;
 }
 
+struct ofono_watch
+{
+	char *rule;
+	char *path;
+	char *interface;
+	char *signal;
+	char *arg0;
+
+	plugin_t *p;
+	ofono_signal_t cb;
+	void *cbdata;
+};
+
+static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
+					       DBusMessage *msg,
+					       void *user_data)
+{
+	ofono_watch_t *s = user_data;
+	const char *data;
+
+	if (dbus_message_get_type (msg) != DBUS_MESSAGE_TYPE_SIGNAL
+	 || strcmp (dbus_message_get_sender (msg), s->p->name))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	(void)conn;
+
+	if (!dbus_message_has_interface (msg, s->interface))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (s->path
+	 && !dbus_message_has_path (msg, s->path))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (s->signal
+	 && !dbus_message_has_member (msg, s->path))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (s->arg0
+	 && (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &data,
+				     DBUS_TYPE_INVALID)
+	  || strcmp (s->signal, data)))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	s->cb (s->p, msg, s->cbdata);
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static void ofono_free_sigdata (void *data)
+{
+	ofono_watch_t *s = data;
+
+	free (s->rule);
+	free (s->path);
+	free (s->interface);
+	free (s->signal);
+	free (s->arg0);
+
+	free (s);
+}
+
+ofono_watch_t *ofono_signal_watch (plugin_t *p,
+				   const char *subif,
+				   const char *path,
+				   const char *signal,
+				   const char *arg0,
+				   ofono_signal_t cb,
+				   void *data)
+{
+	at_cancel_assert (false);
+
+	if (!subif)
+		return NULL;
+
+	ofono_watch_t *s = calloc (1, sizeof(ofono_watch_t));
+	if (!s)
+		return NULL;
+
+	size_t len;
+	FILE *rule = open_memstream (&s->rule, &len);
+
+	if (!rule)
+	{
+		free (s);
+		return NULL;
+	}
+
+	s->cb = cb;
+	s->cbdata = data;
+	s->p = p;
+
+	fprintf (rule, "type='signal',interface='org.ofono.%s'", subif);
+
+	s->interface = malloc (strlen (subif) + 11);
+	sprintf (s->interface, "org.ofono.%s", subif);
+
+	if (!path)
+		path = p->objpath;
+	fprintf (rule, ",path='%s'", path);
+	s->path = strdup (path);
+
+	if (signal)
+	{
+		fprintf (rule, ",member='%s'", signal);
+		s->signal = strdup (signal);
+	}
+	if (arg0)
+	{
+		fprintf (rule, ",arg0='%s'", arg0);
+		s->arg0 = strdup (arg0);
+	}
+
+	fclose (rule);
+
+	at_dbus_add_match (DBUS_BUS_SYSTEM, s->rule);
+	at_dbus_add_filter (DBUS_BUS_SYSTEM, ofono_signal_matcher,
+			    s, ofono_free_sigdata);
+
+	return s;
+}
+
+void ofono_signal_unwatch (ofono_watch_t *s)
+{
+	at_dbus_remove_match (DBUS_BUS_SYSTEM, s->rule);
+	at_dbus_remove_filter (DBUS_BUS_SYSTEM,
+			       ofono_signal_matcher, s);
+}
 
 /*** Plugin registration ***/
 

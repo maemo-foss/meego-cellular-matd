@@ -74,6 +74,13 @@ int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
 int ofono_prop_find_bool (DBusMessage *msg, const char *name);
 
+typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
+typedef struct ofono_watch ofono_watch_t;
+ofono_watch_t *ofono_signal_watch (plugin_t *, const char *, const char *,
+				   const char *, const char *, ofono_signal_t,
+				   void *);
+void ofono_signal_unwatch (ofono_watch_t *);
+
 /* Command handlers */
 void modem_register (at_commands_t *, plugin_t *);
 void call_forwarding_register (at_commands_t *, plugin_t *);
