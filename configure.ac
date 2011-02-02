@@ -62,6 +62,10 @@ dnl D-Bus
 PKG_CHECK_MODULES(DBUS, [dbus-1])
 
 
+dnl libudev
+PKG_CHECK_MODULES(UDEV, [libudev])
+
+
 dnl Automake
 AM_INIT_AUTOMAKE([1.11 color-tests])
 AM_SILENT_RULES([yes])
