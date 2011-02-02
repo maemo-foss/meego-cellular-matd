@@ -512,6 +512,7 @@ static at_error_t handle_cops (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_cops, get_cops, list_cops);
 }
 
+
 /*** AT+CREG ***/
 
 static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
@@ -688,6 +689,51 @@ static at_error_t handle_creg (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CSQ ***/
+
+static at_error_t do_csq (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	int q = modem_prop_get_byte (p, "NetworkRegistration", "Strength");
+
+	if (q < 0)
+		q = 99;
+	else
+		q = q * 31 / 100;
+
+	at_intermediate (modem, "\r\n+CSQ: %d,99", q);
+
+	return AT_OK;
+}
+
+static at_error_t list_csq (at_modem_t *modem, void *data)
+{
+	(void)data;
+
+	at_intermediate (modem, "\r\n+CSQ: (0-31,99),(99)");
+
+	return AT_OK;
+}
+
+
+static at_error_t handle_csq (at_modem_t *modem, const char *req, void *data)
+{
+	req += 4;
+	req += strspn (req, " ");
+
+	if (!*req)
+		return do_csq (modem, data);
+
+	if (*(req++) != '=')
+		return AT_CME_EINVAL;
+	req += strspn (req, " ");
+	if (*(req++) != '?')
+		return AT_CME_EINVAL;
+
+	return list_csq (modem, data);
+}
+
+
 /*** Registration ***/
 
 void network_register (at_commands_t *set, plugin_t *p)
@@ -698,6 +744,7 @@ void network_register (at_commands_t *set, plugin_t *p)
 	p->cops = 2;
 	at_register (set, "+CREG", handle_creg, p);
 	p->creg = 0;
+	at_register (set, "+CSQ", handle_csq, p);
 }
 
 void network_unregister (plugin_t *p)
