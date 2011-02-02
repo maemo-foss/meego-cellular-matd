@@ -512,6 +512,181 @@ static at_error_t handle_cops (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_cops, get_cops, list_cops);
 }
 
+/*** AT+CREG ***/
+
+static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
+{
+	int canc = at_cancel_disable ();
+	at_error_t ret = AT_OK;
+
+	DBusMessage *msg = modem_props_get (p, "NetworkRegistration");
+	if (!msg)
+	{
+		ret = AT_CME_UNKNOWN;
+		goto end;
+	}
+
+	static const char sts[][13] = {
+		"unregistered",
+		"registered",
+		"searching",
+		"denied",
+		"unknown",
+		"roaming"
+	};
+
+	const char *st;
+
+	if (!(st = ofono_prop_find_string (msg, "Status")))
+	{
+		dbus_message_unref (msg);
+		ret = AT_ERROR;
+		goto end;
+	}
+
+	int status = -1;
+
+	for (size_t i = 0; i < sizeof (sts) / sizeof (*sts); i++)
+	{
+		if (!strcmp (st, sts[i]))
+		{
+			status = i;
+			break;
+		}
+	}
+
+	if (status == -1)
+	{
+		dbus_message_unref (msg);
+		ret = AT_ERROR;
+		goto end;
+	}
+
+	if (p->creg == 2 && (status == 1 || status == 5))
+	{
+		unsigned cellid = ofono_prop_find_u32 (msg, "CellId", 0);
+		int lac = ofono_prop_find_u16 (msg, "LocationAreaCode");
+		const char *tec = ofono_prop_find_string (msg,
+							 "Technology");
+		unsigned tech = 0;
+
+		if (lac == -1)
+			lac = 0;
+
+		for (size_t i = 0; i < sizeof (tes) / sizeof (*tes); i++)
+		{
+			if (!strcmp (tec, tes[i]))
+			{
+				tech = i;
+				break;
+			}
+		}
+
+		if (requested)
+			at_intermediate (modem,
+					 "\r\n+CREG: %u,%d,\"%04X\",\"%X\",%u",
+					 p->creg, status, lac, cellid, tech);
+		else
+			at_intermediate (modem,
+					 "\r\n+CREG: %d,\"%04X\",\"%X\",%u",
+					 status, lac, cellid, tech);
+	}
+	else if (requested)
+		at_intermediate (modem, "\r\n+CREG: %u,%d", p->creg, status);
+	else
+		at_intermediate (modem, "\r\n+CREG: %u", p->creg);
+
+	dbus_message_unref (msg);
+
+
+end:
+	at_cancel_enable (canc);
+	return ret;
+}
+
+static void unsoli_creg (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	const char *prop;
+
+	/* FIXME: We should only print one message if several details change
+	 * at once. */
+
+	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &prop,
+				    DBUS_TYPE_INVALID)
+	 || (strcmp (prop, "Status") && strcmp (prop, "CellId")
+	  && strcmp (prop, "LocationAreaCode")
+	  && strcmp (prop, "Technology")))
+		return;
+
+	(void)msg;
+
+	print_creg (m, p, false);
+}
+
+static at_error_t set_creg (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned creg;
+
+	if (sscanf (req, " %u", &creg) < 1 || creg > 2)
+		return AT_CME_EINVAL;
+
+	if (p->creg == creg)
+		return AT_OK;
+
+	int canc = at_cancel_disable ();
+
+	p->creg = creg;
+
+	if (p->creg_filter)
+		ofono_signal_unwatch (p->creg_filter);
+	p->creg_filter = NULL;
+
+	switch (creg)
+	{
+	case 0:
+		break;
+	case 1:
+		p->creg_filter = ofono_signal_watch (p, "NetworkRegistration",
+						     NULL, "PropertyChanged",
+						     "Status", unsoli_creg,
+						     modem);
+		break;
+	case 2:
+		/* FIXME: This will catch changes in Strength, which may
+		 * cause some unnecessary wakeups. */
+		p->creg_filter = ofono_signal_watch (p, "NetworkRegistration",
+						     NULL, "PropertyChanged",
+						     NULL, unsoli_creg,
+						     modem);
+		break;
+	}
+	at_cancel_enable (canc);
+
+	return AT_OK;
+}
+
+static at_error_t get_creg (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	return print_creg (modem, p, true);
+}
+
+static at_error_t list_creg (at_modem_t *modem, void *data)
+{
+	(void)data;
+
+	at_intermediate (modem, "\r\n+CREG: (0-2)");
+	return AT_OK;
+}
+
+static at_error_t handle_creg (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_creg, get_creg, list_creg);
+}
+
 
 /*** Registration ***/
 
@@ -521,4 +696,12 @@ void network_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+WS46", handle_ws46, p);
 	at_register (set, "+COPS", handle_cops, p);
 	p->cops = 2;
+	at_register (set, "+CREG", handle_creg, p);
+	p->creg = 0;
+}
+
+void network_unregister (plugin_t *p)
+{
+	if (p->creg_filter)
+		ofono_signal_unwatch (p->creg_filter);
 }

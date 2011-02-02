@@ -46,4 +46,6 @@ struct plugin
 	char *objpath;
 	unsigned char vhu; /**< AT+CVHU */
 	unsigned char cops; /**< AT+COPS */
+	unsigned char creg; /**< AT+COPS */
+	ofono_watch_t *creg_filter; /**< AT+CREG */
 };
