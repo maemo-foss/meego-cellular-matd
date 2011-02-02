@@ -288,7 +288,7 @@ static at_error_t lock_pin (plugin_t *p, const char *type,
 	ret = modem_request (p, "SimManager", lock ? "LockPin" : "UnlockPin",
 	                     DBUS_TYPE_STRING, &type, DBUS_TYPE_STRING, &pass,
 	                     DBUS_TYPE_INVALID);
-	if (ret == AT_CME_ERROR (0)) 
+	if (ret == AT_CME_ERROR (0))
 		ret = AT_CME_ERROR (16); /* bad password */
 	return ret;
 }
