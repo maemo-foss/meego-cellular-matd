@@ -164,6 +164,15 @@ const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name)
 	return value;
 }
 
+int ofono_dict_find_byte (DBusMessageIter *dict, const char *name)
+{
+	unsigned char b;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BYTE, &b))
+		return -1;
+	return b;
+}
+
 int ofono_dict_find_bool (DBusMessageIter *dict, const char *name)
 {
 	dbus_bool_t b;
@@ -200,6 +209,15 @@ int ofono_prop_find_bool (DBusMessage *msg, const char *name)
 	if (!dbus_message_iter_init (msg, &dict))
 		return -1;
 	return ofono_dict_find_bool (&dict, name);
+}
+
+int ofono_prop_find_byte (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find_byte (&dict, name);
 }
 
 int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
@@ -336,6 +354,25 @@ int modem_prop_get_bool (const plugin_t *p, const char *iface,
 	if (props != NULL)
 	{
 		ret = ofono_prop_find_bool (props, name);
+		dbus_message_unref (props);
+	}
+	else
+		ret = -1;
+
+	at_cancel_enable (canc);
+	return ret;
+}
+
+int modem_prop_get_byte (const plugin_t *p, const char *iface,
+                         const char *name)
+{
+	int canc = at_cancel_disable ();
+	int ret;
+
+	DBusMessage *props = modem_props_get (p, iface);
+	if (props != NULL)
+	{
+		ret = ofono_prop_find_byte (props, name);
 		dbus_message_unref (props);
 	}
 	else

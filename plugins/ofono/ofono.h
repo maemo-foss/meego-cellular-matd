@@ -49,6 +49,7 @@ at_error_t modem_request (const plugin_t *, const char *, const char *,
 DBusMessage *modem_props_get (const plugin_t *, const char *);
 char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);
+int modem_prop_get_byte (const plugin_t *, const char *, const char *);
 int modem_prop_get_u16 (const plugin_t *, const char *, const char *);
 at_error_t modem_prop_set_string (const plugin_t *, const char *,
                                   const char *, const char *);
@@ -70,9 +71,11 @@ at_error_t ofono_request (const plugin_t *, const char *,
 int ofono_dict_find (DBusMessageIter *, const char *, int, DBusMessageIter *);
 const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name);
 int ofono_dict_find_bool (DBusMessageIter *dict, const char *name);
+int ofono_dict_find_byte (DBusMessageIter *dict, const char *name);
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
 int ofono_prop_find_bool (DBusMessage *msg, const char *name);
+int ofono_prop_find_byte (DBusMessage *msg, const char *name);
 int ofono_prop_find_u16 (DBusMessage *msg, const char *name);
 unsigned ofono_prop_find_u32 (DBusMessage *msg, const char *name,
 			      unsigned fallback);
