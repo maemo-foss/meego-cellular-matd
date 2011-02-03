@@ -566,6 +566,43 @@ static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, set_vts, get_vts, list_vts);
 }
 
+/*** AT+VTD ***/
+
+static at_error_t set_vtd (at_modem_t *m, const char *req, void *data)
+{
+	(void)data;
+	(void)m;
+
+	unsigned dura;
+	if (sscanf (req, " %u", &dura) < 1)
+		return AT_CME_EINVAL;
+	if (dura != 0)
+		return AT_CME_ENOTSUP;
+
+	return AT_OK;
+}
+
+static at_error_t get_vtd (at_modem_t *m, void *data)
+{
+	(void)data;
+
+	at_intermediate (m, "\r\n+VTD: 0");
+
+	return AT_OK;
+}
+
+static at_error_t list_vtd (at_modem_t *modem, void *data)
+{
+	(void)data;
+
+	at_intermediate (modem, "\r\n+VTD: (0)");
+	return AT_OK;
+}
+
+static at_error_t handle_vtd (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_vtd, get_vtd, list_vtd);
+}
 
 /*** AT+CTFR ***/
 
@@ -709,6 +746,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
+	at_register (set, "+VTD", handle_vtd, p);
 	at_register (set, "+CTFR", handle_ctfr, p);
 	at_register (set, "+CPAS", handle_cpas, p);
 }
