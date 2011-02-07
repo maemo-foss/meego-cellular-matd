@@ -169,7 +169,7 @@ int main (void)
 		if (fd == -1)
 		{
 			ret = -1;
-			break;
+			goto error;
 		}
 
 		struct at_modem *m = at_modem_start (fd, hangup_cb, &self);
@@ -177,7 +177,7 @@ int main (void)
 		{
 			syslog (LOG_CRIT, "Cannot start USB modem: %m");
 			ret = -1;
-			break;
+			goto error;
 		}
 
 		while (sigwait (&set, &signum) == -1);
@@ -188,9 +188,10 @@ int main (void)
 	}
 	while (signum == SIGHUP);
 
-	pthread_sigmask (SIG_UNBLOCK, &set, NULL);
 	syslog (LOG_INFO, "stopped (caught signal %d - %s)", signum,
 	        strsignal (signum));
+error:
+	pthread_sigmask (SIG_UNBLOCK, &set, NULL);
 	close_syslog ();
 	at_unload_plugins ();
 	return -ret;
