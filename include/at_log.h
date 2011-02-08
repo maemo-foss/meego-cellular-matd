@@ -47,6 +47,8 @@
 #ifndef MATD_AT_LOG_H
 # define MATD_AT_LOG_H 1
 
+# include <stdarg.h>
+
 /**
  * @defgroup logging Log messages
  * @{
@@ -65,23 +67,45 @@ __attribute__ ((format(printf,2,3)))
 # define error(...) at_trace (LOG_ERR, __VA_ARGS__)
 
 /**
+ * va_list variant for error()
+ */
+# define verror(fmt, ap) at_vtrace(LOG_ERR, fmt, ap)
+
+/**
  * Log a warning message
  */
 # define warning(...) at_trace (LOG_WARNING, __VA_ARGS__)
+
+/**
+ * va_list variant for warning()
+ */
+# define vwarning(fmt, ap) at_vtrace (LOG_WARNING, fmt, ap)
 
 /**
  * Log an informational notice message
  */
 # define notice(...) at_trace (LOG_NOTICE, __VA_ARGS__)
 
+/**
+ * va_list variant for notice()
+ */
+# define vnotice(fmt, ap) at_vtrace (LOG_NOTICE, fmt, ap)
+
 # if 1
 /**
  * Log a debug message or do nothing if debug is off.
  */
 #  define debug(...) at_trace (LOG_DEBUG, __VA_ARGS__)
+
+/**
+ * va_list variant for debug()
+ */
+#  define vdebug(fmt, ap) at_vtrace (LOG_DEBUG, fmt, ap)
 # else
 #  define debug(...) (void)0
 # endif
+
+void at_vtrace (int level, const char *fmt, va_list ap);
 
 /** @} */
 /** @} */

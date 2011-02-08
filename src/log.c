@@ -51,7 +51,7 @@
 #include <at_log.h>
 #include <at_thread.h>
 
-static void vtrace (int level, const char *fmt, va_list arg)
+void at_vtrace (int level, const char *fmt, va_list arg)
 {
 	int canc = at_cancel_disable ();
 #if 1
@@ -70,6 +70,6 @@ void at_trace (int level, const char *fmt, ...)
 	va_list ap;
 
 	va_start (ap, fmt);
-	vtrace (level, fmt, ap);
+	at_vtrace (level, fmt, ap);
 	va_end (ap);
 }

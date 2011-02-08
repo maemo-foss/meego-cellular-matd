@@ -32,6 +32,7 @@ at_hangup
 at_reset
 at_setting
 at_trace
+at_vtrace
 at_thread_create
 at_dbus_request
 at_dbus_query
