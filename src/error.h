@@ -44,7 +44,20 @@
 #ifndef AT_ERROR_H
 # define AT_ERROR_H 1
 
-int at_print_reply (at_modem_t *, at_error_t);
+/**
+ * Sends a result code to the DTE. The output format depends on
+ * ATQ, ATV and AT+CMEE commands.
+ *
+ * @param code result code
+ * @return 0 on success, -1 on I/O error.
+ */
+int at_print_reply (at_modem_t *, at_error_t code);
+
+
+/**
+ * Sends a line rate notification (+ILRR: ...) to the DTE.
+ * @return 0 on success, -1 on I/O error.
+ */
 int at_print_rate (at_modem_t *);
 
 #endif
