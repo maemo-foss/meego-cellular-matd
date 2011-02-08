@@ -117,6 +117,8 @@ void *at_plugin_register (at_commands_t *set)
 
 	/* return to data mode */
 	at_register_alpha (set, 'O', alpha_no_carrier, NULL);
+	/* CONNECT result codes */
+	at_register_alpha (set, 'X', alpha_nothing, NULL);
 
 	at_register (set, "+FCLASS", handle_fclass, NULL);
 
