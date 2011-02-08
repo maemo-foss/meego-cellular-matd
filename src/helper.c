@@ -54,7 +54,7 @@ at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
 	char op;
 
 	if (sscanf (req, "%*[^?= ] %c%n", &op, &offset) < 1)
-		return AT_ERROR;
+		return set (m, "", opaque);
 
 	req += offset;
 
