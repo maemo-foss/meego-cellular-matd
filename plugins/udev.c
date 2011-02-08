@@ -94,29 +94,55 @@ static at_error_t do_cbc (at_modem_t *m, void *data)
 	struct udev_list_entry *devs = udev_enumerate_get_list_entry (en);
 	struct udev_list_entry *i;
 
-	unsigned long total_charge = 0;
-	unsigned long max_charge = 0;
+	unsigned long charge = 0;
+	unsigned long capacity = 0;
+	bool discharging = false;
 
 	udev_list_entry_foreach (i, devs)
 	{
-		struct udev_device *d = udev_device_new_from_syspath (
-				udev, udev_list_entry_get_name (i));
-		const char *chrg = udev_device_get_sysattr_value (
-				d, "charge_now");
-		const char *chmx = udev_device_get_sysattr_value (
-				d, "charge_full");
+		struct udev_device *d;
+		const char *snow, *smax, *svolt;
 
-		if (chrg && chmx)
+		d = udev_device_new_from_syspath (udev, udev_list_entry_get_name (i));
+
+		/* Charge */
+		if ((snow = udev_device_get_sysattr_value (d, "charge_now"))
+		 && (smax = udev_device_get_sysattr_value (d, "charge_full")))
 		{
-			unsigned long charge = strtoul (chrg, NULL, 10);
-			unsigned long max = strtoul (chmx, NULL, 10);
+			unsigned long uAh = strtoul (snow, NULL, 10);
+			unsigned long uAh_max = strtoul (smax, NULL, 10);
 
-			if (charge > max)
-				charge = max;
+			if (uAh > uAh_max)
+				uAh = uAh_max;
 
-			total_charge += charge;
-			max_charge += max;
+			charge += uAh;
+			capacity += uAh_max;
 		}
+		else
+		/* Energy (fallback) */
+		if ((svolt = udev_device_get_sysattr_value (d, "voltage_now"))
+		 && (snow = udev_device_get_sysattr_value (d, "energy_now"))
+		 && (smax = udev_device_get_sysattr_value (d, "energy_full")))
+		{
+			unsigned long uvolts = strtoul (svolt, NULL, 10);
+			unsigned long uWh = strtoul (snow, NULL, 10);
+			unsigned long uWh_max = strtoul (smax, NULL, 10);
+
+			if (uWh > uWh_max)
+				uWh = uWh_max;
+
+			/* Approximation with constant voltage */
+			if (uvolts != 0)
+			{
+				charge += 1000000LLU * uWh / uvolts;
+				capacity += 1000000LLU * uWh_max / uvolts;
+			}
+		}
+
+		/* Status */
+		if ((snow = udev_device_get_sysattr_value (d, "status"))
+		 && !strcasecmp (snow, "discharging"))
+			discharging = true;
 
 		udev_device_unref(d);
 	}
@@ -124,12 +150,11 @@ static at_error_t do_cbc (at_modem_t *m, void *data)
 	udev_enumerate_unref(en);
 	udev_unref(udev);
 
-	if (max_charge == 0)
+	if (capacity == 0)
 		at_intermediate (m, "\r\n+CBC: 2,0");
 	else
-		at_intermediate (m, "\r\n+CBC: 0,%lu",
-				 100 * total_charge / max_charge);
-
+		at_intermediate (m, "\r\n+CBC: %u,%lu", !discharging,
+		                 capacity ? (100 * charge / capacity) : 0);
 end:
 	at_cancel_enable (canc);
 	return ret;
