@@ -592,10 +592,13 @@ static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
 					 "\r\n+CREG: %d,\"%04X\",\"%X\",%u",
 					 status, lac, cellid, tech);
 	}
-	else if (requested)
-		at_intermediate (modem, "\r\n+CREG: %u,%d", p->creg, status);
 	else
-		at_intermediate (modem, "\r\n+CREG: %u", p->creg);
+	{
+		if (requested)
+			at_intermediate (modem, "\r\n+CREG: %u,%d", p->creg, status);
+		else
+			at_intermediate (modem, "\r\n+CREG: %u", p->creg);
+	}
 
 	dbus_message_unref (msg);
 
