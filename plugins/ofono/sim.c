@@ -438,6 +438,44 @@ static at_error_t handle_cpwd (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CSUS ***/
+
+static at_error_t set_csus (at_modem_t *modem, const char *req, void *data)
+{
+	unsigned slot;
+
+	(void) modem;
+	(void) data;
+
+	if (sscanf (req, "%u", &slot) != 1)
+		return AT_CME_EINVAL;
+	/* TODO: when oFono support multi SIM */
+	if (slot != 0)
+		return AT_CME_ENOTSUP;
+
+	return AT_OK;
+}
+
+static at_error_t get_csus (at_modem_t *modem, void *data)
+{
+	(void) data;
+	at_intermediate (modem, "\r\n+CSUS: 0");
+	return AT_OK;
+}
+
+static at_error_t list_csus (at_modem_t *modem, void *data)
+{
+	(void) data;
+	at_intermediate (modem, "\r\n+CSUS: (0)");
+	return AT_OK;
+}
+
+static at_error_t handle_csus (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_csus, get_csus, list_csus);
+}
+
+
 /*** Registration ***/
 
 void sim_register (at_commands_t *set, plugin_t *p)
@@ -447,4 +485,5 @@ void sim_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CLCK", handle_clck, p);
 	at_register (set, "+CPIN", handle_cpin, p);
 	at_register (set, "+CPWD", handle_cpwd, p);
+	at_register (set, "+CSUS", handle_csus, p);
 }
