@@ -52,6 +52,27 @@
 #include <at_thread.h>
 #include <at_log.h>
 
+static void at_udev_logger (struct udev *udev, int priority, const char *file,
+                            int line, const char *fn, const char *fmt,
+                            va_list args)
+{
+	(void) udev;
+	(void) priority; /* FIXME */
+
+	vdebug (fmt, args);
+	debug (" (at %s:%d:%s)", file, line, fn);
+}
+
+static struct udev *at_udev_new (void)
+{
+	struct udev *udev = udev_new ();
+	if (udev == NULL)
+		return NULL;
+
+	udev_set_log_fn (udev, at_udev_logger);
+	return udev;
+}
+
 static at_error_t do_cbc (at_modem_t *m, void *data)
 {
 	(void)data;
@@ -59,7 +80,7 @@ static at_error_t do_cbc (at_modem_t *m, void *data)
 	int canc = at_cancel_disable ();
 	at_error_t ret = AT_OK;
 
-	struct udev *udev = udev_new ();
+	struct udev *udev = at_udev_new ();
 	if (!udev) {
 		ret = AT_ERROR;
 		goto end;
