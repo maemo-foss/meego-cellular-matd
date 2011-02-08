@@ -699,6 +699,7 @@ void *at_plugin_register (at_commands_t *set)
 	gprs_register (set, p);
 	network_register (set, p);
 	sim_register (set, p);
+	sms_register (set, p);
 	voicecallmanager_register (set, p);
 	at_register (set, "*CNTI", handle_cnti, p);
 	return p;

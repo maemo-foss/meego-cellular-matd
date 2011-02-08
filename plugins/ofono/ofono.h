@@ -95,6 +95,7 @@ void gprs_register (at_commands_t *, plugin_t *);
 void network_register (at_commands_t *, plugin_t *);
 void network_unregister (plugin_t *);
 void sim_register (at_commands_t *, plugin_t *);
+void sms_register (at_commands_t *, plugin_t *);
 void voicecallmanager_register (at_commands_t *, plugin_t *);
 void voicecallmanager_unregister (plugin_t *);
 at_error_t handle_cnti (at_modem_t *, const char *, void *);
