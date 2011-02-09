@@ -282,7 +282,7 @@ ssize_t at_getline (at_modem_t *m, char *restrict buf, size_t size)
 		buf[i++] = c;
 
 		// Carriage Return or Ctrl+Z
-		if (c == '\r' || c == 26)
+		if (c == '\r' || c == 26 || c == 27)
 			break;
 	}
 	buf[i] = '\0';
