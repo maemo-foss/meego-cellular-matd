@@ -290,7 +290,11 @@ static at_error_t get_cmer (at_modem_t *m, void *opaque)
 {
 	cmer_t *cmer = opaque;
 
-	at_intermediate (m, "\r\n+CMER: %u,0,0,0,0,0", cmer->enabled);
+	/* FIXME: There is a small theoretical violation of the POSIX memory model
+	 * if cmer_thread() gets POLLHUP, overwrites a file descriptor to -1. */
+	at_intermediate (m, "\r\n+CMER: %u,%u,0,0,0,%u", cmer->enabled,
+	                 cmer->keyp_fd != -1,
+	                 (cmer->tscrn_fd != -1) ? 3 : 0);
 	return AT_OK;
 }
 
