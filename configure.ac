@@ -58,6 +58,28 @@ AS_IF([test "${enable_vendor}" != "no"], [
 AC_SUBST(VENDOR)
 
 
+dnl Input controls
+AC_ARG_ENABLE([keypad],
+  [AS_HELP_STRING([--enable-keypad],
+                  [Set the keypad device (default /dev/input/keypad)]))],, [
+  enable_keypad="/dev/input/keypad"
+])
+AS_IF([test "${enable_keypad}" != "no"], [
+  AC_DEFINE_UNQUOTED([KEYPAD_NODE], ["${enable_keypad}"],
+                     [Define the input device for keypad event reporting])
+])
+
+AC_ARG_ENABLE([touchscreen],
+  [AS_HELP_STRING([--enable-touchscreen],
+                  [Set the touch device (default /dev/input/touchscreen)]))],, [
+  enable_touchscreen="/dev/input/touchscreen"
+])
+AS_IF([test "${enable_touchscreen}" != "no"], [
+  AC_DEFINE_UNQUOTED([TOUCHSCREEN_NODE], ["${enable_touchscreen}"],
+                     [Define the input device for touchscreen event reporting])
+])
+
+
 dnl D-Bus
 PKG_CHECK_MODULES(DBUS, [dbus-1])
 
