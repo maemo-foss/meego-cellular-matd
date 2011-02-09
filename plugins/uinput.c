@@ -275,22 +275,51 @@ static at_error_t handle_keypad (at_modem_t *modem, const char *req,
 
 /*** AT+CTSA touchscreen action ***/
 
-#define MAX_X 863
-#define MAX_Y 479
+static void get_screen_size (unsigned *restrict pwidth,
+                             unsigned *restrict pheight)
+{
+	*pwidth = 800;
+	*pheight = 480;
+
+#ifdef TOUCHSCREEN_NODE
+	int fd = open (TOUCHSCREEN_NODE, O_RDONLY|O_NDELAY|O_CLOEXEC);
+	if (fd == -1)
+	{
+		error ("Cannot query touchscreen dimensions (%m)");
+		return;
+	}
+
+	int canc = at_cancel_disable ();
+	struct input_absinfo info;
+
+	if (ioctl (fd, EVIOCGABS(ABS_X), &info) == 0)
+		*pwidth = info.maximum - info.minimum + 1;
+	if (ioctl (fd, EVIOCGABS(ABS_Y), &info) == 0)
+		*pheight = info.maximum - info.minimum + 1;
+
+	close (fd);
+	at_cancel_enable (canc);
+#endif
+}
+
 
 static int setup_touchscreen (int fd)
 {
 	struct uinput_user_dev dev;
+	unsigned width, height;
+
+	get_screen_size (&width, &height);
+	width--; height--;
 
 	memset (&dev, 0, sizeof (dev));
 	strncpy (dev.name, "3GPP Mobile Terminal touchscreen controls",
 	         sizeof (dev.name));
 	dev.id.bustype = BUS_VIRTUAL;
 	//dev.id.version = 0;
-	dev.absmax[ABS_X] = MAX_X;
-	dev.absmax[ABS_Y] = MAX_Y;
-	dev.absmax[ABS_MT_POSITION_X] = MAX_X;
-	dev.absmax[ABS_MT_POSITION_Y] = MAX_Y;
+	dev.absmax[ABS_X] = width;
+	dev.absmax[ABS_Y] = height;
+	dev.absmax[ABS_MT_POSITION_X] = width;
+	dev.absmax[ABS_MT_POSITION_Y] = height;
 	dev.absmax[ABS_MT_TOUCH_MAJOR] = 1;
 	//dev.absmax[ABS_MT_TRACKING_ID] = 0;
 	if (write (fd, &dev, sizeof (dev)) != sizeof (dev))
@@ -437,7 +466,10 @@ static at_error_t handle_ctsa (at_modem_t *m, const char *req, void *data)
 
 static at_error_t handle_css (at_modem_t *m, const char *req, void *data)
 {
-	at_intermediate (m, "\r\n+CSS: %u,%u", MAX_X + 1, MAX_Y + 1);
+	unsigned width, height;
+
+	get_screen_size (&width, &height);
+	at_intermediate (m, "\r\n+CSS: %u,%u", width, height);
 	(void) req; (void) data;
 	return AT_OK;
 }
