@@ -249,7 +249,8 @@ static at_error_t set_cmer (at_modem_t *m, const char *req, void *opaque)
 	/* Create new thread */
 	if (keyp > 0)
 	{
-		int fd = open ("/dev/input/keypad", O_RDONLY|O_NDELAY|O_CLOEXEC);
+#ifdef KEYPAD_NODE
+		int fd = open (KEYPAD_NODE, O_RDONLY|O_NDELAY|O_CLOEXEC);
 		if (fd == -1)
 		{
 			error ("Keypad input device error (%m)");
@@ -257,10 +258,14 @@ static at_error_t set_cmer (at_modem_t *m, const char *req, void *opaque)
 		}
 		fcntl (fd, F_SETFD, FD_CLOEXEC);
 		cmer->keyp_fd = fd;
+#else
+		goto out;
+#endif
 	}
 	if (tscrn > 0)
 	{
-		int fd = open ("/dev/input/ts", O_RDONLY|O_NDELAY|O_CLOEXEC);
+#ifdef TOUCHSCREEN_NODE
+		int fd = open (TOUCHSCREEN_NODE, O_RDONLY|O_NDELAY|O_CLOEXEC);
 		if (fd == -1)
 		{
 			error ("Touchscreen input device error (%m)");
@@ -268,6 +273,9 @@ static at_error_t set_cmer (at_modem_t *m, const char *req, void *opaque)
 		}
 		fcntl (fd, F_SETFD, FD_CLOEXEC);
 		cmer->tscrn_fd = fd;
+#else
+		goto out;
+#endif
 	}
 	if (mode > 0)
 	{
@@ -300,7 +308,19 @@ static at_error_t get_cmer (at_modem_t *m, void *opaque)
 
 static at_error_t list_cmer (at_modem_t *m, void *opaque)
 {
-	at_intermediate (m, "\r\n+CMER: (0-1),(0-1),(0),(0),(0),(0,3)");
+	const char *can_keyp = "0", *can_tscrn = "0";
+
+#ifdef KEYPAD_NODE
+	if (access (KEYPAD_NODE, R_OK) == 0)
+		can_keyp = "0-1";
+#endif
+#ifdef TOUCHSCREEN_NODE
+	if (access (TOUCHSCREEN_NODE, R_OK) == 0)
+		can_tscrn = "0,3";
+#endif
+
+	at_intermediate (m, "\r\n+CMER: (0-1),(%s),(0),(0),(0),(%s)",
+	                 can_keyp, can_tscrn);
 	(void)opaque;
 	return AT_OK;
 }
