@@ -63,6 +63,7 @@ plugins_LTLIBRARIES += libudev_at.la
 # oFono plugin
 libofono_at_la_SOURCES = \
 	ofono/ofono.h \
+	ofono/core.h \
 	ofono/cnti.c \
 	ofono/modem.c \
 	ofono/callforwarding.c \
