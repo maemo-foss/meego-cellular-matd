@@ -292,7 +292,7 @@ int at_intermediatev (at_modem_t *, const char *fmt, va_list args);
  * @param size byte size of the buffer (at most size-1 byte will be read)
  * @return -1 on error or at end of file,
  * otherwise the number of bytes read.
- * A nul-terminator is added (if size is non-zero).
+ * A nul-terminator is added (if buffer size is non-zero).
  */
 ssize_t at_getline (at_modem_t *, char *buf, size_t size);
 
