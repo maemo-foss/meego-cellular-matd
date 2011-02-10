@@ -39,6 +39,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+#include <stdbool.h>
+#include <dbus/dbus.h>
+
 typedef struct plugin plugin_t;
 
 /* D-Bus */

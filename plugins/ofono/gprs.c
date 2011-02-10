@@ -44,9 +44,7 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
 #include <stdio.h>
-#include <dbus/dbus.h>
 
 #include <at_command.h>
 #include <at_log.h>

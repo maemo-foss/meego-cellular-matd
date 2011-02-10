@@ -44,12 +44,10 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <at_command.h>
-#include <dbus/dbus.h>
 #include "ofono.h"
 
 static const char *reason_to_prop (unsigned reason)

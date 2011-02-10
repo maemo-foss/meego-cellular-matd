@@ -50,7 +50,6 @@
 
 #include <at_command.h>
 
-#include <dbus/dbus.h>
 #include "ofono.h"
 
 /*** AT+CGSMS ***/

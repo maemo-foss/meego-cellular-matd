@@ -50,9 +50,10 @@
 #include <string.h>
 
 #include <at_command.h>
-#include <at_dbus.h>
 #include <at_thread.h>
 #include <at_log.h>
+#include <dbus/dbus.h>
+
 #include "ofono.h"
 #include "core.h"
 

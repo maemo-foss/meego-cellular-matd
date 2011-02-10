@@ -44,13 +44,11 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <at_command.h>
-#include <dbus/dbus.h>
 #include "ofono.h"
 
 /*** AT+CLIR ***/
