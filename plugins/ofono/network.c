@@ -318,7 +318,7 @@ static at_error_t get_cops (at_modem_t *modem, void *data)
 		goto end;
 	}
 
-	if (!strcmp (value, "auto"))
+	if (!strcmp (value, "auto") || !strcmp (value, "auto-only"))
 		mode = 0;
 	else if (!strcmp (value, "manual"))
 		mode = 1;
@@ -338,7 +338,7 @@ static at_error_t get_cops (at_modem_t *modem, void *data)
 
 	if (strcmp (value, "registered") && strcmp (value, "roaming"))
 	{
-		at_intermediate (modem, "\r\n+COPS: %d", mode);
+		at_intermediate (modem, "\r\n+COPS: %u", mode);
 		goto end;
 	}
 
