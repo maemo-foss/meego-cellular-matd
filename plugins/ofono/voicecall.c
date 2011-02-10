@@ -369,7 +369,6 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 
 	(void)modem;
 
-	value += strspn (value, " ");
 	if (!*value)
 		return AT_CME_EINVAL;
 
@@ -637,10 +636,14 @@ static at_error_t handle_ctfr (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CPAS ***/
 
-static at_error_t show_cpas (at_modem_t *modem, plugin_t *p)
+static at_error_t show_cpas (at_modem_t *modem, const char *req, void *data)
 {
+	plugin_t *p = data;
 	unsigned pas = 2; /* unknown */
 	at_error_t dummy;
+
+	if (*req)
+		return AT_CME_ENOTSUP;
 
 	int canc = at_cancel_disable ();
 
@@ -686,27 +689,16 @@ static at_error_t show_cpas (at_modem_t *modem, plugin_t *p)
 	return AT_OK;
 }
 
-static at_error_t list_cpas (at_modem_t *modem)
+static at_error_t list_cpas (at_modem_t *modem, void *data)
 {
+	(void) data;
 	at_intermediate (modem, "\r\n+CPAS: (0-5)");
 	return AT_OK;
 }
 
 static at_error_t handle_cpas (at_modem_t *modem, const char *req, void *data)
 {
-	assert (strlen (req) >= 5);
-	req += 5;
-	req += strspn (req, " ");
-	if (*req == '=')
-	{
-		req++;
-		req += strspn (req, " ");
-		if (*req == '?')
-			return list_cpas (modem);
-	}
-	else if (*req == '\0')
-		return show_cpas (modem, data);
-	return AT_CME_EINVAL;
+	return at_setting (modem, req, data, show_cpas, NULL, list_cpas);
 }
 
 

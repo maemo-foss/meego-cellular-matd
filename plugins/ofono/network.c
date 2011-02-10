@@ -693,8 +693,11 @@ static at_error_t handle_creg (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CSQ ***/
 
-static at_error_t do_csq (at_modem_t *modem, void *data)
+static at_error_t do_csq (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_ENOTSUP;
+
 	plugin_t *p = data;
 	int q = modem_prop_get_byte (p, "NetworkRegistration", "Strength");
 
@@ -720,19 +723,7 @@ static at_error_t list_csq (at_modem_t *modem, void *data)
 
 static at_error_t handle_csq (at_modem_t *modem, const char *req, void *data)
 {
-	req += 4;
-	req += strspn (req, " ");
-
-	if (!*req)
-		return do_csq (modem, data);
-
-	if (*(req++) != '=')
-		return AT_CME_EINVAL;
-	req += strspn (req, " ");
-	if (*(req++) != '?')
-		return AT_CME_EINVAL;
-
-	return list_csq (modem, data);
+	return at_setting (modem, req, data, do_csq, NULL, list_csq);
 }
 
 
