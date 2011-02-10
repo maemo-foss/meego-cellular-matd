@@ -737,6 +737,7 @@ void network_register (at_commands_t *set, plugin_t *p)
 	p->cops = 2;
 	at_register (set, "+CREG", handle_creg, p);
 	p->creg = 0;
+	p->creg_filter = NULL;
 	at_register (set, "+CSQ", handle_csq, p);
 }
 
