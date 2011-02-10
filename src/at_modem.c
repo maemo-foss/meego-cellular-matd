@@ -287,6 +287,10 @@ char *at_read_text (at_modem_t *m)
 			continue;
 		}
 
+		// New line
+		if (c == '\r' && at_get_echo (m))
+			at_intermediate_blob (m, "\n", 1);
+
 		buf[len++] = c;
 
 	}
