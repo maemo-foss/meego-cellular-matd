@@ -73,6 +73,7 @@ libofono_at_la_SOURCES = \
 	ofono/sim.c \
 	ofono/sms.c \
 	ofono/voicecall.c \
+	ofono/charset.c \
 	ofono/core.c
 libofono_at_la_CFLAGS = $(DBUS_CFLAGS)
 libofono_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
