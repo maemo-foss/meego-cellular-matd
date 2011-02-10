@@ -73,8 +73,11 @@ static struct udev *at_udev_new (void)
 	return udev;
 }
 
-static at_error_t do_cbc (at_modem_t *m, void *data)
+static at_error_t do_cbc (at_modem_t *m, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_ENOTSUP;
+
 	(void)data;
 
 	int canc = at_cancel_disable ();
@@ -171,24 +174,7 @@ static at_error_t list_cbc (at_modem_t *m, void *data)
 
 static at_error_t handle_cbc (at_modem_t *m, const char *req, void *data)
 {
-	req += 4;
-	req += strspn (req, " ");
-
-	if (!*req)
-		return do_cbc (m, data);
-
-	if (*(req++) != '=')
-		return AT_CME_EINVAL;
-	req += strspn (req, " ");
-
-	if (*(req++) != '?')
-		return AT_CME_EINVAL;
-	req += strspn (req, " ");
-
-	if (*req)
-		return AT_CME_EINVAL;
-
-	return list_cbc (m, data);
+	return at_setting (m, req, data, do_cbc, NULL, list_cbc);
 }
 
 void *at_plugin_register (at_commands_t *set)
