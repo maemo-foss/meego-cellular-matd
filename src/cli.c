@@ -58,6 +58,7 @@
 #include <sys/ioctl.h>
 #include <getopt.h>
 #include <pthread.h>
+#include <locale.h>
 
 #include <at_modem.h>
 #include <at_log.h>
@@ -113,6 +114,8 @@ int main (int argc, char *argv[])
 	signal (SIGCHLD, SIG_DFL);
 	pthread_sigmask (SIG_UNBLOCK, &set, NULL);
 	sigdelset (&set, SIGCHLD);
+
+	setlocale (LC_CTYPE, "");
 
 #ifdef AT_PLUGINS_PATH
 	if (setenv ("AT_PLUGINS_PATH", AT_PLUGINS_PATH, 0))

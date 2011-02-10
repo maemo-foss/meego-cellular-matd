@@ -55,6 +55,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
+#include <locale.h>
 
 #include <at_modem.h>
 
@@ -147,6 +148,8 @@ int main (void)
 	sigaddset (&set, SIGCHLD);
 	pthread_sigmask (SIG_UNBLOCK, &set, NULL);
 	sigdelset (&set, SIGCHLD);
+
+	setlocale (LC_CTYPE, "");
 
 	if (unsetenv ("AT_PLUGINS_PATH"))
 		return 2;
