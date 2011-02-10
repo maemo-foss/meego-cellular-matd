@@ -154,17 +154,10 @@ static at_error_t get_csca (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t list_csca (at_modem_t *modem, void *data)
-{
-	(void) modem;
-	(void) data;
-	return AT_OK;
-}
-
 static at_error_t handle_csca (at_modem_t *modem, const char *req,
                                  void *data)
 {
-	return at_setting (modem, req, data, set_csca, get_csca, list_csca);
+	return at_setting (modem, req, data, set_csca, get_csca, NULL);
 }
 
 

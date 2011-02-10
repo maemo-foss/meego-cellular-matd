@@ -442,13 +442,6 @@ static at_error_t set_ctsa (at_modem_t *m, const char *req, void *data)
 	return AT_OK;
 }
 
-static at_error_t get_ctsa (at_modem_t *m, void *data)
-{
-	(void) m;
-	(void) data;
-	return AT_ERROR;
-}
-
 static at_error_t list_ctsa (at_modem_t *m, void *data)
 {
 	at_intermediate (m, "\r\n+CTSA: (0-2)");
@@ -458,7 +451,7 @@ static at_error_t list_ctsa (at_modem_t *m, void *data)
 
 static at_error_t handle_ctsa (at_modem_t *m, const char *req, void *data)
 {
-	return at_setting (m, req, data, set_ctsa, get_ctsa, list_ctsa);
+	return at_setting (m, req, data, set_ctsa, NULL, list_ctsa);
 }
 
 

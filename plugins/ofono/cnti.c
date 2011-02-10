@@ -133,15 +133,6 @@ static at_error_t set_cnti (at_modem_t *modem, const char *req, void *data)
 	return AT_CME_ENOTSUP;
 }
 
-
-static at_error_t get_cnti (at_modem_t *modem, void *data)
-{
-	(void) modem;
-	(void) data;
-	return AT_ERROR;
-}
-
-
 static at_error_t list_cnti (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n*CNTI: (0-2)");
@@ -152,5 +143,5 @@ static at_error_t list_cnti (at_modem_t *modem, void *data)
 
 at_error_t handle_cnti (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_cnti, get_cnti, list_cnti);
+	return at_setting (modem, req, data, set_cnti, NULL, list_cnti);
 }

@@ -198,13 +198,6 @@ static at_error_t set_ccfc (at_modem_t *modem, const char *req, void *data)
 	return AT_CME_EINVAL;
 }
 
-static at_error_t get_ccfc (at_modem_t *modem, void *data)
-{
-	(void) modem;
-	(void) data;
-	return AT_CME_EINVAL;
-}
-
 static at_error_t list_ccfc (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CCFC: (0-5)");
@@ -215,7 +208,7 @@ static at_error_t list_ccfc (at_modem_t *modem, void *data)
 static at_error_t handle_ccfc (at_modem_t *modem, const char *req,
                                  void *data)
 {
-	return at_setting (modem, req, data, set_ccfc, get_ccfc, list_ccfc);
+	return at_setting (modem, req, data, set_ccfc, NULL, list_ccfc);
 }
 
 

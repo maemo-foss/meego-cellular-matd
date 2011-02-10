@@ -390,9 +390,12 @@ typedef at_error_t (*at_list_t) (at_modem_t *, void *);
  * depending on the operations.
  * @param req commands to parse and dispatch
  * @param opaque data pointer for the callbacks
- * @param set set operation callback (e.g. AT+FOO=bar)
- * @param get get operation callback (e.g. AT+FOO?)
- * @param list test operation callback (e.g. AT+FOO=?)
+ * @param set set operation callback, e.g. "AT+FOO=1,2,3" or "AT+FOO"
+ *            (must not be NULL)
+ * @param get get operation callback, e.g. "AT+FOO?"
+ *            (if NULL, simply returns AT_CME_EINVAL)
+ * @param list test operation callback, e.g. "AT+FOO=?"
+ *             (if NULL, simply returns AT_OK)
  * @return command result, or AT_ERROR on syntax error.
  */
 at_error_t at_setting (at_modem_t *, const char *req, void *opaque,

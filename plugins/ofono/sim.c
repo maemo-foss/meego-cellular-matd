@@ -263,17 +263,9 @@ out:
 }
 
 
-static at_error_t list_cpin (at_modem_t *modem, void *data)
-{
-	(void) modem;
-	(void) data;
-	return AT_CME_EINVAL;
-}
-
-
 static at_error_t handle_cpin (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_cpin, get_cpin, list_cpin);
+	return at_setting (modem, req, data, set_cpin, get_cpin, NULL);
 }
 
 
@@ -365,13 +357,6 @@ static at_error_t set_clck (at_modem_t *modem, const char *req, void *data)
 }
 
 
-static at_error_t get_clck (at_modem_t *modem, void *data)
-{
-	(void) modem; (void)data;
-	return AT_CME_ENOTSUP;
-}
-
-
 static at_error_t list_clck (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CLCK: (\"PS\",\"PF\",\"SC\",\"PN\",\"PU\","
@@ -383,7 +368,7 @@ static at_error_t list_clck (at_modem_t *modem, void *data)
 
 static at_error_t handle_clck (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_clck, get_clck, list_clck);
+	return at_setting (modem, req, data, set_clck, NULL, list_clck);
 }
 
 
@@ -416,13 +401,6 @@ static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
 }
 
 
-static at_error_t get_cpwd (at_modem_t *modem, void *data)
-{
-	(void) modem; (void)data;
-	return AT_CME_ENOTSUP;
-}
-
-
 static at_error_t list_cpwd (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CPWD: (\"PS\",8),(\"PF\",8),(\"SC\",8),"
@@ -434,7 +412,7 @@ static at_error_t list_cpwd (at_modem_t *modem, void *data)
 
 static at_error_t handle_cpwd (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_cpwd, get_cpwd, list_cpwd);
+	return at_setting (modem, req, data, set_cpwd, NULL, list_cpwd);
 }
 
 

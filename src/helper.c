@@ -45,6 +45,7 @@
 #endif
 
 #include <stdio.h>
+#include <assert.h>
 #include <at_command.h>
 
 at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
@@ -52,6 +53,8 @@ at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
 {
 	int offset;
 	char op;
+
+	assert (set != NULL);
 
 	if (sscanf (req, "%*[^?= ] %c%n", &op, &offset) < 1)
 		return set (m, "", opaque);
@@ -62,7 +65,7 @@ at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
 	{
 		case '?':
 			/* "AT+FOO?" */
-			return get (m, opaque);
+			return (get != NULL) ? get (m, opaque) : AT_CME_EINVAL;
 		case '=':
 			if (sscanf (req, " %n%c", &offset, &op) < 1)
 				/* "AT+FOO=" */
@@ -70,7 +73,7 @@ at_error_t at_setting (at_modem_t * m, const char *req, void *opaque,
 
 			if (op == '?')
 				/* "AT+FOO=?" */
-				return list (m, opaque);
+				return (list != NULL) ? list (m, opaque) : AT_OK;
 
 			req += offset;
 			/* "AT+FOO=BAR" */

@@ -417,14 +417,6 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 	}
 }
 
-static at_error_t get_chld (at_modem_t *modem, void *data)
-{
-	(void)modem;
-	(void)data;
-
-	return AT_CME_EINVAL;
-}
-
 static at_error_t list_chld (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CHLD: (1,1x,2,3,4)");
@@ -435,7 +427,7 @@ static at_error_t list_chld (at_modem_t *modem, void *data)
 
 static at_error_t handle_chld (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_chld, get_chld, list_chld);
+	return at_setting (modem, req, data, set_chld, NULL, list_chld);
 }
 
 
@@ -545,14 +537,6 @@ static at_error_t set_vts (at_modem_t *m, const char *req, void *data)
 	                      DBUS_TYPE_INVALID);
 }
 
-static at_error_t get_vts (at_modem_t *m, void *data)
-{
-	(void)m;
-	(void)data;
-
-	return AT_CME_EINVAL;
-}
-
 static at_error_t list_vts (at_modem_t *modem, void *data)
 {
 	(void)data;
@@ -563,7 +547,7 @@ static at_error_t list_vts (at_modem_t *modem, void *data)
 
 static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, set_vts, get_vts, list_vts);
+	return at_setting (modem, req, data, set_vts, NULL, list_vts);
 }
 
 /*** AT+VTD ***/
@@ -637,12 +621,6 @@ static at_error_t do_ctfr (at_modem_t *modem, const char *req, void *data)
 	                          DBUS_TYPE_INVALID);
 }
 
-static at_error_t get_ctfr (at_modem_t *modem, void *data)
-{
-	(void) modem; (void) data;
-	return AT_CME_EINVAL;
-}
-
 static at_error_t list_ctfr (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CTFR: ");
@@ -652,7 +630,7 @@ static at_error_t list_ctfr (at_modem_t *modem, void *data)
 
 static at_error_t handle_ctfr (at_modem_t *modem, const char *req, void *data)
 {
-	return at_setting (modem, req, data, do_ctfr, get_ctfr, list_ctfr);
+	return at_setting (modem, req, data, do_ctfr, NULL, list_ctfr);
 }
 
 
