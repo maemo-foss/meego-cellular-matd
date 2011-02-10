@@ -46,12 +46,11 @@
 #endif
 
 #include <stdint.h>
-#include <stddef.h>
-
-#include <at_command.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <at_command.h>
 
 static at_error_t handle_bool (at_modem_t *modem, unsigned val, void *data)
 {

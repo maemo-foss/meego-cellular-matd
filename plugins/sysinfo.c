@@ -45,11 +45,8 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include <at_command.h>
 #include <at_thread.h>

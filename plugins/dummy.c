@@ -44,7 +44,6 @@
 # include <config.h>
 #endif
 
-#include <stdint.h>
 #include <stddef.h>
 
 #include <at_command.h>
