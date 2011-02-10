@@ -271,13 +271,13 @@ static at_error_t set_cops (at_modem_t *modem, const char *req, void *data)
 	int c = sscanf (req, " %u , %u , \"%31[^\"]\" , %u",
 			&mode, &format, buf, &tech);
 	if (c < 1)
-		return AT_ERROR;
+		return AT_CME_EINVAL;
 
 	switch (mode)
 	{
 	case 0:
-	/* FIXME: How do we change back to automatic? */
-		return AT_CME_ENOTSUP;
+		return modem_request (p, "NetworkRegistration", "Register",
+		                      DBUS_TYPE_INVALID);
 	case 1:
 		if (c < 3)
 			return AT_CME_EINVAL;
