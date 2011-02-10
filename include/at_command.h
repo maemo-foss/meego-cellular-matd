@@ -58,7 +58,6 @@ extern "C" {
 #endif
 
 #include <stdarg.h> /* va_list */
-#include <sys/types.h> /* ssize_t */
 
 /**
  * @defgroup cmd AT commands
@@ -286,15 +285,17 @@ int at_intermediatev (at_modem_t *, const char *fmt, va_list args);
 
 
 /**
- * Reads one line from the DTE (in commands mode).
- * This can be used, e.g. to send an SMS in text mode.
- * @param buf buffer to store the read line
- * @param size byte size of the buffer (at most size-1 byte will be read)
- * @return -1 on error or at end of file,
- * otherwise the number of bytes read.
- * A nul-terminator is added (if buffer size is non-zero).
+ * Reads text from the DTE (in commands mode) until Ctrl+Z or ESC.
+ * This can be used, e.g. to enter an SMS in text mode.
+ * The caller shall send any required intermediate response before calling
+ * this function, e.g. "\r\n> " for text mode SMS.
+ *
+ * @return
+ * On success, text is returned as a string. The final Ctrl+Z is discarded.
+ * A nul terminator is appended. The buffer must be released with free().
+ * On error or if ESC is received, NULL is returned.
  */
-ssize_t at_getline (at_modem_t *, char *buf, size_t size);
+char *at_read_text (at_modem_t *);
 
 /**
  * Sends an unsolicited message.

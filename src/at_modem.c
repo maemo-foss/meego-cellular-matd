@@ -245,48 +245,53 @@ static int at_getchar (at_modem_t *m)
 	return m->in_buf[m->in_offset++];
 }
 
-ssize_t at_getline (at_modem_t *m, char *restrict buf, size_t size)
+char *at_read_text (at_modem_t *m)
 {
-	size_t i = 0;
+	char *buf = NULL;
+	size_t size = 0, len = 0;
 
-	if (size == 0)
-		return 0;
-	size--;
-
-	while (i < size)
+	pthread_cleanup_push (free, buf);
+	for (;;)
 	{
 		int c = at_getchar (m);
-		if (c == -1)
+		if (c == -1 /* I/O error */ || c == 27 /* escape */)
 		{
-			if (i == 0)
-				return -1;
+			free (buf);
+			buf = NULL;
+			break;
+		}
+
+		if (len >= size)
+		{
+			size_t newsize = size ? (2 * size) : 256;
+			char *newbuf = realloc (buf, newsize);
+
+			if (newbuf == NULL)
+				break;
+			buf = newbuf;
+			size = newsize;
+		}
+
+		// Ctrl+Z: done
+		if (c == 26)
+		{
+			buf[len] = '\0';
 			break;
 		}
 
 		// Backspace (standard) and Delete (non-standard)
 		if (c == '\b' || c == 127)
 		{
-			if (i > 0)
-				i--;
+			if (len > 0)
+				len--;
 			continue;
 		}
 
-		// Line Feed (non-standard, should use CR instead)
-		if (c == '\n')
-		{
-			if (i == 0)
-				continue; // ignore LF after CR
-			c = '\r'; // rewrite lone LF to CR
-		}
+		buf[len++] = c;
 
-		buf[i++] = c;
-
-		// Carriage Return or Ctrl+Z
-		if (c == '\r' || c == 26 || c == 27)
-			break;
 	}
-	buf[i] = '\0';
-	return i;
+	pthread_cleanup_pop (0);
+	return buf;
 }
 
 int at_intermediate_blob (at_modem_t *m, const void *blob, size_t len)

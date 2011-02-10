@@ -10,7 +10,7 @@ at_register_s
 at_intermediate
 at_intermediate_blob
 at_intermediatev
-at_getline
+at_read_text
 at_unsolicited
 at_unsolicited_blob
 at_unsolicitedv
