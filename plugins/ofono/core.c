@@ -694,6 +694,7 @@ void *at_plugin_register (at_commands_t *set)
 	p->objpath = path;
 
 	modem_register (set, p);
+	agps_register (set, p);
 	call_forwarding_register (set, p);
 	call_settings_register (set, p);
 	gprs_register (set, p);
