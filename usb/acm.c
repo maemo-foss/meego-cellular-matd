@@ -92,7 +92,7 @@ static void hangup_cb (struct at_modem *m, void *data)
 static int open_tty (const char *path, struct termios *oldtp)
 {
 	/* Prepare our terminal (connection to DTE) */
-	int fd = open (path, O_RDWR|O_NOCTTY|O_CLOEXEC);
+	int fd = open (path, O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
 	if (fd == -1)
 	{
 		syslog (LOG_CRIT, "%s: %m", path);
@@ -118,6 +118,9 @@ static int open_tty (const char *path, struct termios *oldtp)
 	tp.c_cflag |= CS8 | CLOCAL;
 	tp.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 	tcsetattr (fd, TCSADRAIN, &tp);
+
+	/* Blocking mode for actual I/O */
+	fcntl (fd, F_SETFL, fcntl (fd, F_GETFL) & ~O_NONBLOCK);
 	return fd;
 }
 
