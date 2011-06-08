@@ -385,8 +385,7 @@ CASE (clock)
 	RESPONSE ();
 	CHECK_ERROR ();
 	REQUEST ("AT+CCLK=?");
-	RESPONSE ();
-	CHECK_ERROR ();
+	RESPONSE (); /* Not very clear if OK should be returned here */
 
 	/* Trying to set the test system time is probably a bad idea */
 	REQUEST ("AT+CCLK=2010");
