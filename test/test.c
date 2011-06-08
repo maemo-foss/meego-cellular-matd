@@ -549,9 +549,9 @@ CASE (cmee)
 	RESPONSE ();
 	CHECK_OK ();
 
-	REQUEST ("AT+CMEE++");
+	REQUEST ("AT+CMEE");
 	RESPONSE ();
-	CHECK_ERROR ();
+	CHECK_OK ();
 
 	return 0;
 }
