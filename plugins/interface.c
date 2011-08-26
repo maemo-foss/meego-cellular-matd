@@ -438,7 +438,7 @@ void *at_plugin_register (at_commands_t *set)
 	plugin_t *p = malloc (sizeof (*p));
 	if (p == NULL)
 		return NULL;
-	p->fc[0] = p->fc[1] = 0;
+	p->fc[0] = p->fc[1] = 2;
 	at_register (set, "+IFC", handle_fc, p);
 	return p;
 }
