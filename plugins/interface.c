@@ -315,10 +315,18 @@ static at_error_t set_fc (at_modem_t *m, const char *req, void *data)
 			return AT_ERROR;
 	}
 
-	if (out >= 4 || in >= 3)
+	/* XXX: AT+IFC=3 not implemented */
+	if (out >= 3 || in >= 3)
 		return AT_ERROR;
-	/* Inline XON/XOFF characters (DC1/DC3) not supported */
-	if ((out | in) & 1)
+
+	struct termios tp;
+	at_get_attr (m, &tp);
+	tp.c_iflag &= ~(IXON|IXANY|IXOFF);
+	if (out & 1)
+		tp.c_iflag |= IXON;
+	if (in & 1)
+		tp.c_iflag |= IXOFF;
+	if (at_set_attr (m, &tp))
 		return AT_ERROR;
 
 	/* Store values. TODO? implement CTS/RTS and RFR? */
@@ -337,7 +345,7 @@ static at_error_t get_fc (at_modem_t *m, void *data)
 
 static at_error_t list_fc (at_modem_t *m, void *data)
 {
-	at_intermediate (m, "\r\n+IFC: (0,2),(0,2)");
+	at_intermediate (m, "\r\n+IFC: (0-2),(0-2)");
 	(void) data;
 	return AT_OK;
 }
