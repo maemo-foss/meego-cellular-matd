@@ -50,6 +50,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+
+typedef struct
+{
+	unsigned dr:1;
+	unsigned ds_dir:2;
+	unsigned ds_nego:1;
+	uint16_t ds_dict;
+	uint8_t  ds_string;
+} dummy_t;
 
 static at_error_t alpha_nothing (at_modem_t *modem, unsigned value,
                                  void *data)
@@ -90,7 +100,6 @@ static at_error_t get_fclass (at_modem_t *m, void *data)
 	at_intermediate (m, "\r\n0");
 
 	(void)data;
-	(void)m;
 	return AT_OK;
 }
 
@@ -99,6 +108,99 @@ static at_error_t handle_fclass (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data,
 	                   set_fclass, get_fclass, get_fclass);
 }
+
+
+/*** AT+DR (data compression reporting) ***/
+static at_error_t set_dr (at_modem_t *m, const char *req, void *data)
+{
+	dummy_t *d = data;
+	unsigned dr;
+
+	if (sscanf (req, " %u", &dr) < 1)
+		return AT_ERROR;
+	if (dr > 1)
+		return AT_ERROR;
+
+	d->dr = dr;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t get_dr (at_modem_t *m, void *data)
+{
+	dummy_t *d = data;
+
+	at_intermediate (m, "\r\n+DR: %u", d->dr);
+	return AT_OK;
+}
+
+static at_error_t list_dr (at_modem_t *m, void *data)
+{
+	at_intermediate (m, "\r\n+DR: (0,1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_dr (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_dr, get_dr, list_dr);
+}
+
+
+/*** AT+DS (data compression) ***/
+static at_error_t set_ds (at_modem_t *m, const char *req, void *data)
+{
+	dummy_t *d = data;
+	unsigned dir, nego, dict, str;
+
+	switch (sscanf (req, " %u , %u , %u , %u", &dir, &nego, &dict, &str))
+	{
+		case 0:
+			dir = 3;
+		case 1:
+			nego = 0;
+		case 2:
+			dict = 256;
+		case 3:
+			str = 6;
+		case 4:
+			break;
+		default:
+			return AT_ERROR;
+	}
+	if (dir > 3 || nego > 1 || dict < 256 || dict > 65535
+	 || str < 6 || str > 250)
+		return AT_ERROR;
+
+	d->ds_dir = dir;
+	d->ds_nego = nego;
+	d->ds_dict = dict;
+	d->ds_string = str;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t get_ds (at_modem_t *m, void *data)
+{
+	dummy_t *d = data;
+
+	at_intermediate (m, "\r\n+DS: %u,%u,%u,%u", d->ds_dir, d->ds_nego,
+	                 d->ds_dict, d->ds_string);
+	return AT_OK;
+}
+
+static at_error_t list_ds (at_modem_t *m, void *data)
+{
+	at_intermediate (m, "\r\n+DS: (0-3),(0,1),(512-65535),(6-250)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_ds (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_ds, get_ds, list_ds);
+}
+
 
 
 /*** Plugin registration ***/
@@ -121,5 +223,16 @@ void *at_plugin_register (at_commands_t *set)
 
 	at_register (set, "+FCLASS", handle_fclass, NULL);
 
-	return NULL;
+	dummy_t *d = malloc  (sizeof (*d));
+	if (d != NULL)
+	{
+		d->dr = 0;
+		at_register (set, "+DR", handle_dr, d);
+		d->ds_dir = 3;
+		d->ds_nego = 0;
+		d->ds_dict = 512;
+		d->ds_string = 6;
+		at_register (set, "+DS", handle_ds, d);
+	}
+	return d;
 }
