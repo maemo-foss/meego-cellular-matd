@@ -321,6 +321,11 @@ int at_unsolicited_blob (at_modem_t *, const void *blob, size_t len);
 int at_unsolicitedv (at_modem_t *, const char *fmt, va_list args);
 
 /**
+ * Sends an unsolicited RING message, depending on verbosity.
+ */
+int at_ring (at_modem_t *);
+
+/**
  * Enter data mode and transmit raw data, usually for PPP emulation.
  * While in this mode, any attempt to write with at_unsolicited(),
  * at_unsolicitedv() or at_unsolicited_blob() will fail (i.e. return -1).

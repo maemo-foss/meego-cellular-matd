@@ -170,6 +170,16 @@ int at_print_reply (at_modem_t *m, at_error_t res)
 		: at_intermediate (m, "\r\n%u\r\n", res);
 }
 
+
+int at_ring (at_modem_t *m)
+{
+	/* FIXME: not thread-safe according to POSIX memory model */
+	return at_get_verbose (m)
+		? at_unsolicited (m, "\r\n%s\r\n", "RING")
+		: at_unsolicited (m, "\r\n%u\r\n", 2);
+}
+
+
 static int cmp_rate (const void *key, const void *member)
 {
 	const speed_t *ps = key;
