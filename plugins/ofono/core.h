@@ -44,7 +44,10 @@ struct plugin
 {
 	char *name;
 	char *objpath;
+
 	unsigned char vhu; /**< AT+CVHU */
+	ofono_watch_t *ring_filter; /**< RING */
+
 	unsigned char cops; /**< AT+COPS */
 	unsigned char creg; /**< AT+COPS */
 	ofono_watch_t *creg_filter; /**< AT+CREG */

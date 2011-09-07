@@ -195,6 +195,28 @@ static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 }
 
 
+/*** RING ***/
+static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	DBusMessageIter call;
+
+	/* Skip call object path */
+	if (!dbus_message_iter_init (msg, &call)
+	 || dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_OBJECT_PATH)
+		return;
+	dbus_message_iter_next (&call);
+
+	/* Only care about incoming calls */
+	const char *state = ofono_dict_find_string (&call, "State");
+	if (state == NULL || strcmp (state, "incoming"))
+		return;
+
+	at_ring (m);
+	(void) p;
+}
+
+
 /*** AT+CLCC ***/
 
 static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
@@ -720,10 +742,15 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+VTD", handle_vtd, p);
 	at_register (set, "+CTFR", handle_ctfr, p);
 	at_register (set, "+CPAS", handle_cpas, p);
+
+	p->ring_filter = ofono_signal_watch (p, "VoiceCallManager", NULL,
+	                                     "CallAdded", NULL, ring_callback,
+	                                     AT_COMMANDS_MODEM(set));
 }
 
 void voicecallmanager_unregister (plugin_t *p)
 {
+	ofono_signal_unwatch (p->ring_filter);
 	if (p->vhu == 2)
 		handle_chup (NULL, "+CHUP", p);
 }
