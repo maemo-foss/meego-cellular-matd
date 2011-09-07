@@ -35,7 +35,7 @@ Doxyfile: Doxyfile.in
 	$(SHELL) ./config.status --file=Doxyfile
 
 doc: Doxyfile
-	$(DOXYGEN)
+	cd "$(top_srcdir)" && $(DOXYGEN) "$(abs_top_builddir)/Doxyfile"
 
 .PHONY: doc
 
