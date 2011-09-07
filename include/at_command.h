@@ -152,6 +152,21 @@ void *at_plugin_register (at_commands_t *set);
 void at_plugin_unregister (void *opaque);
 
 /**
+ * Retrieves the AT modem that the AT commands list belongs to.
+ *
+ * If a plug-in needs to perform output before any command has executed,
+ * the needed AT modem object can be obtained from the AT commands set.
+ * This may be required to implement ringing: contrary to other unsolicited
+ * messages, the RING notification may come before any command is executed.
+ *
+ * @note
+ * Normally, the at_plugin_register() function registers command handlers and
+ * initializes defautl value. There is usually no need to perform any input or
+ * output at this point, so the modem object is not needed.
+ */
+#define AT_COMMANDS_MODEM(set) (*((at_modem_t **)(set)))
+
+/**
  * Callback prototype to execute an AT command.
  * @param m AT modem object
  * @param str text of the AT command (<b>without the AT prefix</b>)

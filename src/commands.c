@@ -120,6 +120,7 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 		bank->cmd.s[i].set = NULL;
 	bank->cmd.extended = NULL;
 	bank->modem = modem;
+	assert (AT_COMMANDS_MODEM(bank) == modem);
 
 	/* Load all plugins */
 	int canc = at_cancel_disable ();
