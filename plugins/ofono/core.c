@@ -579,7 +579,7 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	if (s->signal
-	 && !dbus_message_has_member (msg, s->path))
+	 && !dbus_message_has_member (msg, s->signal))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	if (s->arg0
