@@ -299,7 +299,7 @@ static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
 	plugin_t *p = data;
 	at_error_t ret;
 
-	ret = modem_request (p, "VoiceCallManager", "ReleaseAndAnswer",
+	ret = modem_request (p, "VoiceCallManager", "HangupAll",
 	                     DBUS_TYPE_INVALID);
 	if (ret == AT_CME_ERROR_0)
 		ret = AT_OK; /* there was no ongoing call */
