@@ -82,7 +82,52 @@ static at_error_t handle_acm (at_modem_t *modem, const char *req, void *data)
 	return at_setting (modem, req, data, reset_acm, get_acm, NULL);
 }
 
+
+/*** AT+CAMM ***/
+
+static at_error_t set_amm (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	uint32_t amm;
+	char pin[9];
+
+	switch (sscanf (req, " \"%"SCNx32"\" , \"%8[0-9]\"", &amm, pin))
+	{
+		case 0:
+			amm = 0;
+		case 1:
+			*pin = '\0';
+		case 2:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	(void) modem;
+	return modem_prop_set_u32_pw (p, "CallMeter",
+	                              "AccumulatedCallMeterMaximum", amm, pin);
+}
+
+static at_error_t get_amm (at_modem_t *m, void *data)
+{
+	plugin_t *p = data;
+	int64_t amm = modem_prop_get_u32 (p, "CallMeter", "AccumulatedCallMeterMaximum");
+
+	if (amm == -1)
+		return AT_CME_ENOTSUP;
+	return at_intermediate (m, "\r\n+CAMM: \"%06"PRIX32"\"", (uint32_t)amm);
+}
+
+static at_error_t handle_amm (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_amm, get_amm, NULL);
+}
+
+
+/*** Registration ***/
+
 void call_meter_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CACM", handle_acm, p);
+	at_register (set, "+CAMM", handle_amm, p);
 }
