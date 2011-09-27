@@ -231,15 +231,14 @@ int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
 	return val;
 }
 
-unsigned ofono_prop_find_u32 (DBusMessage *msg, const char *name,
-			      unsigned fallback)
+int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name)
 {
 	DBusMessageIter dict;
 	dbus_uint32_t val;
 
 	if (!dbus_message_iter_init (msg, &dict)
 	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT32, &val))
-		return fallback;
+		return -1;
 	return val;
 }
 

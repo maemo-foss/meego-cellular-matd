@@ -564,12 +564,14 @@ static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
 
 	if (p->creg == 2 && (status == 1 || status == 5))
 	{
-		unsigned cellid = ofono_prop_find_u32 (msg, "CellId", 0);
+		int cellid = ofono_prop_find_u32 (msg, "CellId");
 		int lac = ofono_prop_find_u16 (msg, "LocationAreaCode");
 		const char *tec = ofono_prop_find_string (msg,
 							 "Technology");
 		unsigned tech = 0;
 
+		if (cellid == -1)
+			cellid = 0;
 		if (lac == -1)
 			lac = 0;
 

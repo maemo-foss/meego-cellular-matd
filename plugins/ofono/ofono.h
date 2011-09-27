@@ -40,6 +40,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <dbus/dbus.h>
 
 typedef struct plugin plugin_t;
@@ -80,8 +81,7 @@ const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
 int ofono_prop_find_bool (DBusMessage *msg, const char *name);
 int ofono_prop_find_byte (DBusMessage *msg, const char *name);
 int ofono_prop_find_u16 (DBusMessage *msg, const char *name);
-unsigned ofono_prop_find_u32 (DBusMessage *msg, const char *name,
-			      unsigned fallback);
+int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name);
 
 typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
 typedef struct ofono_watch ofono_watch_t;
