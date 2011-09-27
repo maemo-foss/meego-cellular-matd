@@ -127,8 +127,6 @@ static void at_dbus_toggle_watch (DBusWatch *watch, void *opaque)
 			events |= POLLOUT;
 	}
 
-	debug ("WATCH %d: %s %s", adw->fd,
-	       (events & POLLIN) ? "READ" : "", (events & POLLOUT) ? "WRITE" : "");
 	pthread_mutex_lock (&ad->lock);
 	assert (adw->fd == dbus_watch_get_unix_fd (watch));
 	adw->events = events;
@@ -322,9 +320,6 @@ loop:
 
 			p->fd = adw->fd;
 			p->events = adw->events;
-			debug ("POLL %d: %s %s", adw->fd,
-			       (adw->events & POLLIN) ? "READ" : "",
-			       (adw->events & POLLOUT) ? "WRITE" : "");
 			p++;
 		}
 		pthread_mutex_unlock (&ad->lock);
