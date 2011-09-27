@@ -55,6 +55,7 @@ char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);
 int modem_prop_get_byte (const plugin_t *, const char *, const char *);
 int modem_prop_get_u16 (const plugin_t *, const char *, const char *);
+int64_t modem_prop_get_u32 (const plugin_t *, const char *, const char *);
 at_error_t modem_prop_set_string (const plugin_t *, const char *,
                                   const char *, const char *);
 at_error_t modem_prop_set_bool (const plugin_t *, const char *,

@@ -395,6 +395,21 @@ int modem_prop_get_u16 (const plugin_t *p, const char *iface, const char *name)
 	return ret;
 }
 
+int64_t modem_prop_get_u32 (const plugin_t *p, const char *iface,
+                            const char *name)
+{
+	int64_t ret;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *props = modem_props_get (p, iface);
+	if (props != NULL)
+		ret = ofono_prop_find_u32 (props, name);
+	else
+		ret = -1;
+	at_cancel_enable (canc);
+	return ret;
+}
+
 static at_error_t modem_prop_set (const plugin_t *p, const char *iface,
                                   const char *name, int type, void *value)
 {
