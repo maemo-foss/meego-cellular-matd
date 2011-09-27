@@ -46,6 +46,7 @@ struct plugin
 	char *objpath;
 
 	unsigned char vhu; /**< AT+CVHU */
+	bool cring; /**< AT+CRC */
 	ofono_watch_t *ring_filter; /**< RING */
 
 	unsigned char cops; /**< AT+COPS */

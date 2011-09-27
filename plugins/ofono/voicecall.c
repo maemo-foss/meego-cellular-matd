@@ -212,8 +212,47 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 	if (state == NULL || strcmp (state, "incoming"))
 		return;
 
-	at_ring (m);
+	if (p->cring)
+		at_unsolicited (m, "\r\n+CRING: VOICE\r\n");
+	else
+		at_ring (m);
 	(void) p;
+}
+
+/** AT+CRC (+CRING) */
+static at_error_t set_ring (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->cring = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_ring (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	at_intermediate (modem, "\r\n+CRC: %u", p->cring);
+	return AT_OK;
+}
+
+static at_error_t list_ring (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CRC: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_ring (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_ring, get_ring, list_ring);
 }
 
 
@@ -736,6 +775,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CMOD", handle_cmod, p);
 	at_register (set, "+CVMOD", handle_cvmod, p);
 	at_register (set, "+CHLD", handle_chld, p);
+	p->cring = false;
+	at_register (set, "+CRC", handle_ring, p);
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
