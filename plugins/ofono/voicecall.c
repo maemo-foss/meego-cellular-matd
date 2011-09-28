@@ -224,7 +224,14 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 			at_unsolicited (m, "\r\n+CLIP: \"%s\",%u\r\n", str,
 			                (str[0] == '+') ? 145 : 129);
 	}
-	(void) p;
+
+	if (p->cdip)
+	{
+		str = ofono_dict_find_string (&call, "IncomingLine");
+		if (str != NULL)
+			at_unsolicited (m, "\r\n+CDIP: \"%s\",%u\r\n", str,
+			                (str[0] == '+') ? 145 : 129);
+	}
 }
 
 /** AT+CRC (+CRING) */
@@ -298,6 +305,43 @@ static at_error_t list_clip (at_modem_t *modem, void *data)
 static at_error_t handle_clip (at_modem_t *modem, const char *req, void *data)
 {
 	return at_setting (modem, req, data, set_clip, get_clip, list_clip);
+}
+
+
+/** AT+CDIP */
+static at_error_t set_cdip (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->cdip = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cdip (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	at_intermediate (modem, "\r\n+CDIP: %u", p->cdip);
+	return AT_OK;
+}
+
+static at_error_t list_cdip (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CDIP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_cdip (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cdip, get_cdip, list_cdip);
 }
 
 
@@ -824,6 +868,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CRC", handle_ring, p);
 	p->clip = false;
 	at_register (set, "+CLIP", handle_clip, p);
+	p->cdip = false;
+	at_register (set, "+CDIP", handle_cdip, p);
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
