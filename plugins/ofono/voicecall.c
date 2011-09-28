@@ -227,6 +227,17 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 			                (str[0] == '+') ? 145 : 129);
 	}
 
+	if (p->cnap)
+	{
+		str = ofono_dict_find_string (&call, "Name");
+		if (str == NULL)
+			at_unsolicited (m, "\r\n+CNAP: \"\",2\r\n");
+		else if (!strcmp (str, "withheld"))
+			at_unsolicited (m, "\r\n+CNAP: \"\",1\r\n");
+		else
+			at_unsolicited (m, "\r\n+CNAP: \"%.80s\"\r\n", str);
+	}
+
 	if (p->cdip)
 	{
 		str = ofono_dict_find_string (&call, "IncomingLine");
@@ -319,6 +330,55 @@ static at_error_t handle_clip (at_modem_t *modem, const char *req, void *data)
 {
 	return at_setting (modem, req, data, set_clip, get_clip, list_clip);
 }
+
+
+/** AT+CNAP */
+static at_error_t set_cnap (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->cnap = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cnap (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CallingNamePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CNAP service state \"%s\"", setting);
+
+	at_intermediate (modem, "\r\n+CNAP: %u,%u", p->cnap, mode);
+	return AT_OK;
+}
+
+static at_error_t list_cnap (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CNAP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_cnap (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cnap, get_cnap, list_cnap);
+}
+
 
 
 /** AT+CDIP */
@@ -892,6 +952,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CRC", handle_ring, p);
 	p->clip = false;
 	at_register (set, "+CLIP", handle_clip, p);
+	p->cnap = false;
+	at_register (set, "+CNAP", handle_cnap, p);
 	p->cdip = false;
 	at_register (set, "+CDIP", handle_cdip, p);
 	p->vhu = 0;

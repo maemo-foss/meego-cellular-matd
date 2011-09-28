@@ -160,4 +160,5 @@ void call_settings_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CLIR", handle_clir, p);
 	at_register (set, "+COLR", do_colr, p);
+	/* NOTE: +CLIP, +COLP and +CNAP are in voicecall.c */
 }

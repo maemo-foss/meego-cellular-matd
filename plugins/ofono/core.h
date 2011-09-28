@@ -48,6 +48,7 @@ struct plugin
 	unsigned char vhu; /**< AT+CVHU */
 	bool cring; /**< AT+CRC */
 	bool clip; /**< AT+CLIP */
+	bool cnap; /**< AT+CNAP */
 	bool cdip; /**< AT+CDIP */
 	ofono_watch_t *ring_filter; /**< RING */
 
