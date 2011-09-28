@@ -208,14 +208,22 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 	dbus_message_iter_next (&call);
 
 	/* Only care about incoming calls */
-	const char *state = ofono_dict_find_string (&call, "State");
-	if (state == NULL || strcmp (state, "incoming"))
+	const char *str = ofono_dict_find_string (&call, "State");
+	if (str == NULL || strcmp (str, "incoming"))
 		return;
 
 	if (p->cring)
 		at_unsolicited (m, "\r\n+CRING: VOICE\r\n");
 	else
 		at_ring (m);
+
+	if (p->clip)
+	{
+		str = ofono_dict_find_string (&call, "LineIdentification");
+		if (str != NULL)
+			at_unsolicited (m, "\r\n+CLIP: \"%s\",%u\r\n", str,
+			                (str[0] == '+') ? 145 : 129);
+	}
 	(void) p;
 }
 
@@ -253,6 +261,43 @@ static at_error_t list_ring (at_modem_t *modem, void *data)
 static at_error_t handle_ring (at_modem_t *modem, const char *req, void *data)
 {
 	return at_setting (modem, req, data, set_ring, get_ring, list_ring);
+}
+
+
+/** AT+CLIP */
+static at_error_t set_clip (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->clip = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_clip (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	at_intermediate (modem, "\r\n+CLIP: %u", p->clip);
+	return AT_OK;
+}
+
+static at_error_t list_clip (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CLIP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_clip (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_clip, get_clip, list_clip);
 }
 
 
@@ -777,6 +822,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CHLD", handle_chld, p);
 	p->cring = false;
 	at_register (set, "+CRC", handle_ring, p);
+	p->clip = false;
+	at_register (set, "+CLIP", handle_clip, p);
 	p->vhu = 0;
 	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
 	at_register (set, "+VTS", handle_vts, p);
