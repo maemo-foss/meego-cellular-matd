@@ -220,7 +220,9 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 	if (p->clip)
 	{
 		str = ofono_dict_find_string (&call, "LineIdentification");
-		if (str != NULL)
+		if (str == NULL || !strcmp (str, "withheld"))
+			at_unsolicited (m, "\r\n+CLIP: \"\",128\r\n");
+		else
 			at_unsolicited (m, "\r\n+CLIP: \"%s\",%u\r\n", str,
 			                (str[0] == '+') ? 145 : 129);
 	}
