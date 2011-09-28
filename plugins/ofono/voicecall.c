@@ -290,8 +290,19 @@ static at_error_t set_clip (at_modem_t *modem, const char *req, void *data)
 static at_error_t get_clip (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CallingLinePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CLIP service state \"%s\"", setting);
 
-	at_intermediate (modem, "\r\n+CLIP: %u", p->clip);
+	at_intermediate (modem, "\r\n+CLIP: %u,%u", p->clip, mode);
 	return AT_OK;
 }
 
