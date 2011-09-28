@@ -340,8 +340,19 @@ static at_error_t set_cdip (at_modem_t *modem, const char *req, void *data)
 static at_error_t get_cdip (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CalledLinePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CDIP service state \"%s\"", setting);
 
-	at_intermediate (modem, "\r\n+CDIP: %u", p->cdip);
+	at_intermediate (modem, "\r\n+CDIP: %u,%u", p->cdip, mode);
 	return AT_OK;
 }
 
