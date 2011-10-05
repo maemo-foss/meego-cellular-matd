@@ -404,7 +404,8 @@ static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
 static at_error_t list_cpwd (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CPWD: (\"PS\",8),(\"PF\",8),(\"SC\",8),"
-	                        "(\"PN\",8),(\"PU\",8),(\"PP\",8),(\"PC\",8)");
+	                        "(\"PN\",8),(\"PU\",8),(\"PP\",8),(\"PC\",8),"
+	                        "(\"P2\",8)");
 	(void) data;
 	return AT_OK;
 }
