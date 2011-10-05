@@ -383,16 +383,25 @@ static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
 	 || !fac[0])
 		return AT_CME_EINVAL;
 
-	const char *type = fac_to_ofono (fac);
-	if (type == NULL)
-		return AT_CME_ENOTSUP;
-
 	const char *oldpin = oldpwd, *newpin = newpwd;
 	at_error_t ret;
 
-	ret = modem_request (data, "SimManager", "ChangePin",
-	                     DBUS_TYPE_STRING, &type, DBUS_TYPE_STRING, &oldpin,
-	                     DBUS_TYPE_STRING, &newpin, DBUS_TYPE_INVALID);
+	/* SIM password */
+	const char *type = fac_to_ofono (fac);
+	if (type != NULL)
+		ret = modem_request (data, "SimManager", "ChangePin",
+		                     DBUS_TYPE_STRING, &type,
+		                     DBUS_TYPE_STRING, &oldpin,
+		                     DBUS_TYPE_STRING, &newpin, DBUS_TYPE_INVALID);
+	else
+	/* Call barring password (FIXME? max password length) */
+	if (!strcmp (fac, "AB"))
+		ret = modem_request (data, "CallBarring", "ChangePassword",
+		                     DBUS_TYPE_STRING, &oldpin,
+		                     DBUS_TYPE_STRING, &newpin, DBUS_TYPE_INVALID);
+	else
+		ret = AT_CME_ENOTSUP;
+
 	if (ret == AT_CME_ERROR (0))
 		ret = AT_CME_ERROR (16);
 
@@ -405,7 +414,7 @@ static at_error_t list_cpwd (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n+CPWD: (\"PS\",8),(\"PF\",8),(\"SC\",8),"
 	                        "(\"PN\",8),(\"PU\",8),(\"PP\",8),(\"PC\",8),"
-	                        "(\"P2\",8)");
+	                        "(\"P2\",8),(\"AB\",8)");
 	(void) data;
 	return AT_OK;
 }
