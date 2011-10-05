@@ -49,6 +49,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <search.h>
+#include <fnmatch.h>
 #include <dbus/dbus.h>
 
 #include <at_command.h>
@@ -269,6 +270,84 @@ static at_error_t handle_cpin (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CPINR ***/
+
+static at_error_t query_pinr (at_modem_t *m, const char *req, void *data)
+{
+	char *pattern;
+
+	req += strspn (req, " ");
+	switch (req[0])
+	{
+		case '"':
+			req++;
+			pattern = strndup (req, strcspn (req, "\""));
+			if (pattern == NULL)
+				return AT_CME_ENOMEM;
+			break;
+		case '\0':
+			pattern = NULL;
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	plugin_t *p = data;
+	at_error_t ret = AT_CME_UNKNOWN;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *props = modem_props_get (p, "SimManager");
+	if (props == NULL)
+		goto error;
+
+	DBusMessageIter prop, entry;
+	if (ofono_prop_find (props, "Retries", DBUS_TYPE_ARRAY, &prop)
+	 || dbus_message_iter_get_element_type (&prop) != DBUS_TYPE_DICT_ENTRY)
+		goto error;
+
+	dbus_message_iter_recurse (&prop, &entry);
+	while (dbus_message_iter_get_arg_type (&entry) != DBUS_TYPE_INVALID)
+	{
+		DBusMessageIter value;
+		const char *pw;
+		unsigned char retries;
+
+		dbus_message_iter_recurse (&entry, &value);
+
+		if (dbus_message_iter_get_arg_type (&value) != DBUS_TYPE_STRING)
+			goto error;
+		dbus_message_iter_get_basic (&value, &pw);
+
+		pw = ofono_to_code (pw);
+		if (pw == NULL)
+			goto skip;
+		if (pattern != NULL && fnmatch (pattern, pw, FNM_NOESCAPE))
+			goto skip;
+
+		dbus_message_iter_next (&value);
+		if (dbus_message_iter_get_arg_type (&value) != DBUS_TYPE_BYTE)
+			goto error;
+		dbus_message_iter_get_basic (&value, &retries);
+
+		at_intermediate (m, "\r\n+CPINR: %s,%hhu", pw, retries);
+	skip:
+		dbus_message_iter_next (&entry);
+	}
+	ret = AT_OK;
+error:
+	if (props != NULL)
+		dbus_message_unref (props);
+	at_cancel_enable (canc);
+	free (pattern);
+	return ret;
+}
+
+static at_error_t handle_cpinr (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, query_pinr, NULL, NULL);
+}
+
+
 /*** AT+CLCK ***/
 
 /* Enable/Disable PIN query */
@@ -472,6 +551,7 @@ void sim_register (at_commands_t *set, plugin_t *p)
 	at_register (set ,"+CNUM", handle_cnum, p);
 	at_register (set, "+CLCK", handle_clck, p);
 	at_register (set, "+CPIN", handle_cpin, p);
+	at_register (set, "+CPINR", handle_cpinr, p);
 	at_register (set, "+CPWD", handle_cpwd, p);
 	at_register (set, "+CSUS", handle_csus, p);
 }
