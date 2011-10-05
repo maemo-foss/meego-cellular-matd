@@ -481,21 +481,21 @@ void at_dbus_remove_filter (DBusBusType bus,
 
 void at_dbus_add_match (DBusBusType bus, const char *rule)
 {
+	int canc = at_cancel_disable ();
 	DBusConnection *conn = at_dbus_get (bus);
-	if (conn == NULL)
-		return;
-
-	dbus_bus_add_match (conn, rule, NULL);
+	if (conn != NULL)
+		dbus_bus_add_match (conn, rule, NULL);
+	at_cancel_enable (canc);
 }
 
 
 void at_dbus_remove_match (DBusBusType bus, const char *rule)
 {
+	int canc = at_cancel_disable ();
 	DBusConnection *conn = at_dbus_get (bus);
-	if (conn == NULL)
-		return;
-
-	dbus_bus_remove_match (conn, rule, NULL);
+	if (conn != NULL)
+		dbus_bus_remove_match (conn, rule, NULL);
+	at_cancel_enable (canc);
 }
 
 

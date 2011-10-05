@@ -640,13 +640,13 @@ static at_error_t set_creg (at_modem_t *modem, const char *req, void *data)
 	if (p->creg == creg)
 		return AT_OK;
 
-	int canc = at_cancel_disable ();
-
 	p->creg = creg;
 
-	if (p->creg_filter)
+	if (p->creg_filter != NULL)
+	{
 		ofono_signal_unwatch (p->creg_filter);
-	p->creg_filter = NULL;
+		p->creg_filter = NULL;
+	}
 
 	switch (creg)
 	{
@@ -667,7 +667,6 @@ static at_error_t set_creg (at_modem_t *modem, const char *req, void *data)
 						     modem);
 		break;
 	}
-	at_cancel_enable (canc);
 
 	return AT_OK;
 }

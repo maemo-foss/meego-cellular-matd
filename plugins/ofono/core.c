@@ -523,8 +523,6 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p,
 				   ofono_signal_t cb,
 				   void *data)
 {
-	at_cancel_assert (false);
-
 	if (!subif)
 		return NULL;
 
@@ -532,11 +530,13 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p,
 	if (!s)
 		return NULL;
 
+	int canc = at_cancel_disable ();
 	size_t len;
 	FILE *rule = open_memstream (&s->rule, &len);
 
 	if (!rule)
 	{
+		at_cancel_enable (canc);
 		free (s);
 		return NULL;
 	}
@@ -571,7 +571,7 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p,
 	at_dbus_add_match (DBUS_BUS_SYSTEM, s->rule);
 	at_dbus_add_filter (DBUS_BUS_SYSTEM, ofono_signal_matcher,
 			    s, ofono_free_sigdata);
-
+	at_cancel_enable (canc);
 	return s;
 }
 
