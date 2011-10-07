@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = \
 	foreign \
 	no-exeext \
-	dist-bzip2 \
+	dist-xz \
 	no-dist-gzip \
 	-Wall
 
