@@ -53,6 +53,7 @@
 #include <at_thread.h>
 #include <at_log.h>
 #include <dbus/dbus.h>
+#include <assert.h>
 
 #include "ofono.h"
 #include "core.h"
