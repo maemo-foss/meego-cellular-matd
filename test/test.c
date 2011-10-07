@@ -45,7 +45,6 @@
 #endif
 #undef _FORTIFY_SOURCE
 
-#undef NDEBUG
 #include <assert.h>
 
 #include <stdio.h>
@@ -83,7 +82,15 @@ static pid_t mat_start (FILE **pout, FILE **pin)
 	tcsetattr (fd, TCSANOW, &tp);
 
 	pid_t pid = -1;
-	char name[32], *argv[] = { (char *)"mat", name, NULL, };
+	char name[32], *argv[] = {
+		(char *)"mat",
+#ifndef NDEBUG
+		(char *)"-d",
+#endif
+		(char *)"--",
+		name,
+		NULL,
+	};
 
 	const char *path = getenv ("srcdir") ? "../mat" : BINDIR"/mat";
 	if (ptsname_r (fd, name, sizeof (name)) || unlockpt (fd))
