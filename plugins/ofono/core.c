@@ -155,65 +155,6 @@ int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
 	return 0;
 }
 
-int ofono_prop_find (DBusMessage *msg, const char *name, int type,
-                     DBusMessageIter *value)
-{
-	DBusMessageIter dict;
-
-	if (!dbus_message_iter_init (msg, &dict))
-		return -1;
-	return ofono_dict_find (&dict, name, type, value);
-}
-
-const char *ofono_prop_find_string (DBusMessage *msg, const char *name)
-{
-	DBusMessageIter dict;
-
-	if (!dbus_message_iter_init (msg, &dict))
-		return NULL;
-	return ofono_dict_find_string (&dict, name);
-}
-
-int ofono_prop_find_bool (DBusMessage *msg, const char *name)
-{
-	DBusMessageIter dict;
-
-	if (!dbus_message_iter_init (msg, &dict))
-		return -1;
-	return ofono_dict_find_bool (&dict, name);
-}
-
-int ofono_prop_find_byte (DBusMessage *msg, const char *name)
-{
-	DBusMessageIter dict;
-
-	if (!dbus_message_iter_init (msg, &dict))
-		return -1;
-	return ofono_dict_find_byte (&dict, name);
-}
-
-int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
-{
-	DBusMessageIter dict;
-	dbus_uint16_t val;
-
-	if (!dbus_message_iter_init (msg, &dict)
-	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT16, &val))
-		return -1;
-	return val;
-}
-
-int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name)
-{
-	DBusMessageIter dict;
-	dbus_uint32_t val;
-
-	if (!dbus_message_iter_init (msg, &dict)
-	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT32, &val))
-		return -1;
-	return val;
-}
-
 DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
 				const char *subif, const char *method)
 {

@@ -151,13 +151,73 @@ int ofono_dict_find_bool (DBusMessageIter *dict, const char *name)
 	return b;
 }
 
-int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
-const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
-int ofono_prop_find_bool (DBusMessage *msg, const char *name);
-int ofono_prop_find_byte (DBusMessage *msg, const char *name);
-int ofono_prop_find_u16 (DBusMessage *msg, const char *name);
-int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name);
+/* Finds one oFono property in a D-Bus message */
+static inline
+int ofono_prop_find (DBusMessage *msg, const char *name, int type,
+                     DBusMessageIter *value)
+{
+	DBusMessageIter dict;
 
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find (&dict, name, type, value);
+}
+
+static inline
+const char *ofono_prop_find_string (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return NULL;
+	return ofono_dict_find_string (&dict, name);
+}
+
+static inline
+int ofono_prop_find_bool (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find_bool (&dict, name);
+}
+
+static inline
+int ofono_prop_find_byte (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find_byte (&dict, name);
+}
+
+static inline
+int ofono_prop_find_u16 (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+	dbus_uint16_t val;
+
+	if (!dbus_message_iter_init (msg, &dict)
+	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT16, &val))
+		return -1;
+	return val;
+}
+
+static inline
+int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+	dbus_uint32_t val;
+
+	if (!dbus_message_iter_init (msg, &dict)
+	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT32, &val))
+		return -1;
+	return val;
+}
+
+/* D-Bus oFono signal handling */
 typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
 typedef struct ofono_watch ofono_watch_t;
 ofono_watch_t *ofono_signal_watch (plugin_t *, const char *, const char *,
