@@ -100,7 +100,7 @@ static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 		const char *msisdn;
 
 		dbus_message_iter_get_basic (&it, &msisdn);
-		at_intermediate (modem, "\r\n+CNUM: ,%s,0", msisdn);
+		at_intermediate (modem, "\r\n+CNUM: ,\"%s\",0", msisdn);
 		dbus_message_iter_next (&it);
 	}
 	dbus_message_unref (msg);
