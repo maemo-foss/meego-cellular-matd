@@ -105,6 +105,14 @@ at_error_t modem_prop_set_u32_pw (const plugin_t *p, const char *iface,
 	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT32, &u, password);
 }
 
+static inline
+at_error_t modem_prop_set_double_pw (const plugin_t *p, const char *iface,
+                                     const char *name, double value,
+                                     const char *password)
+{
+	return modem_prop_set (p, iface, name, DBUS_TYPE_DOUBLE, &value, password);
+}
+
 /* D-Bus oFono voicecall helpers */
 at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
                               int, ...);
@@ -214,6 +222,18 @@ int64_t ofono_prop_find_u32 (DBusMessage *msg, const char *name)
 	if (!dbus_message_iter_init (msg, &dict)
 	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_UINT32, &val))
 		return -1;
+	return val;
+}
+
+static inline
+double ofono_prop_find_double (DBusMessage *msg, const char *name)
+{
+	DBusMessageIter dict;
+	double val;
+
+	if (!dbus_message_iter_init (msg, &dict)
+	 || ofono_dict_find_basic (&dict, name, DBUS_TYPE_DOUBLE, &val))
+		val = -1.;
 	return val;
 }
 
