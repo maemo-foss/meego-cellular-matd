@@ -49,6 +49,7 @@
 
 #include <at_command.h>
 #include <at_log.h>
+#include <at_thread.h>
 #include "ofono.h"
 
 
@@ -111,7 +112,8 @@ static at_error_t set_amm (at_modem_t *modem, const char *req, void *data)
 static at_error_t get_amm (at_modem_t *m, void *data)
 {
 	plugin_t *p = data;
-	int64_t amm = modem_prop_get_u32 (p, "CallMeter", "AccumulatedCallMeterMaximum");
+	int64_t amm = modem_prop_get_u32 (p, "CallMeter",
+	                                  "AccumulatedCallMeterMaximum");
 
 	if (amm == -1)
 		return AT_CME_ENOTSUP;
@@ -124,10 +126,70 @@ static at_error_t handle_amm (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CPUC ***/
+
+static at_error_t set_puc (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	double ppu;
+	char currency[4], pin[9];
+
+	/* FIXME: %lf assumes we do not set LC_NUMERIC. uselocale() should be used
+	 * to force POSIX numbers. */
+	switch (sscanf (req, " \"%3[^\"]\" , \"%lf\" , \"%8[0-9]\"", currency,
+	                &ppu, pin))
+	{
+		case 2:
+			*pin = '\0';
+		case 3:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	at_error_t ret;
+
+	ret = modem_prop_set_string_pw (p, "CallMeter", "Currency", currency,
+	                                *pin ? pin : NULL);
+	if (ret == AT_OK)
+		ret = modem_prop_set_double_pw (p, "CallMetter", "PricePerUnit", ppu,
+		                                *pin ? pin : NULL);
+	(void) modem;
+	return ret;
+}
+
+static at_error_t get_puc (at_modem_t *m, void *data)
+{
+	plugin_t *p = data;
+	at_error_t ret = AT_CME_UNKNOWN;
+
+	int canc = at_cancel_disable ();
+	DBusMessage *props = modem_props_get (p, "CallMeter");
+	if (props != NULL)
+	{
+		const char *currency = ofono_prop_find_string (props, "Currency");
+		double ppu = ofono_prop_find_double (props, "PricePerUnit");
+
+		if (currency != NULL && ppu >= 0.)
+			ret = at_intermediate (m, "\r\n+CPUC: \"%s\",\"%lf\"",
+			                       currency, ppu);
+		dbus_message_unref (props);
+	}
+	at_cancel_enable (canc);
+	return ret;
+}
+
+static at_error_t handle_puc (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_puc, get_puc, NULL);
+}
+
+
 /*** Registration ***/
 
 void call_meter_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CACM", handle_acm, p);
 	at_register (set, "+CAMM", handle_amm, p);
+	at_register (set, "+CPUC", handle_puc, p);
 }
