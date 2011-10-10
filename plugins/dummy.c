@@ -54,6 +54,7 @@
 
 typedef struct
 {
+	unsigned s6:4;
 	unsigned dr:1;
 	unsigned ds_dir:2;
 	unsigned ds_nego:1;
@@ -107,6 +108,26 @@ static at_error_t handle_fclass (at_modem_t *modem, const char *req, void *data)
 {
 	return at_setting (modem, req, data,
 	                   set_fclass, get_fclass, get_fclass);
+}
+
+
+/*** ATS6 ***/
+static at_error_t set_s6 (at_modem_t *m, unsigned val, void *data)
+{
+	dummy_t *d = data;
+
+	if (val < 2 || val > 10)
+		return AT_ERROR;
+	d->s6 = val;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t get_s6 (at_modem_t *m, void *data)
+{
+	dummy_t *d = data;
+
+	return at_intermediate (m, "\r\n%03u\r\n", d->s6);
 }
 
 
@@ -206,6 +227,8 @@ static at_error_t handle_ds (at_modem_t *modem, const char *req, void *data)
 /*** Plugin registration ***/
 void *at_plugin_register (at_commands_t *set)
 {
+	dummy_t *d = malloc  (sizeof (*d));
+
 	/* speaker loudness */
 	at_register_alpha (set, 'L', alpha_nothing, NULL);
 	/* speaker mode */
@@ -215,6 +238,12 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_alpha (set, 'P', alpha_nothing, NULL);
 	/* tone dialing */
 	at_register_alpha (set, 'T', alpha_nothing, NULL);
+	/* pause before blind calling */
+	if (d != NULL)
+	{
+		d->s6 = 2;
+		at_register_s (set, 6, set_s6, get_s6, d);
+	}
 
 	/* return to data mode */
 	at_register_alpha (set, 'O', alpha_no_carrier, NULL);
@@ -223,7 +252,6 @@ void *at_plugin_register (at_commands_t *set)
 
 	at_register (set, "+FCLASS", handle_fclass, NULL);
 
-	dummy_t *d = malloc  (sizeof (*d));
 	if (d != NULL)
 	{
 		d->dr = 0;
