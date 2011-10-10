@@ -144,8 +144,8 @@ int ofono_dict_find (DBusMessageIter *dict, const char *name, int type,
 	return 0;
 }
 
-static int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
-                                  int type, void *buf)
+int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
+                           int type, void *buf)
 {
 	DBusMessageIter value;
 
@@ -154,34 +154,6 @@ static int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
 	dbus_message_iter_get_basic (&value, buf);
 	return 0;
 }
-
-const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name)
-{
-	const char *value;
-
-	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_STRING, &value))
-		return NULL;
-	return value;
-}
-
-int ofono_dict_find_byte (DBusMessageIter *dict, const char *name)
-{
-	unsigned char b;
-
-	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BYTE, &b))
-		return -1;
-	return b;
-}
-
-int ofono_dict_find_bool (DBusMessageIter *dict, const char *name)
-{
-	dbus_bool_t b;
-
-	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BOOLEAN, &b))
-		return -1;
-	return b;
-}
-
 
 int ofono_prop_find (DBusMessage *msg, const char *name, int type,
                      DBusMessageIter *value)

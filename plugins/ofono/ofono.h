@@ -45,20 +45,25 @@
 
 typedef struct plugin plugin_t;
 
-/* D-Bus */
+/* D-Bus oFono modem helpers */
 DBusMessage *modem_req_new (const plugin_t *, const char *, const char *);
 at_error_t modem_request (const plugin_t *, const char *, const char *,
                           int, ...);
-DBusMessage *modem_props_get (const plugin_t *, const char *iface);
-at_error_t modem_prop_set (const plugin_t *, const char *iface,
-                           const char *name, int type, void *value,
-                           const char *password);
 
+/* Get all properties of one modem atom (use with ofono_prop_find()) */
+DBusMessage *modem_props_get (const plugin_t *, const char *iface);
+
+/* Gets one modem property */
 char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);
 int modem_prop_get_byte (const plugin_t *, const char *, const char *);
 int modem_prop_get_u16 (const plugin_t *, const char *, const char *);
 int64_t modem_prop_get_u32 (const plugin_t *, const char *, const char *);
+
+/* Set one modem property */
+at_error_t modem_prop_set (const plugin_t *, const char *iface,
+                           const char *name, int type, void *value,
+                           const char *password);
 
 static inline
 at_error_t modem_prop_set_string (const plugin_t *p, const char *iface,
@@ -100,9 +105,11 @@ at_error_t modem_prop_set_u32_pw (const plugin_t *p, const char *iface,
 	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT32, &u, password);
 }
 
+/* D-Bus oFono voicecall helpers */
 at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
                               int, ...);
 
+/* D-Bus oFono generic helpers */
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
 DBusMessage *ofono_req_new (const plugin_t *, const char *,
 				const char *, const char *);
@@ -110,10 +117,40 @@ at_error_t ofono_request (const plugin_t *, const char *,
 			      const char *, const char *,
 			      int, ...);
 
+/* Finds one entry in a string-indexed dictionary */
 int ofono_dict_find (DBusMessageIter *, const char *, int, DBusMessageIter *);
-const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name);
-int ofono_dict_find_bool (DBusMessageIter *dict, const char *name);
-int ofono_dict_find_byte (DBusMessageIter *dict, const char *name);
+int ofono_dict_find_basic (DBusMessageIter *, const char *, int, void *);
+
+static inline
+const char *ofono_dict_find_string (DBusMessageIter *dict, const char *name)
+{
+	const char *value;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_STRING, &value))
+		value = NULL;
+	return value;
+}
+
+static inline
+int ofono_dict_find_byte (DBusMessageIter *dict, const char *name)
+{
+	unsigned char b;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BYTE, &b))
+		return -1;
+	return b;
+}
+
+static inline
+int ofono_dict_find_bool (DBusMessageIter *dict, const char *name)
+{
+	dbus_bool_t b;
+
+	if (ofono_dict_find_basic (dict, name, DBUS_TYPE_BOOLEAN, &b))
+		return -1;
+	return b;
+}
+
 int ofono_prop_find (DBusMessage *, const char *, int, DBusMessageIter *);
 const char *ofono_prop_find_string (DBusMessage *msg, const char *name);
 int ofono_prop_find_bool (DBusMessage *msg, const char *name);
