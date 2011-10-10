@@ -49,21 +49,56 @@ typedef struct plugin plugin_t;
 DBusMessage *modem_req_new (const plugin_t *, const char *, const char *);
 at_error_t modem_request (const plugin_t *, const char *, const char *,
                           int, ...);
+DBusMessage *modem_props_get (const plugin_t *, const char *iface);
+at_error_t modem_prop_set (const plugin_t *, const char *iface,
+                           const char *name, int type, void *value,
+                           const char *password);
 
-DBusMessage *modem_props_get (const plugin_t *, const char *);
 char *modem_prop_get_string (const plugin_t *, const char *, const char *);
 int modem_prop_get_bool (const plugin_t *, const char *, const char *);
 int modem_prop_get_byte (const plugin_t *, const char *, const char *);
 int modem_prop_get_u16 (const plugin_t *, const char *, const char *);
 int64_t modem_prop_get_u32 (const plugin_t *, const char *, const char *);
-at_error_t modem_prop_set_string (const plugin_t *, const char *, const char *,
-                                  const char *);
-at_error_t modem_prop_set_bool (const plugin_t *, const char *, const char *,
-                                bool);
-at_error_t modem_prop_set_u16 (const plugin_t *, const char *, const char *,
-                               unsigned);
-at_error_t modem_prop_set_u32_pw (const plugin_t *, const char *, const char *,
-                                  unsigned value, const char *);
+
+static inline
+at_error_t modem_prop_set_string (const plugin_t *p, const char *iface,
+                                  const char *name, const char *value)
+{
+	return modem_prop_set (p, iface, name, DBUS_TYPE_STRING, &value, NULL);
+}
+
+static inline
+at_error_t modem_prop_set_string_pw (const plugin_t *p, const char *iface,
+                                     const char *name, const char *value,
+                                     const char *password)
+{
+	return modem_prop_set (p, iface, name, DBUS_TYPE_STRING, &value, password);
+}
+
+static inline
+at_error_t modem_prop_set_bool (const plugin_t *p, const char *iface,
+                                const char *name, bool value)
+{
+	dbus_bool_t b = value;
+	return modem_prop_set (p, iface, name, DBUS_TYPE_BOOLEAN, &b, NULL);
+}
+
+static inline
+at_error_t modem_prop_set_u16 (const plugin_t *p, const char *iface,
+                               const char *name, unsigned value)
+{
+	dbus_uint16_t u = value;
+	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT16, &u, NULL);
+}
+
+static inline
+at_error_t modem_prop_set_u32_pw (const plugin_t *p, const char *iface,
+                                  const char *name, unsigned value,
+                                  const char *password)
+{
+	dbus_uint32_t u = value;
+	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT32, &u, password);
+}
 
 at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
                               int, ...);

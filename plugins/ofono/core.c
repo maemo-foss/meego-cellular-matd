@@ -410,9 +410,9 @@ int64_t modem_prop_get_u32 (const plugin_t *p, const char *iface,
 	return ret;
 }
 
-static at_error_t modem_prop_set (const plugin_t *p, const char *iface,
-                                  const char *name, int type, void *value,
-                                  const char *pass)
+at_error_t modem_prop_set (const plugin_t *p, const char *iface,
+                           const char *name, int type, void *value,
+                           const char *pass)
 {
 	int canc = at_cancel_disable ();
 	at_error_t ret = AT_CME_ENOMEM;
@@ -446,35 +446,6 @@ out:
 	at_cancel_enable (canc);
 	return ret;
 }
-
-at_error_t modem_prop_set_string (const plugin_t *p, const char *iface,
-                                  const char *name, const char *value)
-{
-	return modem_prop_set (p, iface, name, DBUS_TYPE_STRING, &value, NULL);
-}
-
-at_error_t modem_prop_set_bool (const plugin_t *p, const char *iface,
-                                const char *name, bool value)
-{
-	dbus_bool_t b = value;
-	return modem_prop_set (p, iface, name, DBUS_TYPE_BOOLEAN, &b, NULL);
-}
-
-at_error_t modem_prop_set_u16 (const plugin_t *p, const char *iface,
-                               const char *name, unsigned value)
-{
-	dbus_uint16_t u = value;
-	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT16, &u, NULL);
-}
-
-at_error_t modem_prop_set_u32_pw (const plugin_t *p, const char *iface,
-                                  const char *name, unsigned value,
-                                  const char *password)
-{
-	dbus_uint32_t u = value;
-	return modem_prop_set (p, iface, name, DBUS_TYPE_UINT32, &u, password);
-}
-
 
 /*** Voice call helper ***/
 at_error_t voicecall_request (const plugin_t *p, unsigned callid,
