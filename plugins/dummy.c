@@ -81,6 +81,40 @@ static at_error_t alpha_no_carrier (at_modem_t *modem, unsigned value,
 }
 
 
+/* Helpers for always zero parameters */
+static at_error_t set_zero (at_modem_t *modem, const char *req, void *data)
+{
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode != 0)
+		return AT_CME_ENOTSUP;
+	(void) modem;
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t get_zero (at_modem_t *modem, void *data)
+{
+	const char *cmd = data;
+	at_intermediate (modem, "\r\n%s: 0", cmd);
+	return AT_OK;
+}
+
+static at_error_t list_zero (at_modem_t *modem, void *data)
+{
+	const char *cmd = data;
+	at_intermediate (modem, "\r\n%s: (0)", cmd);
+	return AT_OK;
+}
+
+static at_error_t handle_zero (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_zero, get_zero, list_zero);
+}
+
+
 /*** AT+FLCASS ***/
 static at_error_t set_fclass (at_modem_t *m, const char *req, void *data)
 {
@@ -128,61 +162,6 @@ static at_error_t get_s6 (at_modem_t *m, void *data)
 	dummy_t *d = data;
 
 	return at_intermediate (m, "\r\n%03u\r\n", d->s6);
-}
-
-
-/*** AT+CMOD (dummy) ***/
-static at_error_t set_zero (at_modem_t *modem, const char *req, void *data)
-{
-	unsigned mode;
-
-	if (sscanf (req, " %u", &mode) != 1)
-		return AT_CME_EINVAL;
-	if (mode != 0)
-		return AT_CME_ENOTSUP;
-	(void) modem;
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t get_cmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CMOD: 0");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t list_cmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CMOD: (0)");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t handle_cmod (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_zero, get_cmod, list_cmod);
-}
-
-
-/*** AT+CVMOD (dummy) ***/
-static at_error_t get_cvmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CVMOD: 0");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t list_cvmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CVMOD: (0)");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_zero, get_cvmod, list_cvmod);
 }
 
 
@@ -305,10 +284,10 @@ void *at_plugin_register (at_commands_t *set)
 	/* CONNECT result codes */
 	at_register_alpha (set, 'X', alpha_nothing, NULL);
 
-	at_register (set, "+FCLASS", handle_fclass, NULL);
+	at_register (set, "+CMOD", handle_zero, (void *)"+CMOD");
+	at_register (set, "+CVMOD", handle_zero, (void *)"+CVMOD");
 
-	at_register (set, "+CMOD", handle_cmod, NULL);
-	at_register (set, "+CVMOD", handle_cvmod, NULL);
+	at_register (set, "+FCLASS", handle_fclass, NULL);
 
 	if (d != NULL)
 	{
