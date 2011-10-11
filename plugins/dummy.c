@@ -55,6 +55,7 @@
 typedef struct
 {
 	unsigned s6:4;
+	unsigned cpnstat:1;
 	unsigned dr:1;
 	unsigned ds_dir:2;
 	unsigned ds_nego:1;
@@ -112,6 +113,43 @@ static at_error_t list_zero (at_modem_t *modem, void *data)
 static at_error_t handle_zero (at_modem_t *modem, const char *req, void *data)
 {
 	return at_setting (modem, req, data, set_zero, get_zero, list_zero);
+}
+
+
+/*** AT+CPNSTAT (UMA status) ***/
+static at_error_t set_cpnstat (at_modem_t *modem, const char *req, void *data)
+{
+	dummy_t *d = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+	d->cpnstat = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cpnstat (at_modem_t *modem, void *data)
+{
+	dummy_t *d = data;
+
+	/* always GERAN/UTRAN/E-UTRAN, never GAN */
+	at_intermediate (modem, "\r\n+CPNSTAT: %u,1", (unsigned)d->cpnstat);
+	return AT_OK;
+}
+
+static at_error_t list_cpnstat (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CPNSTAT: (0,1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_cpnstat (at_modem_t *m, const char *req, void *data)
+{
+	return at_setting (m, req, data, set_cpnstat, get_cpnstat, list_cpnstat);
 }
 
 
@@ -287,6 +325,11 @@ void *at_plugin_register (at_commands_t *set)
 	at_register (set, "+CMOD", handle_zero, (void *)"+CMOD");
 	at_register (set, "+CVMOD", handle_zero, (void *)"+CVMOD");
 	at_register (set, "+CPNET", handle_zero, (void *)"+CPNET");
+	if (d != NULL)
+	{
+		d->cpnstat = 0;
+		at_register (set, "+CPNSTAT", handle_cpnstat, d);
+	}
 
 	at_register (set, "+FCLASS", handle_fclass, NULL);
 
