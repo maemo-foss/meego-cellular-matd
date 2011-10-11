@@ -540,62 +540,6 @@ static at_error_t handle_hangup (at_modem_t *modem, unsigned val, void *data)
 }
 
 
-/*** AT+CMOD (dummy) ***/
-
-static at_error_t set_zero (at_modem_t *modem, const char *req, void *data)
-{
-	unsigned mode;
-
-	if (sscanf (req, " %u", &mode) != 1)
-		return AT_CME_EINVAL;
-	if (mode != 0)
-		return AT_CME_ENOTSUP;
-	(void) modem;
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t get_cmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CMOD: 0");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t list_cmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CMOD: (0)");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t handle_cmod (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_zero, get_cmod, list_cmod);
-}
-
-
-/*** AT+CVMOD (dummy) ***/
-
-static at_error_t get_cvmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CVMOD: 0");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t list_cvmod (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CVMOD: (0)");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t handle_cvmod (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_zero, get_cvmod, list_cvmod);
-}
-
 /*** AT+CHLD ***/
 
 static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
@@ -946,8 +890,6 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CLCC", handle_clcc, p);
 	at_register (set, "+CHUP", handle_chup, p);
 	at_register_alpha (set, 'H', handle_hangup, p);
-	at_register (set, "+CMOD", handle_cmod, p);
-	at_register (set, "+CVMOD", handle_cvmod, p);
 	at_register (set, "+CHLD", handle_chld, p);
 	p->cring = false;
 	at_register (set, "+CRC", handle_ring, p);
