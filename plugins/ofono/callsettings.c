@@ -49,6 +49,7 @@
 #include <string.h>
 
 #include <at_command.h>
+#include <at_log.h>
 #include "ofono.h"
 
 /*** AT+CLIR ***/
@@ -155,10 +156,102 @@ static at_error_t do_colr (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CCWA ***/
+
+static at_error_t set_ccwa (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned n, mode, class;
+	bool mode_omitted = false;
+
+	switch (sscanf (req, " %u , %u , %u", &n, &mode, &class))
+	{
+		case 0:
+			n = 0;
+		case 1:
+			mode_omitted = true;
+		case 2:
+			class = 7;
+		case 3:
+			break;
+		default:
+			return AT_CME_ENOTSUP;
+	}
+
+	if (n > 1)
+		return AT_CME_ENOTSUP;
+	if (n == 1) /* TODO FIXME */
+		return AT_CME_ENOTSUP;
+
+	if (mode_omitted) /* no mode change, only event subscription */
+		return AT_OK;
+
+	at_error_t ret = AT_OK;
+
+	if (class & 1) /* Voice class */
+	{
+		switch (mode)
+		{
+			case 0:
+			case 1:
+				ret = modem_prop_set_string (p, "CallSettings",
+			                             "VoiceCallWaiting",
+			                             mode ? "enabled" : "disabled");
+				break;
+
+			case 2:
+			{
+				const char *state = modem_prop_get_string (p, "CallSettings",
+				                                           "VoiceCallWaiting");
+				if (state == NULL)
+					ret = AT_CME_UNKNOWN;
+				else
+				if (!strcmp (state, "disabled"))
+					ret = at_intermediate (modem, "\r\n+CCWA: 0,1");
+				else
+				if (!strcmp (state, "enabled"))
+					ret = at_intermediate (modem, "\r\n+CCWA: 1,1");
+				else
+				{
+					error ("Unknown call waiting status \"%s\"", state);
+					ret = AT_CME_UNKNOWN;
+				}
+				break;
+			}
+
+			default:
+				ret = AT_CME_ENOTSUP;
+		}
+	}
+	return ret;
+}
+
+static at_error_t get_ccwa (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CCWA: 0");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t list_ccwa (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CCWA: (0)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_ccwa (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_ccwa, get_ccwa, list_ccwa);
+}
+
+
+/*** Registration ***/
 
 void call_settings_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CLIR", handle_clir, p);
 	at_register (set, "+COLR", do_colr, p);
+	at_register (set, "+CCWA", handle_ccwa, p);
 	/* NOTE: +CLIP, +COLP and +CNAP are in voicecall.c */
 }
