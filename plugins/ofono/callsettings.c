@@ -51,6 +51,55 @@
 #include <at_command.h>
 #include <at_log.h>
 #include "ofono.h"
+#include "core.h"
+
+/** AT+CLIP */
+static at_error_t set_clip (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->clip = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_clip (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CallingLinePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CLIP service state \"%s\"", setting);
+
+	at_intermediate (modem, "\r\n+CLIP: %u,%u", p->clip, mode);
+	return AT_OK;
+}
+
+static at_error_t list_clip (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CLIP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_clip (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_clip, get_clip, list_clip);
+}
+
 
 /*** AT+CLIR ***/
 
@@ -128,6 +177,103 @@ static at_error_t handle_clir (at_modem_t *modem, const char *req,
                                  void *data)
 {
 	return at_setting (modem, req, data, set_clir, get_clir, list_clir);
+}
+
+
+/** AT+CDIP */
+
+static at_error_t set_cdip (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->cdip = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cdip (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CalledLinePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CDIP service state \"%s\"", setting);
+
+	at_intermediate (modem, "\r\n+CDIP: %u,%u", p->cdip, mode);
+	return AT_OK;
+}
+
+static at_error_t list_cdip (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CDIP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_cdip (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cdip, get_cdip, list_cdip);
+}
+
+
+/** AT+CNAP */
+static at_error_t set_cnap (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	p->cnap = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_cnap (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "CallingNamePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown CNAP service state \"%s\"", setting);
+
+	at_intermediate (modem, "\r\n+CNAP: %u,%u", p->cnap, mode);
+	return AT_OK;
+}
+
+static at_error_t list_cnap (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+CNAP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_cnap (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cnap, get_cnap, list_cnap);
 }
 
 
@@ -250,8 +396,14 @@ static at_error_t handle_ccwa (at_modem_t *modem, const char *req, void *data)
 
 void call_settings_register (at_commands_t *set, plugin_t *p)
 {
+	p->clip = false;
+	at_register (set, "+CLIP", handle_clip, p);
 	at_register (set, "+CLIR", handle_clir, p);
+	p->cdip = false;
+	at_register (set, "+CDIP", handle_cdip, p);
+	p->cnap = false;
+	at_register (set, "+CNAP", handle_cnap, p);
 	at_register (set, "+COLR", do_colr, p);
+
 	at_register (set, "+CCWA", handle_ccwa, p);
-	/* NOTE: +CLIP, +COLP and +CNAP are in voicecall.c */
 }
