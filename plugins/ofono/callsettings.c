@@ -180,6 +180,56 @@ static at_error_t handle_clir (at_modem_t *modem, const char *req,
 }
 
 
+/*** AT+COLP ***/
+
+static at_error_t set_colp (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_CME_EINVAL;
+	if (mode > 1)
+		return AT_CME_ENOTSUP;
+
+	/* NOTE: +COLP unsolicited messages are not implemented.
+	 * They do not appear to be required for voice calls. */
+	p->colp = mode;
+	(void) modem;
+	return AT_OK;
+}
+
+static at_error_t get_colp (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+	const char *setting = modem_prop_get_string (p, "CallSettings",
+	                                             "ConnectedLinePresentation");
+	unsigned mode = 2;
+	if (setting == NULL)
+		;
+	else if (!strcmp (setting, "disabled"))
+		mode = 0;
+	else if (!strcmp (setting, "enabled"))
+		mode = 1;
+	else if (strcmp (setting, "unknown"))
+		error ("Unknown COLP service state \"%s\"", setting);
+
+	return at_intermediate (modem, "\r\n+COLP: %u,%u", p->colp, mode);
+}
+
+static at_error_t list_colp (at_modem_t *modem, void *data)
+{
+	at_intermediate (modem, "\r\n+COLP: (0-1)");
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t handle_colp (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_colp, get_colp, list_colp);
+}
+
+
 /** AT+CDIP */
 
 static at_error_t set_cdip (at_modem_t *modem, const char *req, void *data)
@@ -399,6 +449,8 @@ void call_settings_register (at_commands_t *set, plugin_t *p)
 	p->clip = false;
 	at_register (set, "+CLIP", handle_clip, p);
 	at_register (set, "+CLIR", handle_clir, p);
+	p->colp = false;
+	at_register (set, "+COLP", handle_colp, p);
 	p->cdip = false;
 	at_register (set, "+CDIP", handle_cdip, p);
 	p->cnap = false;
