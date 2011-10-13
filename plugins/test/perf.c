@@ -152,9 +152,9 @@ static at_error_t forward (at_modem_t *modem, const char *req, void *data)
 
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "*MCHARGEN", forward, chargen);
-	at_register (set, "*MDISCARD", forward, discard);
-	at_register (set, "*MECHO", forward, echo);
+	at_register (set, "@CHARGEN", forward, chargen);
+	at_register (set, "@DISCARD", forward, discard);
+	at_register (set, "@ECHO", forward, echo);
 
 	return NULL;
 }
