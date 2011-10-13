@@ -497,29 +497,29 @@ CASE (cmee)
 	CHECK_CME_ERROR ();
 
 	/* Test various error types (coverage for at_print_reply()) */
-	REQUEST ("AT*NERROR=0");
+	REQUEST ("AT@ERROR=0");
 	RESPONSE ();
 	CHECK_OK ();
-	REQUEST ("AT*NERROR=3");
+	REQUEST ("AT@ERROR=3");
 	RESPONSE ();
 	if (strcmp ("NO CARRIER\r\n", line))
 		return -1;
-	REQUEST ("AT*NERROR=50");
+	REQUEST ("AT@ERROR=50");
 	RESPONSE ();
 	CHECK_ERROR ();
-	REQUEST ("AT*NERROR=256");
+	REQUEST ("AT@ERROR=256");
 	RESPONSE ();
 	CHECK_CME_ERROR ();
-	REQUEST ("AT*NERROR=355");
+	REQUEST ("AT@ERROR=355");
 	RESPONSE ();
 	CHECK_CME_ERROR ();
-	REQUEST ("AT*NERROR=511");
+	REQUEST ("AT@ERROR=511");
 	RESPONSE ();
 	CHECK_CME_ERROR ();
-	REQUEST ("AT*NERROR=512");
+	REQUEST ("AT@ERROR=512");
 	RESPONSE ();
 	CHECK_CMS_ERROR ();
-	REQUEST ("AT*NERROR=1024");
+	REQUEST ("AT@ERROR=1024");
 	RESPONSE ();
 	CHECK_ERROR ();
 
@@ -533,11 +533,11 @@ CASE (cmee)
 		return -1;
 
 	/* Test various error types */
-	REQUEST ("AT*NERROR=256");
+	REQUEST ("AT@ERROR=256");
 	RESPONSE ();
 	if (strcmp ("+CME ERROR: 0\r\n", line))
 		return -1;
-	REQUEST ("AT*NERROR=512");
+	REQUEST ("AT@ERROR=512");
 	RESPONSE ();
 	if (strcmp ("+CMS ERROR: 0\r\n", line))
 		return -1;

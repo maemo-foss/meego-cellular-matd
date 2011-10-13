@@ -77,7 +77,7 @@ static at_error_t handle_error (at_modem_t *m, const char *req, void *data)
 {
 	unsigned err;
 
-	if (sscanf (req, "*%*6s = %u", &err) != 1)
+	if (sscanf (req, "%*[^=?] = %u", &err) != 1)
 		err = AT_ERROR;
 
 	(void) m; (void) data;
@@ -100,8 +100,8 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_s (set, 23, fail_set, fail_get, NULL);
 	if (at_register_s (set, 23, fail_set, fail_get, NULL) == 0)
 		abort ();
-	at_register (set, "*NERROR", handle_error, NULL);
-	if (at_register (set, "*NERROR", fail_generic, NULL) == 0)
+	at_register (set, "@ERROR", handle_error, NULL);
+	if (at_register (set, "@ERROR", fail_generic, NULL) == 0)
 		abort ();
 
 
