@@ -45,6 +45,9 @@
 # define MATD_AT_THREAD_H 1
 
 # include <pthread.h>
+# ifndef __cplusplus
+#  include <stdbool.h>
+# endif
 
 /**
  * @defgroup thread Threading
@@ -82,21 +85,14 @@ static inline void at_cancel_enable (int state)
 	pthread_setcancelstate (state, NULL);
 }
 
-# ifndef NDEBUG
-#  ifndef __cplusplus
-#   include <stdbool.h>
-#  endif
-#  include <assert.h>
-static inline void at_cancel_assert (bool enabled)
-{
-	int state = at_cancel_disable ();
-	at_cancel_enable (state);
+/**
+ * Asserts that cancellation is in a certain state.
+ */
+void at_cancel_assert (bool enabled);
 
-	assert ((state == PTHREAD_CANCEL_ENABLE) == enabled);
-}
-# else
-#  define at_cancel_assert(b) (void)0
-# endif
+#ifndef NDEBUG
+# define at_cancel_assert(enabled) (void)0
+#endif
 
 /** @} */
 /** @} */

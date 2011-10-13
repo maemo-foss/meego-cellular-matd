@@ -46,6 +46,7 @@
 
 #include <errno.h>
 #include <at_thread.h>
+#include <assert.h>
 
 int at_thread_create (pthread_t *ph, void *(*func) (void *), void *opaque)
 {
@@ -68,4 +69,15 @@ int at_thread_create (pthread_t *ph, void *(*func) (void *), void *opaque)
 		val = -1;
 	}
 	return val;
+}
+
+#undef at_cancel_assert
+void at_cancel_assert (bool enabled)
+{
+	int state = at_cancel_disable ();
+	if (enabled)
+		assert (state == PTHREAD_CANCEL_ENABLE);
+	else
+		assert (state == PTHREAD_CANCEL_DISABLE);
+	at_cancel_enable (state);
 }

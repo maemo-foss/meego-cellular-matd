@@ -35,6 +35,7 @@ at_setting
 at_trace
 at_vtrace
 at_thread_create
+at_cancel_assert
 at_dbus_request
 at_dbus_query
 at_dbus_request_reply
