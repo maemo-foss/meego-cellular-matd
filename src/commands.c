@@ -60,11 +60,12 @@
 #include "plugins.h"
 #include "commands.h"
 
-#define AT_NAME_MAX	16
+#define AT_NAME_MAX	15
 
 typedef struct at_handler
 {
-	char name[16];
+	char name[15];
+	bool wildcard;
 	at_request_cb request;
 	void *opaque;
 } at_handler_t;
@@ -149,27 +150,55 @@ void at_commands_deinit (at_commands_t *bank)
 /*** Command handler registration and lookup ***/
 
 /** Comparator for extended commands */
-static int extended_cmp (const void *a, const void *b)
+static int ext_cmp (const void *a, const void *b)
+{
+	const struct at_handler *ha = a;
+	const struct at_handler *hb = b;
+	size_t alen = strlen (ha->name);
+	size_t blen = strlen (hb->name);
+	int val;
+
+	if (alen > blen)
+	{
+		val = strncasecmp (ha->name, hb->name, blen);
+		if (val != 0)
+			return val;
+		return hb->wildcard ? 0 : +1;
+	}
+	else
+	if (alen < blen)
+	{
+		val = strncasecmp (ha->name, hb->name, alen);
+		if (val != 0)
+			return val;
+		return ha->wildcard ? 0 : -1;
+	}
+	else
+		return strcasecmp (ha->name, hb->name);
+}
+
+static int ext_match (const void *a, const void *b)
 {
 	const char *cmd = a;
-	const char *handler = b;
-	size_t len = strlen (handler);
+	const struct at_handler *handler = b;
+	size_t len = strlen (handler->name);
 
-	int val = strncasecmp (cmd, handler, len);
+	int val = strncasecmp (cmd, handler->name, len);
 	if (val)
 		return val; /* crystal clear mismatch */
 
-	/* Handler is equal or has fewer characters than command */
+	/* Handler is equal to, or has fewer characters than, command */
 	assert (strlen (cmd) >= len);
+	if (handler->wildcard)
+		return 0;
 	cmd += len;
 	if (isalnum ((unsigned char)cmd[0]))
 		return 1; // command is longer, e.g. "+CRC=..." vs "+CR" */
 	return 0; // proper match!
 }
 
-
-int at_register (at_commands_t *bank, const char *name, at_request_cb req,
-                 void *opaque)
+static int at_register_ext (at_commands_t *bank, const char *name,
+                            at_request_cb req, void *opaque, bool wildcard)
 {
 	if (strlen (name) >= AT_NAME_MAX)
 		return ENAMETOOLONG;
@@ -177,10 +206,14 @@ int at_register (at_commands_t *bank, const char *name, at_request_cb req,
 	struct at_handler *h = malloc (sizeof (*h));
 	if (h == NULL)
 		return errno;
+
 	strcpy (h->name, name);
+	h->wildcard = wildcard;
+	h->request = req;
+	h->opaque = opaque;
 
 	void **proot = &bank->cmd.extended;
-	struct at_handler **cur = tsearch (h, proot, extended_cmp);
+	struct at_handler **cur = tsearch (h, proot, ext_cmp);
 	if (cur == NULL) /* Out of memory */
 	{
 		int val = errno;
@@ -194,9 +227,19 @@ int at_register (at_commands_t *bank, const char *name, at_request_cb req,
 		free (h);
 		return EALREADY;
 	}
-	h->request = req;
-	h->opaque = opaque;
 	return 0;
+}
+
+int at_register (at_commands_t *bank, const char *name,
+                 at_request_cb req, void *opaque)
+{
+	return at_register_ext (bank, name, req, opaque, false);
+}
+
+int at_register_wildcard (at_commands_t *bank, const char *name,
+                          at_request_cb req, void *opaque)
+{
+	return at_register_ext (bank, name, req, opaque, true);
 }
 
 int at_register_alpha (at_commands_t *bank, char cmd, at_alpha_cb req,
@@ -356,7 +399,7 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 	}
 
 	/* Other command, i.e. extended command */
-	struct at_handler **p = tfind (req, &bank->cmd.extended, extended_cmp);
+	struct at_handler **p = tfind (req, &bank->cmd.extended, ext_match);
 	if (p == NULL)
 		goto unknown;
 	return (*p)->request (m, req, (*p)->opaque);
