@@ -9,7 +9,6 @@ mat_tests_SOURCES = test.c
 
 dist_check_SCRIPTS = test-cli
 check_SCRIPTS = \
-	backlight.test \
 	charset.test \
 	clock.test \
 	cmec.test \
@@ -29,6 +28,9 @@ check_SCRIPTS = \
 	vendor.test \
 	verbose.test \
 	version.test
+if HAVE_MCE
+check_SCRIPTS += backlight.test
+endif
 
 %.test: Makefile.am
 	$(AM_V_at)-rm -f -- $*.tmp $*.test
