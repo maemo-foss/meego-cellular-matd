@@ -111,6 +111,16 @@ static at_error_t execute (at_modem_t *modem, const char *const *argv)
 }
 
 
+static at_error_t sh (at_modem_t *modem, const char *req, void *data)
+{
+	const char *argv[3] = { "/bin/sh", "-", NULL };
+
+	execute (modem, argv);
+	(void)req; (void) data;
+	return AT_NO_CARRIER;
+}
+
+
 static at_error_t shell (at_modem_t *modem, const char *req, void *data)
 {
 	at_error_t ret;
@@ -143,9 +153,21 @@ out:
 }
 
 
+static at_error_t login (at_modem_t *modem, const char *req, void *data)
+{
+	const char *argv[3] = { "/bin/login", "-", NULL };
+
+	execute (modem, argv);
+	(void)req; (void) data;
+	return AT_NO_CARRIER;
+}
+
+
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "*SHELL", shell, NULL);
+	at_register (set, "@SH", sh, NULL);
+	at_register (set, "@SHELL", shell, NULL);
+	at_register (set, "@LOGIN", login, NULL);
 
 	return NULL;
 }

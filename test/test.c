@@ -566,7 +566,7 @@ CASE (cmee)
 CASE (shell)
 {
 	/* Coverage tests for data mode */
-	REQUEST ("AT *SHELL");
+	REQUEST ("AT @SH");
 	RESPONSE ();
 	if (strcmp ("CONNECT\r\n", line))
 		return -1;
@@ -577,7 +577,7 @@ CASE (shell)
 		RESPONSE ();
 	while (strcmp (line, "NO CARRIER\r\n"));
 
-	REQUEST ("AT *SHELL");
+	REQUEST ("AT @SH");
 	RESPONSE ();
 	if (strcmp ("CONNECT\r\n", line))
 		return -1;
