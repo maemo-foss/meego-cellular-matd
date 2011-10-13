@@ -162,7 +162,7 @@ static int extended_cmp (const void *a, const void *b)
 	/* Handler is equal or has fewer characters than command */
 	assert (strlen (cmd) >= len);
 	cmd += len;
-	if (isalnum (cmd[0]))
+	if (isalnum ((unsigned char)cmd[0]))
 		return 1; // command is longer, e.g. "+CRC=..." vs "+CR" */
 	return 0; // proper match!
 }

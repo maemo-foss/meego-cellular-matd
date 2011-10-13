@@ -243,7 +243,7 @@ static size_t basic_command_length (const char *cmd, size_t len)
 		offset++;
 	}
 
-	if (!isalpha (cmd[offset]))
+	if (!isalpha ((unsigned char)cmd[offset]))
 		return 0; /* not an alphabetic character! */
 
 	offset++;
