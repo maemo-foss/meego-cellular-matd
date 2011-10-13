@@ -149,7 +149,7 @@ static at_error_t handle_gmr (at_modem_t *modem, const char *req, void *data)
 	free (sw);
 
 	/* Hook for modem revision */
-	at_execute (modem, "*MATDMODEMMR");
+	at_execute (modem, "*OFGMR");
 	at_intermediate (modem, "\r\n");
 
 	(void) req;

@@ -189,5 +189,5 @@ void modem_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CFUN", handle_cfun, p);
 	at_register (set, "+CGSN", handle_cgsn, p);
-	at_register (set, "*MATDMODEMMR", handle_gmr, p);
+	at_register (set, "*OFGMR", handle_gmr, p);
 }
