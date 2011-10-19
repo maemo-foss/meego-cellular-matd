@@ -41,7 +41,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-at_commands_t *at_commands_init (at_modem_t *);
+/**
+ * Allocates and initializes a list of AT commands.
+ * @param modem AT modem instance to use
+ * @return the list of AT commands, or NULL on error.
+ */
+at_commands_t *at_commands_init (at_modem_t *modem);
+
+/**
+ * Deinitializes and destroys a list of AT commands.
+ * @param bank AT commands list as returned by at_commands_init()
+ */
 void at_commands_deinit (at_commands_t *bank);
-at_error_t at_commands_execute (const at_commands_t *, at_modem_t *,
-                                const char *);
+
+/**
+ * Executes an elementary AT command (with the AT prefix removed)
+ * @param bank AT commands list created by at_commands_init()
+ * @param modem AT modem instance to run commands for
+ * @param str nul-terminated command string to execute
+ * @return AT_OK on success or an error code on failure (see @ref at_error).
+ */
+at_error_t at_commands_execute (const at_commands_t *bank, at_modem_t *modem,
+                                const char *str);

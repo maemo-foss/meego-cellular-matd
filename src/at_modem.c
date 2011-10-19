@@ -101,19 +101,21 @@ static void at_log_dump (const uint8_t *buf, size_t len, bool out)
 # define at_log_dump(buf, len, out) (void)0
 #endif
 
+/** Internal state of an AT command parser instance. */
 struct at_modem
 {
 	int fd; /**< File to read data from (DTE) */
 	unsigned echo:1; /**< ATE on or off */
 	unsigned quiet:1; /**< ATQ on or off */
 	unsigned verbose:1; /**< ATV on or off */
-	unsigned rate_report:1; /* AT+ILRR on or off */
+	unsigned rate_report:1; /**< AT+ILRR on or off */
 	unsigned data:1; /**< data mode */
 	unsigned cmee:2; /**< 3GPP CMEE error mode */
 	unsigned hungup:1; /**< Forcefully hung up on DCE side */
 	unsigned reset:1; /**< ATZ: plugins re-init pending */
-	uint16_t  in_size, in_offset;
-	uint8_t  in_buf[1024];
+	uint16_t in_size; /**< Input buffer fill length */
+	uint16_t in_offset; /**< Input buffer read offset */
+	uint8_t  in_buf[1024]; /**< Input buffer */
 
 	struct
 	{
@@ -124,7 +126,7 @@ struct at_modem
 	pthread_mutex_t lock; /**< Serializer for output to DTE */
 	pthread_t reader; /**< Thread handling data from the DTE */
 
-	at_commands_t *commands;
+	at_commands_t *commands; /**< Registered commands */
 };
 
 static int at_write_unlocked (at_modem_t *m,

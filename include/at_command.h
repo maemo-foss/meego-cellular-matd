@@ -98,20 +98,20 @@ enum at_error
 	AT_BUSY=7, /**< Connection failed, peer line is busy */
 	AT_NO_ANSWER=8, /**< Connection failed, no response from the peer */
 
-	AT_CME_ERROR_0=0x100,
-	AT_CME_EBUSY=0x102,
-	AT_CME_EPERM=0x103,
-	AT_CME_ENOTSUP=0x104,
-	AT_CME_ENOMEM=0x114,
-	AT_CME_ENOENT=0x116,
-	AT_CME_E2BIG=0x118,
-	AT_CME_EILSEQ=0x119,
-	AT_CME_ETIMEDOUT=0x11F,
-	AT_CME_EINVAL=0x132,
-	AT_CME_UNKNOWN=0x164,
-	AT_CME_ERROR_MAX=0x1FF,
-	AT_CMS_ERROR_0=0x200,
-	AT_CMS_ERROR_MAX=0x3FF,
+	AT_CME_ERROR_0=0x100, /**< Base for CME error codes */
+	AT_CME_EBUSY=0x102, /**< Busy CME error */
+	AT_CME_EPERM=0x103, /**< Permission denied CME error */
+	AT_CME_ENOTSUP=0x104, /**< Operation not supported CME error */
+	AT_CME_ENOMEM=0x114, /**< Out of memory CME error */
+	AT_CME_ENOENT=0x116, /**< Not found CME error */
+	AT_CME_E2BIG=0x118, /**< Too big CME error */
+	AT_CME_EILSEQ=0x119, /**< Illegal byte sequence CME error */
+	AT_CME_ETIMEDOUT=0x11F, /**< Time out CME error */
+	AT_CME_EINVAL=0x132, /**< Invalid parameter CME error */
+	AT_CME_UNKNOWN=0x164, /**< Unknown CME error */
+	AT_CME_ERROR_MAX=0x1FF, /**< Last CME error code */
+	AT_CMS_ERROR_0=0x200, /**< Base for CMS error codes */
+	AT_CMS_ERROR_MAX=0x3FF, /**< Last CMS error code */
 };
 
 /**

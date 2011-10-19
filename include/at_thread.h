@@ -79,6 +79,7 @@ static inline int at_cancel_disable (void)
 /**
  * Restores POSIX thread cancellation to its previous state,
  * as returned by an earlier call to at_cancel_disable().
+ * @param state cancellation state to restore
  */
 static inline void at_cancel_enable (int state)
 {
@@ -87,10 +88,13 @@ static inline void at_cancel_enable (int state)
 
 /**
  * Asserts that cancellation is in a certain state.
+ * @param enabled asserted cancellation state
+ *                (true = enabled, false = disabled)
  */
 void at_cancel_assert (bool enabled);
 
 #ifndef NDEBUG
+/** Turns off cancellation state assertions in non-debugging builds. */
 # define at_cancel_assert(enabled) (void)0
 #endif
 

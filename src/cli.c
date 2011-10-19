@@ -96,6 +96,12 @@ static void hangup_cb (struct at_modem *m, void *data)
 	(void)m;
 }
 
+/**
+ * Runs the AT commands parser from the command line.
+ * @param argc number of command line arguments
+ * @param argv array of command line arguments
+ * @return 0 on successful completion, 1 on I/O error, 2 on invalid arguments.
+ */
 int main (int argc, char *argv[])
 {
 	int ret = -1;

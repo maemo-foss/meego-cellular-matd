@@ -63,6 +63,7 @@
 typedef struct at_dbus_watch at_dbus_watch_t;
 typedef struct at_dbus_timeout at_dbus_timeout_t;
 
+/** Internal state for libdbus file descriptor watch. */
 struct at_dbus_watch
 {
 	at_dbus_watch_t *prev, *next;
@@ -71,6 +72,7 @@ struct at_dbus_watch
 	unsigned events;
 };
 
+/** Internal state for libdbus timeout. */
 struct at_dbus_timeout
 {
 	at_dbus_timeout_t *prev, *next;
@@ -79,6 +81,7 @@ struct at_dbus_timeout
 	uint64_t deadline;
 };
 
+/** Internal state for D-Bus connection. */
 typedef struct
 {
 	pthread_mutex_t lock;
