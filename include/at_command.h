@@ -513,7 +513,7 @@ bool at_get_echo (at_modem_t *);
 
 /**
  * Sets AT modem quiet mode (command responses are not printed).
- * @param on true to enable queit mode, false to disable.
+ * @param on true to enable quiet mode, false to disable.
  */
 void at_set_quiet (at_modem_t *, bool on);
 
