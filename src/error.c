@@ -199,6 +199,9 @@ static unsigned find_rate (speed_t speed)
 
 int at_print_rate (at_modem_t *m)
 {
+	if (!at_get_rate_report (m))
+		return AT_OK;
+
 	struct termios tp;
 	at_get_attr (m, &tp);
 	speed_t ospeed = cfgetospeed (&tp);

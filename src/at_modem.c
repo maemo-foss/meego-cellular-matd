@@ -388,8 +388,7 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 	m->in_size = 0;
 	m->in_offset = 0;
 
-	if (m->rate_report)
-		at_print_rate (m);
+	at_print_rate (m);
 	at_print_reply (m, AT_CONNECT);
 	m->data = true;
 
