@@ -132,6 +132,9 @@ static const char cell_errmsgs[][48] = {
 
 int at_print_reply (at_modem_t *m, at_error_t res)
 {
+	if (at_get_quiet (m))
+		return AT_OK;
+
 	/* Print command line result */
 	if (res < sizeof (at_errmsgs) / sizeof (at_errmsgs[0]))
 		;

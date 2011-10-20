@@ -518,6 +518,12 @@ bool at_get_echo (at_modem_t *);
 void at_set_quiet (at_modem_t *, bool on);
 
 /**
+ * Gets AT modem quiet mode (command responses are not printed).
+ * @return true if quiet mode is enabled (ATQ1), false if not (ATQ0)
+ */
+bool at_get_quiet (at_modem_t *);
+
+/**
  * Reset all settings to default.
  */
 void at_reset (at_modem_t *);

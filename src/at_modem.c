@@ -390,8 +390,7 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 
 	if (m->rate_report)
 		at_print_rate (m);
-	if (!m->quiet)
-		at_print_reply (m, AT_CONNECT);
+	at_print_reply (m, AT_CONNECT);
 	m->data = true;
 
 	fcntl (dte, F_SETFL, fcntl (dte, F_GETFL) | O_NONBLOCK);
@@ -558,8 +557,7 @@ static void process_line (struct at_modem *m, char *line, size_t linelen)
 
 out:
 	/* Print command line result */
-	if (!m->quiet)
-		at_print_reply (m, res);
+	at_print_reply (m, res);
 }
 
 static void dte_cleanup (void *data)
@@ -720,6 +718,11 @@ bool at_get_echo (at_modem_t *m)
 void at_set_echo (at_modem_t *m, bool on)
 {
 	m->echo = on;
+}
+
+bool at_get_quiet (at_modem_t *m)
+{
+	return m->quiet;
 }
 
 void at_set_quiet (at_modem_t *m, bool on)
