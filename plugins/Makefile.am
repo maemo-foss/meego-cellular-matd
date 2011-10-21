@@ -18,6 +18,7 @@ EXTRA_LTLIBRARIES =
 BUILT_SOURCES = .libs/yz .libs/noload.so
 MOSTLYCLEANFILES = $(BUILT_SOURCES)
 
+
 #
 # Generic plugins
 #
@@ -41,7 +42,10 @@ libshell_at_la_SOURCES = shell.c
 libshell_at_la_LIBADD = $(AM_LIBADD) -lpthread
 plugins_LTLIBRARIES += libshell_at.la
 
+
+#
 # Linux kernel plugins
+#
 libinput_at_la_SOURCES = input.c keymap.h
 libinput_at_la_LIBADD = $(AM_LIBADD) -lpthread
 plugins_LTLIBRARIES += libinput_at.la
@@ -54,13 +58,16 @@ libtimezone_at_la_SOURCES = timezone.c
 libtimezone_at_la_LIBADD = $(AM_LIBADD) -lpthread
 plugins_LTLIBRARIES += libtimezone_at.la
 
-# ACPI battery plugin
+# udev (ACPI battery plugin)
 libudev_at_la_SOURCES = udev.c
 libudev_at_la_CFLAGS = $(UDEV_CFLAGS)
 libudev_at_la_LIBADD = $(AM_LIBADD) $(UDEV_LIBS)
 plugins_LTLIBRARIES += libudev_at.la
 
+
+#
 # oFono plugin
+#
 libofono_at_la_SOURCES = \
 	ofono/ofono.h \
 	ofono/core.h \
@@ -81,7 +88,10 @@ libofono_at_la_CFLAGS = $(DBUS_CFLAGS)
 libofono_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
 plugins_LTLIBRARIES += libofono_at.la
 
+
+#
 # Test cases
+#
 libperf_at_la_SOURCES = test/perf.c
 libperf_at_la_LIBADD = $(AM_LIBADD) -lpthread
 libunusable_la_SOURCES = test/unusable.c
@@ -89,7 +99,10 @@ libzzztest_at_la_SOURCES = test/selftest.c
 libzzztest_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libperf_at.la libzzztest_at.la libunusable.la
 
-# sysinfo
+
+#
+# System management plug-ins
+#
 libinfo_at_la_SOURCES = sysinfo.c
 libinfo_at_la_CFLAGS = $(DBUS_CFLAGS) -DVENDOR=\"$(VENDOR)\"
 libinfo_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
