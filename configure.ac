@@ -85,7 +85,7 @@ PKG_CHECK_MODULES(DBUS, [dbus-1])
 
 
 dnl libudev
-PKG_CHECK_MODULES(UDEV, [libudev])
+PKG_CHECK_MODULES(LIBUDEV, [libudev])
 
 
 dnl Automake

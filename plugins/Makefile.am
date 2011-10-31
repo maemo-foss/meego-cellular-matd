@@ -60,8 +60,8 @@ plugins_LTLIBRARIES += libtimezone_at.la
 
 # udev (ACPI battery plugin)
 libudev_at_la_SOURCES = udev.c
-libudev_at_la_CFLAGS = $(UDEV_CFLAGS)
-libudev_at_la_LIBADD = $(AM_LIBADD) $(UDEV_LIBS)
+libudev_at_la_CFLAGS = $(LIBUDEV_CFLAGS)
+libudev_at_la_LIBADD = $(AM_LIBADD) $(LIBUDEV_LIBS)
 plugins_LTLIBRARIES += libudev_at.la
 
 
