@@ -62,7 +62,7 @@
 static void open_syslog (void)
 {
 	int options = LOG_PID;
-	int fd = open ("/root/usb-cdc-acm.log", O_WRONLY|O_APPEND);
+	int fd = open ("/var/log/matd-acm.log", O_WRONLY|O_APPEND);
 	if (fd != -1)
 	{
 		dup2 (fd, 2);
