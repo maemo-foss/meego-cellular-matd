@@ -126,12 +126,12 @@ static at_error_t set_csca (at_modem_t *modem, const char *req, void *data)
 	{
 		case 2:
 			if (type != (*number == '+') ? 145 : 129)
-				return AT_CME_ENOTSUP;
+				return AT_CMS_ENOTSUP;
 			/* fallthrough */
 		case 1:
 			break;
 		default:
-			return AT_CME_EINVAL;
+			return AT_ERROR;
 	}
 
 	return modem_prop_set_string (p, "MessageManager", "ServiceCenterAddress",
@@ -145,7 +145,7 @@ static at_error_t get_csca (at_modem_t *modem, void *data)
 	                                      "ServiceCenterAddress");
 
 	if (number == NULL)
-		return AT_CME_UNKNOWN;
+		return AT_CMS_UNKNOWN;
 
 	at_intermediate (modem, "\r\n+CSCA: \"%s\",%u", number,
 	                 (*number == '+') ? 145 : 129);
