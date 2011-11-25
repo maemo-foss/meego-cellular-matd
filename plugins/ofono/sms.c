@@ -114,6 +114,40 @@ static at_error_t handle_cgsms (at_modem_t *modem, const char *req,
 }
 
 
+/*** AT+CSMS ***/
+
+static at_error_t set_csms (at_modem_t *modem, const char *req, void *data)
+{
+	unsigned service;
+
+	if (sscanf (req, " %u", &service) != 1)
+		return AT_ERROR;
+	if (service > 0)
+		return AT_CMS_ENOTSUP;
+	(void) modem;
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSMS: 1,1,1");
+}
+
+static at_error_t get_csms (at_modem_t *modem, void *data)
+{
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSMS: 0,1,1,1");
+}
+
+static at_error_t list_csms (at_modem_t *modem, void *data)
+{
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSMS: (0)");
+}
+
+static at_error_t handle_csms (at_modem_t *modem, const char *req,
+                               void *data)
+{
+	return at_setting (modem, req, data, set_csms, get_csms, list_csms);
+}
+
+
 /*** AT+CSCA ***/
 
 static at_error_t set_csca (at_modem_t *modem, const char *req, void *data)
@@ -271,6 +305,7 @@ static at_error_t handle_cmgs (at_modem_t *m, const char *req, void *data)
 void sms_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CGSMS", handle_cgsms, p);
+	at_register (set, "+CSMS", handle_csms, p);
 	at_register (set, "+CSCA", handle_csca, p);
 	at_register (set, "+CMGF", handle_cmgf, p);
 	at_register (set, "+CMGS", handle_cmgs, p);
