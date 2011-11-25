@@ -110,7 +110,15 @@ enum at_error
 	AT_CME_EINVAL=0x132, /**< Invalid parameter CME error */
 	AT_CME_UNKNOWN=0x164, /**< Unknown CME error */
 	AT_CME_ERROR_MAX=0x1FF, /**< Last CME error code */
+
 	AT_CMS_ERROR_0=0x200, /**< Base for CMS error codes */
+	AT_CMS_EPERM=814, /**< Permission denied CMS error */
+	AT_CMS_ENOTSUP=815, /**< Operation not supported CMS error */
+	AT_CMS_PDU_EINVAL=816, /**< Invalid parameter for PDU mode */
+	AT_CMS_TXT_EINVAL=817, /**< Invalid parameter for text mode */
+	AT_CMS_ENOMEM=834, /**< Out of memory CMS error */
+	AT_CMS_ETIMEDOUT=844, /**< Network time out CMS error */
+	AT_CMS_UNKNOWN=1012, /** Unknown CMS error */
 	AT_CMS_ERROR_MAX=0x3FF, /**< Last CMS error code */
 };
 
