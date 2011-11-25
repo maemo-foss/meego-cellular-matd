@@ -247,11 +247,13 @@ static int at_getchar (at_modem_t *m)
 	return m->in_buf[m->in_offset++];
 }
 
-char *at_read_text (at_modem_t *m)
+char *at_read_text (at_modem_t *m, const char *prompt)
 {
 	char *buf = NULL;
 	size_t size = 0, len = 0;
+	const size_t prompt_len = strlen (prompt);
 
+	at_intermediate_blob (m, prompt, prompt_len);
 	pthread_cleanup_push (free, buf);
 	for (;;)
 	{
@@ -287,14 +289,13 @@ char *at_read_text (at_modem_t *m)
 			if (len > 0)
 				len--;
 			continue;
+
 		}
-
-		// New line
-		if (c == '\r' && at_get_echo (m))
-			at_intermediate_blob (m, "\n", 1);
-
 		buf[len++] = c;
 
+		// New line
+		if (c == '\r')
+			at_intermediate_blob (m, prompt, prompt_len);
 	}
 	pthread_cleanup_pop (0);
 	return buf;

@@ -61,9 +61,8 @@ static at_error_t do_cpos (at_modem_t *modem, const char *req, void *data)
 
 	if (*req)
 		return AT_CME_ENOTSUP;
-	at_intermediate_blob (modem, "\r\n", 2);
 
-	xml = at_read_text (modem);
+	xml = at_read_text (modem, "\r\n");
 	if (xml == NULL)
 		return AT_ERROR;
 

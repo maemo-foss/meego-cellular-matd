@@ -316,15 +316,15 @@ int at_intermediatev (at_modem_t *, const char *fmt, va_list args);
 /**
  * Reads text from the DTE (in commands mode) until Ctrl+Z or ESC.
  * This can be used, e.g. to enter an SMS in text mode.
- * The caller shall send any required intermediate response before calling
- * this function, e.g. "\r\n> " for text mode SMS.
+ *
+ * @param prompt text sent to DTE at the beginning of each new line
  *
  * @return
  * On success, text is returned as a string. The final Ctrl+Z is discarded.
  * A nul terminator is appended. The buffer must be released with free().
  * On error or if ESC is received, NULL is returned.
  */
-char *at_read_text (at_modem_t *);
+char *at_read_text (at_modem_t *, const char *prompt);
 
 /**
  * Sends an unsolicited message.
