@@ -47,8 +47,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <at_command.h>
+#include <at_thread.h>
 
 #include "ofono.h"
 
@@ -160,10 +162,116 @@ static at_error_t handle_csca (at_modem_t *modem, const char *req,
 }
 
 
+/*** AT+CMGF ***/
+
+/* TODO: PDU mode */
+
+static at_error_t set_cmgf (at_modem_t *m, const char *req, void *data)
+{
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		return AT_ERROR;
+	if (mode != 1)
+		return AT_CMS_ENOTSUP;
+
+	(void)m;
+	(void)data;
+	return AT_OK;
+}
+
+static at_error_t get_cmgf (at_modem_t *m, void *data)
+{
+	(void)data;
+	return at_intermediate (m, "\r\n+CMGF: 1");
+}
+
+static at_error_t list_cmgf (at_modem_t *m, void *data)
+{
+	(void)data;
+	return at_intermediate (m, "\r\n+CMGF: (1)");
+}
+
+static at_error_t handle_cmgf (at_modem_t *m, const char *req, void *data)
+{
+	return at_setting (m, req, data, set_cmgf, get_cmgf, list_cmgf);
+}
+
+
+/*** AT+CMGS ***/
+
+static at_error_t set_cmgs (at_modem_t *m, const char *req, void *data)
+{
+	char number[21];
+	unsigned type;
+
+	switch (sscanf (req, " \"%20[^\"]\" , %u", number, &type))
+	{
+		case 2:
+			if (type != (*number == '+') ? 145 : 129)
+				return AT_CMS_ENOTSUP;
+			/* fallthrough */
+		case 1:
+			break;
+		default:
+			return AT_CMS_TXT_EINVAL;
+	}
+
+	plugin_t *p = data;
+	char *text = at_read_text (m, "\r\n> ");
+	if (text == NULL)
+		return AT_OK;
+
+	at_error_t ret = AT_OK;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *msg = modem_req_new (p, "MessageManager", "SendMessage");
+	if (msg == NULL
+	 || !dbus_message_append_args (msg,
+	                               DBUS_TYPE_STRING, &(const char *){ number },
+	                               DBUS_TYPE_STRING, &text,
+	                               DBUS_TYPE_INVALID))
+	{
+		ret = AT_CMS_ENOMEM;
+		goto out;
+	}
+
+	msg = ofono_query (msg, &ret);
+	if (ret != AT_OK)
+		goto out;
+
+	const char *path;
+	uint8_t mr;
+	if (!dbus_message_get_args (msg, NULL,
+	                            DBUS_TYPE_OBJECT_PATH, &path,
+	                            DBUS_TYPE_INVALID))
+	{
+		ret = AT_CMS_UNKNOWN;
+		goto out;
+	}
+	/* This message reference is totally fake. FIXME? */
+	if (sscanf (path, "%*[^_]_%2"SCNx8, &mr) != 1)
+		mr = 0;
+	at_intermediate (m, "\r\n+CMGS: %"PRIu8, mr);
+out:
+	if (msg != NULL)
+		dbus_message_unref (msg);
+	at_cancel_enable (canc);
+	return ret;
+}
+
+static at_error_t handle_cmgs (at_modem_t *m, const char *req, void *data)
+{
+	return at_setting (m, req, data, set_cmgs, NULL, NULL);
+}
+
+
 /*** Registration ***/
 
 void sms_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CGSMS", handle_cgsms, p);
 	at_register (set, "+CSCA", handle_csca, p);
+	at_register (set, "+CMGF", handle_cmgf, p);
+	at_register (set, "+CMGS", handle_cmgs, p);
 }
