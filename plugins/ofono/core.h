@@ -42,8 +42,11 @@
 
 struct plugin
 {
-	char *name;
-	char *objpath;
+	char *name; /**< oFono daemon D-Bus name */
+	char **modemv; /**< List of oFono modems */
+	unsigned modemc; /**< Number of modems */
+	unsigned modem; /**< Index of currently selected modem */
+	pthread_mutex_t modem_lock;
 
 	unsigned char vhu; /**< AT+CVHU */
 	bool cring; /**< AT+CRC */

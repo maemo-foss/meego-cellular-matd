@@ -55,6 +55,7 @@
 #include <at_command.h>
 #include <at_thread.h>
 #include "ofono.h"
+#include "core.h"
 
 /*** AT+CIMI ***/
 
@@ -509,31 +510,38 @@ static at_error_t handle_cpwd (at_modem_t *modem, const char *req, void *data)
 
 static at_error_t set_csus (at_modem_t *modem, const char *req, void *data)
 {
+	plugin_t *p = data;
 	unsigned slot;
 
 	(void) modem;
-	(void) data;
 
 	if (sscanf (req, "%u", &slot) != 1)
 		return AT_CME_EINVAL;
-	/* TODO: when oFono support multi SIM */
-	if (slot != 0)
-		return AT_CME_ENOTSUP;
+	if (slot >= p->modemc)
+		return AT_CME_EINVAL;
 
+	pthread_mutex_lock (&p->modem_lock);
+	p->modem = slot;
+	pthread_mutex_unlock (&p->modem_lock);
 	return AT_OK;
 }
 
 static at_error_t get_csus (at_modem_t *modem, void *data)
 {
-	(void) data;
-	at_intermediate (modem, "\r\n+CSUS: 0");
+	plugin_t *p = data;
+
+	at_intermediate (modem, "\r\n+CSUS: %u", p->modem);
 	return AT_OK;
 }
 
 static at_error_t list_csus (at_modem_t *modem, void *data)
 {
-	(void) data;
-	at_intermediate (modem, "\r\n+CSUS: (0)");
+	plugin_t *p = data;
+
+	if (p->modemc > 1)
+		at_intermediate (modem, "\r\n+CSUS: (0-%u)", p->modemc);
+	else
+		at_intermediate (modem, "\r\n+CSUS: (0)");
 	return AT_OK;
 }
 

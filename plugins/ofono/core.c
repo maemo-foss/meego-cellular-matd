@@ -209,7 +209,7 @@ at_error_t ofono_request (const plugin_t *p, const char *path,
 DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
                             const char *method)
 {
-	return ofono_req_new (p, p->objpath, subif, method);
+	return ofono_req_new (p, p->modemv[p->modem], subif, method);
 }
 
 at_error_t modem_request (const plugin_t *p, const char *subif,
@@ -219,7 +219,7 @@ at_error_t modem_request (const plugin_t *p, const char *subif,
 	va_list ap;
 
 	va_start (ap, first);
-	ret = ofono_request_va (p, p->objpath, subif, method, first, ap);
+	ret = ofono_request_va (p, p->modemv[p->modem], subif, method, first, ap);
 	va_end (ap);
 
 	return ret;
@@ -364,12 +364,13 @@ out:
 at_error_t voicecall_request (const plugin_t *p, unsigned callid,
                               const char *method, int first, ...)
 {
-	size_t len = strlen (p->objpath) + sizeof ("/voicecall99");
+	const char *modem = p->modemv[p->modem];
+	size_t len = strlen (modem) + sizeof ("/voicecall99");
 	char path[len];
 
 	if (callid > 99)
 		return AT_CME_ENOENT;
-	snprintf (path, len, "%s/voicecall%02u", p->objpath, callid);
+	snprintf (path, len, "%s/voicecall%02u", modem, callid);
 
 	DBusMessage *msg;
 	at_error_t ret;
@@ -398,10 +399,11 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 
 
 /*** Modem manager ***/
-static char *manager_find_modem (char **pname)
+static char *manager_find (char ***modemlist, unsigned *modemcount)
 {
 	DBusMessage *msg;
 
+	/* list oFono modems */
 	msg = dbus_message_new_method_call ("org.ofono", "/",
 	                                    "org.ofono.Manager", "GetModems");
 	if (msg == NULL)
@@ -415,43 +417,47 @@ static char *manager_find_modem (char **pname)
 		return NULL;
 	}
 
-	/* Find a modem */
+	/* Remember unique name of oFono service */
+	char *name = strdup (dbus_message_get_sender (msg));
+
 	DBusMessageIter args, array;
 
-	if (!dbus_message_iter_init (msg, &args)
+	if (name == NULL
+	 || !dbus_message_iter_init (msg, &args)
 	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
 	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
 	{
 		dbus_message_unref (msg);
 		return NULL;
 	}
-
 	dbus_message_iter_recurse (&args, &array);
-	/* XXX: not really a loop, we always take the first entry */
-	char *ret = NULL;
+
+	/* Enumerate modems */
+	char **tab = NULL;
+	unsigned i = 0;
 
 	while (dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID)
 	{
 		DBusMessageIter modem;
 		const char *path;
+		char **newtab = realloc (tab, sizeof (*tab) * (i + 1));
+		if (newtab == NULL)
+			break;
+		tab = newtab;
 
 		dbus_message_iter_recurse (&array, &modem);
 		if (dbus_message_iter_get_arg_type (&modem) != DBUS_TYPE_OBJECT_PATH)
 			break;
 		dbus_message_iter_get_basic (&modem, &path);
-		ret = strdup (path);
-		break;
-	}
+		tab[i++] = strdup (path);
 
-	/* Remember unique name */
-	if ((*pname = strdup (dbus_message_get_sender (msg))) == NULL)
-	{
-		free (ret);
-		ret = NULL;
+		dbus_message_iter_next (&array);
 	}
-
 	dbus_message_unref (msg);
-	return ret;
+
+	*modemlist = tab;
+	*modemcount = i;
+	return name;
 }
 
 struct ofono_watch
@@ -494,10 +500,10 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	  || strcmp (s->arg0, data)))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (!dbus_message_has_path (msg, s->path ? s->path : p->objpath))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	s->cb (p, msg, s->cbdata);
+	pthread_mutex_lock (&p->modem_lock);
+	if (dbus_message_has_path (msg, s->path ? s->path : p->modemv[p->modem]))
+		s->cb (p, msg, s->cbdata);
+	pthread_mutex_unlock (&p->modem_lock);
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -585,21 +591,23 @@ void ofono_signal_unwatch (ofono_watch_t *s)
 
 void *at_plugin_register (at_commands_t *set)
 {
-	char *name;
-	char *path = manager_find_modem (&name);
-	if (path == NULL)
-		return NULL;
-
 	plugin_t *p = malloc (sizeof (*p));
 	if (p == NULL)
+		return NULL;
+
+	p->name = manager_find (&p->modemv, &p->modemc);
+	if (p->name == NULL || p->modemc == 0)
 	{
-		free (path);
+		free (p->name);
+		free (p);
 		return NULL;
 	}
 
-	debug ("Using oFono %s modem %s", name, path);
-	p->name = name;
-	p->objpath = path;
+	debug ("Using oFono %s", p->name);
+	for (unsigned i = 0; i < p->modemc; i++)
+		debug (" modem %u: %s", i, p->modemv[i]);
+	p->modem = 0;
+	pthread_mutex_init (&p->modem_lock, NULL);
 
 	modem_register (set, p);
 	agps_register (set, p);
@@ -618,13 +626,15 @@ void *at_plugin_register (at_commands_t *set)
 void at_plugin_unregister (void *opaque)
 {
 	plugin_t *p = opaque;
-
 	if (p == NULL)
 		return;
 
 	network_unregister (p);
 	voicecallmanager_unregister (p);
+	pthread_mutex_destroy (&p->modem_lock);
+	for (unsigned i = 0; i < p->modemc; i++)
+		free (p->modemv[i]);
+	free (p->modemv);
 	free (p->name);
-	free (p->objpath);
 	free (p);
 }
