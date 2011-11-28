@@ -472,6 +472,7 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 					       void *user_data)
 {
 	ofono_watch_t *s = user_data;
+	plugin_t *p = s->p;
 	const char *data;
 
 	if (dbus_message_get_type (msg) != DBUS_MESSAGE_TYPE_SIGNAL
@@ -481,10 +482,6 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	(void)conn;
 
 	if (!dbus_message_has_interface (msg, s->interface))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	if (s->path
-	 && !dbus_message_has_path (msg, s->path))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	if (s->signal
@@ -497,8 +494,10 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	  || strcmp (s->arg0, data)))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	s->cb (s->p, msg, s->cbdata);
+	if (!dbus_message_has_path (msg, s->path ? s->path : p->objpath))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
+	s->cb (p, msg, s->cbdata);
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -550,11 +549,11 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p,
 	s->interface = malloc (strlen (subif) + 11);
 	sprintf (s->interface, "org.ofono.%s", subif);
 
-	if (!path)
-		path = p->objpath;
-	fprintf (rule, ",path='%s'", path);
-	s->path = strdup (path);
-
+	if (path)
+	{
+		fprintf (rule, ",path='%s'", path);
+		s->path = strdup (path);
+	}
 	if (signal)
 	{
 		fprintf (rule, ",member='%s'", signal);
