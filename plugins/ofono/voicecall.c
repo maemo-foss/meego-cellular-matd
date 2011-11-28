@@ -755,7 +755,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CTFR", handle_ctfr, p);
 	at_register (set, "+CPAS", handle_cpas, p);
 
-	p->ring_filter = ofono_signal_watch (p, "VoiceCallManager", NULL,
+	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,
 	                                     AT_COMMANDS_MODEM(set));
 }

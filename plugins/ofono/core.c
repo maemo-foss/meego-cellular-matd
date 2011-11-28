@@ -516,8 +516,8 @@ static void ofono_free_sigdata (void *data)
 }
 
 ofono_watch_t *ofono_signal_watch (plugin_t *p,
-				   const char *subif,
 				   const char *path,
+				   const char *subif,
 				   const char *signal,
 				   const char *arg0,
 				   ofono_signal_t cb,
