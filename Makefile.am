@@ -8,7 +8,7 @@ AUTOMAKE_OPTIONS = \
 
 SUBDIRS = src plugins . usb test
 EXTRA_DIST = Doxyfile.in matd.pc.in
-MOSTLYCLEANFILES = $(noinst_SCRIPTS) $(pkgconfig_DATA) stamp-lcov Doxyfile
+MOSTLYCLEANFILES = $(pkgconfig_DATA) stamp-lcov Doxyfile
 SUFFIXES = .pc .pc.in -raw.info .info
 
 ### Command line tool ###
