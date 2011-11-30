@@ -59,4 +59,8 @@ struct plugin
 	unsigned char cops; /**< AT+COPS */
 	unsigned char creg; /**< AT+CREG */
 	ofono_watch_t *creg_filter; /**< AT+CREG */
+
+	unsigned char cgreg; /**< AT+CGREG */
+	ofono_watch_t *cgreg_filter;
+	ofono_watch_t *cgatt_filter;
 };

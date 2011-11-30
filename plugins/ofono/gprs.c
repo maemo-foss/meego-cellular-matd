@@ -45,10 +45,13 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
 
 #include <at_command.h>
 #include <at_log.h>
 #include "ofono.h"
+#include <at_thread.h>
+#include "core.h"
 
 /*** AT+CGATT ***/
 
@@ -93,7 +96,115 @@ static at_error_t handle_attach (at_modem_t *modem, const char *req,
 	return at_setting (modem, req, data, set_attach, get_attach, list_attach);
 }
 
+
+/*** AT+CGREG ***/
+static void gprs_att_cb (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	const char *prop;
+	dbus_bool_t attach;
+
+	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &prop,
+	                            DBUS_TYPE_BOOLEAN, &attach, DBUS_TYPE_INVALID))
+		return;
+
+	if (attach)
+		ofono_netreg_print (m, p, "+CGREG", -1);
+	else
+		at_unsolicited (m, "\r\n+CGREG: 0\r\n");
+}
+
+static void gprs_reg_cb (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	const char *prop;
+
+	/* FIXME: We should only print one message if several details change
+	 * at once. */
+	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &prop,
+				    DBUS_TYPE_INVALID)
+	 || (strcmp (prop, "Status") && strcmp (prop, "CellId")
+	  && strcmp (prop, "LocationAreaCode")
+	  && strcmp (prop, "Technology")))
+		return;
+
+	if (modem_prop_get_bool (p, "ConnectionManager", "Attached") == 1)
+		ofono_netreg_print (m, p, "+CGREG", -1);
+	else
+		at_unsolicited (m, "\r\n+CGREG: 0\r\n");
+}
+
+static at_error_t set_cgreg (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned n;
+
+	if (sscanf (req, " %u", &n) < 1 || n > 2)
+		return AT_CME_EINVAL;
+
+	if (p->cgreg == n)
+		return AT_OK;
+
+	p->cgreg = n;
+	if (p->cgreg_filter != NULL)
+	{
+		ofono_signal_unwatch (p->cgreg_filter);
+		p->cgreg_filter = NULL;
+	}
+	if (p->cgatt_filter != NULL)
+	{
+		ofono_signal_unwatch (p->cgatt_filter);
+		p->cgatt_filter = NULL;
+	}
+
+	if (n == 0)
+		return AT_OK;
+
+	p->cgatt_filter = ofono_signal_watch (p, NULL, "ConnectionManager",
+	                                      "PropertyChanged", "Attached",
+	                                      gprs_att_cb, modem);
+	p->cgreg_filter = ofono_signal_watch (p, NULL, "NetworkRegistration",
+		                                  "PropertyChanged",
+	                                      (n == 1) ? "Status" : NULL,
+		                                  gprs_reg_cb, modem);
+	return AT_OK;
+}
+
+static at_error_t get_cgreg (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	return ofono_netreg_print (modem, p, "+CGREG", p->cgreg);
+}
+
+static at_error_t list_cgreg (at_modem_t *modem, void *data)
+{
+	(void)data;
+
+	at_intermediate (modem, "\r\n+CGREG: (0-2)");
+	return AT_OK;
+}
+
+static at_error_t handle_cgreg (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cgreg, get_cgreg, list_cgreg);
+}
+
+
+/*** Registration ***/
 void gprs_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CGATT", handle_attach, p);
+	p->cgreg = 0;
+	p->cgreg_filter = NULL;
+	p->cgatt_filter = NULL;
+	at_register (set, "+CGREG", handle_cgreg, p);
+}
+
+void gprs_unregister (plugin_t *p)
+{
+	if (p->cgreg_filter)
+		ofono_signal_unwatch (p->cgreg_filter);
+	if (p->cgatt_filter)
+		ofono_signal_unwatch (p->cgatt_filter);
 }
