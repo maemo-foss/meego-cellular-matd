@@ -356,9 +356,9 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 		dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
 		dbus_message_iter_next (&array))
 	{
-		const char *path, *number, *state;
+		const char *path, *dir, *number, *state;
 		unsigned id;
-		int stat = -1, orig, mpty;
+		int stat = -1, mpty;
 
 		DBusMessageIter call;
 		dbus_message_iter_recurse (&array, &call);
@@ -369,10 +369,10 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 
 		dbus_message_iter_next (&call);
 		number = ofono_dict_find_string (&call, "LineIdentification");
-		orig = ofono_dict_find_bool (&call, "Originated");
+		dir = ofono_dict_find_string (&call, "Direction");
 		mpty = ofono_dict_find_bool (&call, "Multiparty");
 		state = ofono_dict_find_string (&call, "State");
-		if (orig == -1 || mpty == -1 || state == NULL)
+		if (dir == NULL || mpty == -1 || state == NULL)
 		{
 			ret = AT_CME_UNKNOWN;
 			goto out;
@@ -394,11 +394,11 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 
 		if (number != NULL && strcmp (number, "withheld"))
 			at_intermediate (modem, "\r\n+CLCC: %u,%u,%d,0,%u,\"%s\",%u", id,
-			                 !orig, stat, mpty, number,
+			                 !strcmp (dir, "mt"), stat, mpty, number,
 			                 (number[0] == '+') ? 145 : 129);
 		else
 			at_intermediate (modem, "\r\n+CLCC: %u,%u,%u,0,%u", id,
-			                 !orig, stat, mpty);
+			                 !strcmp (dir, "mt"), stat, mpty);
 	}
 
 	ret = AT_OK;
