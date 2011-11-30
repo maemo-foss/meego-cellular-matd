@@ -318,7 +318,7 @@ loop:
 		     adw != NULL;
 		     adw = adw->next)
 		{
-			if (p->events == 0)
+			if (adw->events == 0)
 				continue;
 
 			p->fd = adw->fd;
