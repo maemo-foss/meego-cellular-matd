@@ -574,6 +574,8 @@ static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
 			cellid = 0;
 		if (lac == -1)
 			lac = 0;
+		if (tec == NULL)
+			tec = "";
 
 		for (size_t i = 0; i < sizeof (tes) / sizeof (*tes); i++)
 		{
