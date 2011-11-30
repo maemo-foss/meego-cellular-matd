@@ -245,6 +245,11 @@ ofono_watch_t *ofono_signal_watch (plugin_t *, const char *, const char *,
 				   void *);
 void ofono_signal_unwatch (ofono_watch_t *);
 
+/* Helper to print registration status */
+at_error_t ofono_netreg_print (at_modem_t *modem, plugin_t *p,
+                               const char *prefix, int n);
+
+
 /* Misc */
 bool utf8_validate_string (const char *str);
 

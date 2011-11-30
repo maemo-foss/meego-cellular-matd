@@ -514,7 +514,8 @@ static at_error_t handle_cops (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CREG ***/
 
-static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
+at_error_t ofono_netreg_print (at_modem_t *modem, plugin_t *p,
+                               const char *prefix, int n)
 {
 	int canc = at_cancel_disable ();
 	at_error_t ret = AT_OK;
@@ -586,21 +587,19 @@ static at_error_t print_creg (at_modem_t *modem, plugin_t *p, bool requested)
 			}
 		}
 
-		if (requested)
-			at_intermediate (modem,
-					 "\r\n+CREG: %u,%d,\"%04X\",\"%X\",%u",
-					 p->creg, status, lac, cellid, tech);
+		if (n >= 0)
+			at_intermediate (modem, "\r\n%s: %d,%d,\"%04X\",\"%X\",%u", prefix,
+			                 n, status, lac, cellid, tech);
 		else
-			at_unsolicited (modem,
-					"\r\n+CREG: %d,\"%04X\",\"%X\",%u\r\n",
-					status, lac, cellid, tech);
+			at_unsolicited (modem, "\r\n%s: %d,\"%04X\",\"%X\",%u\r\n", prefix,
+			                status, lac, cellid, tech);
 	}
 	else
 	{
-		if (requested)
-			at_intermediate (modem, "\r\n+CREG: %u,%d", p->creg, status);
+		if (n >= 0)
+			at_intermediate (modem, "\r\n%s: %d,%d", prefix, n, status);
 		else
-			at_unsolicited (modem, "\r\n+CREG: %u\r\n", status);
+			at_unsolicited (modem, "\r\n%s: %u\r\n", prefix, status);
 	}
 
 	dbus_message_unref (msg);
@@ -628,7 +627,7 @@ static void unsoli_creg (plugin_t *p, DBusMessage *msg, void *data)
 
 	(void)msg;
 
-	print_creg (m, p, false);
+	ofono_netreg_print (m, p, "+CREG", -1);
 }
 
 static at_error_t set_creg (at_modem_t *modem, const char *req, void *data)
@@ -675,7 +674,7 @@ static at_error_t get_creg (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
 
-	return print_creg (modem, p, true);
+	return ofono_netreg_print (modem, p, "+CREG", p->creg);
 }
 
 static at_error_t list_creg (at_modem_t *modem, void *data)
