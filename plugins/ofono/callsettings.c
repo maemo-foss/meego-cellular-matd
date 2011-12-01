@@ -376,9 +376,8 @@ static at_error_t set_ccwa (at_modem_t *modem, const char *req, void *data)
 
 	if (n > 1)
 		return AT_CME_ENOTSUP;
-	if (n == 1) /* TODO FIXME */
-		return AT_CME_ENOTSUP;
 
+	p->ccwa = n;
 	if (mode_omitted) /* no mode change, only event subscription */
 		return AT_OK;
 
@@ -424,16 +423,15 @@ static at_error_t set_ccwa (at_modem_t *modem, const char *req, void *data)
 
 static at_error_t get_ccwa (at_modem_t *modem, void *data)
 {
-	at_intermediate (modem, "\r\n+CCWA: 0");
-	(void) data;
-	return AT_OK;
+	plugin_t *p = data;
+
+	return at_intermediate (modem, "\r\n+CCWA: %u", p->ccwa != 0);
 }
 
 static at_error_t list_ccwa (at_modem_t *modem, void *data)
 {
-	at_intermediate (modem, "\r\n+CCWA: (0)");
 	(void) data;
-	return AT_OK;
+	return at_intermediate (modem, "\r\n+CCWA: (0,1)");
 }
 
 static at_error_t handle_ccwa (at_modem_t *modem, const char *req, void *data)
@@ -456,6 +454,6 @@ void call_settings_register (at_commands_t *set, plugin_t *p)
 	p->cnap = false;
 	at_register (set, "+CNAP", handle_cnap, p);
 	at_register (set, "+COLR", do_colr, p);
-
+	p->ccwa = false;
 	at_register (set, "+CCWA", handle_ccwa, p);
 }

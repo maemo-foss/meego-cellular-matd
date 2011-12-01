@@ -197,6 +197,56 @@ static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 
 
 /*** RING ***/
+static void incoming_call (plugin_t *p, DBusMessageIter *call, at_modem_t *m)
+{
+	if (p->cring)
+		at_unsolicited (m, "\r\n+CRING: VOICE\r\n");
+	else
+		at_ring (m);
+
+	if (p->clip)
+	{
+		const char *str = ofono_dict_find_string (call, "LineIdentification");
+		if (str == NULL || !strcmp (str, "withheld"))
+			at_unsolicited (m, "\r\n+CLIP: \"\",128\r\n");
+		else
+			at_unsolicited (m, "\r\n+CLIP: \"%s\",%u\r\n", str,
+			                (str[0] == '+') ? 145 : 129);
+	}
+
+	if (p->cnap)
+	{
+		const char *str = ofono_dict_find_string (call, "Name");
+		if (str == NULL)
+			at_unsolicited (m, "\r\n+CNAP: \"\",2\r\n");
+		else if (!strcmp (str, "withheld"))
+			at_unsolicited (m, "\r\n+CNAP: \"\",1\r\n");
+		else
+			at_unsolicited (m, "\r\n+CNAP: \"%.80s\"\r\n", str);
+	}
+
+	if (p->cdip)
+	{
+		const char *str = ofono_dict_find_string (call, "IncomingLine");
+		if (str != NULL)
+			at_unsolicited (m, "\r\n+CDIP: \"%s\",%u\r\n", str,
+			                (str[0] == '+') ? 145 : 129);
+	}
+}
+
+static void waiting_call (plugin_t *p, DBusMessageIter *call, at_modem_t *m)
+{
+	if (p->ccwa)
+	{
+		const char *str = ofono_dict_find_string (call, "LineIdentification");
+		if (str == NULL || !strcmp (str, "withheld"))
+			at_unsolicited (m, "\r\n+CCWA: \"\",128\r\n");
+		else
+			at_unsolicited (m, "\r\n+CCWA: \"%s\",%u\r\n", str,
+			                (str[0] == '+') ? 145 : 129);
+	}
+}
+
 static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 {
 	at_modem_t *m = data;
@@ -208,45 +258,16 @@ static void ring_callback (plugin_t *p, DBusMessage *msg, void *data)
 		return;
 	dbus_message_iter_next (&call);
 
-	/* Only care about incoming calls */
+	/* Only care about incoming or waiting calls */
 	const char *str = ofono_dict_find_string (&call, "State");
-	if (str == NULL || strcmp (str, "incoming"))
+	if (str == NULL)
 		return;
-
-	if (p->cring)
-		at_unsolicited (m, "\r\n+CRING: VOICE\r\n");
-	else
-		at_ring (m);
-
-	if (p->clip)
-	{
-		str = ofono_dict_find_string (&call, "LineIdentification");
-		if (str == NULL || !strcmp (str, "withheld"))
-			at_unsolicited (m, "\r\n+CLIP: \"\",128\r\n");
-		else
-			at_unsolicited (m, "\r\n+CLIP: \"%s\",%u\r\n", str,
-			                (str[0] == '+') ? 145 : 129);
-	}
-
-	if (p->cnap)
-	{
-		str = ofono_dict_find_string (&call, "Name");
-		if (str == NULL)
-			at_unsolicited (m, "\r\n+CNAP: \"\",2\r\n");
-		else if (!strcmp (str, "withheld"))
-			at_unsolicited (m, "\r\n+CNAP: \"\",1\r\n");
-		else
-			at_unsolicited (m, "\r\n+CNAP: \"%.80s\"\r\n", str);
-	}
-
-	if (p->cdip)
-	{
-		str = ofono_dict_find_string (&call, "IncomingLine");
-		if (str != NULL)
-			at_unsolicited (m, "\r\n+CDIP: \"%s\",%u\r\n", str,
-			                (str[0] == '+') ? 145 : 129);
-	}
+	if (!strcmp (str, "incoming"))
+		incoming_call (p, &call, m);
+	if (!strcmp (str, "waiting"))
+		waiting_call (p, &call, m);
 }
+
 
 /** AT+CRC (+CRING) */
 static at_error_t set_ring (at_modem_t *modem, const char *req, void *data)

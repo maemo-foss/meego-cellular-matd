@@ -54,6 +54,7 @@ struct plugin
 	bool colp; /**< AT+COLP */
 	bool cdip; /**< AT+CDIP */
 	bool cnap; /**< AT+CNAP */
+	bool ccwa; /**< AT+CCWA */
 	ofono_watch_t *ring_filter; /**< RING */
 
 	unsigned char cops; /**< AT+COPS */
