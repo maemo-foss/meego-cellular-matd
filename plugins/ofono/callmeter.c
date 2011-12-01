@@ -51,6 +51,7 @@
 #include <at_log.h>
 #include <at_thread.h>
 #include "ofono.h"
+#include "core.h"
 
 
 /*** AT+CACM ***/
@@ -185,6 +186,75 @@ static at_error_t handle_puc (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT+CCWE ***/
+
+static void cwv_callback (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *modem = data;
+
+	at_unsolicited (modem, "\r\n+CCWV\r\n");
+	(void) p;
+	(void) msg;
+}
+
+static at_error_t set_cwe (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	switch (sscanf (req, " %u", &mode))
+	{
+		case 1:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	switch (mode)
+	{
+		case 0:
+			if (p->ccwe_filter != NULL)
+			{
+				ofono_signal_unwatch (p->ccwe_filter),
+				p->ccwe_filter = NULL;
+			}
+			break;
+
+		case 1:
+			if (p->ccwe_filter == NULL)
+			{
+				p->ccwe_filter = ofono_signal_watch (p, NULL, "CallMeter",
+			    	"NearMaximumWarning", NULL, cwv_callback, modem);
+				if (p->ccwe_filter == NULL)
+					return AT_CME_ENOMEM;
+			}
+			break;
+
+		default:
+			return AT_CME_EINVAL;
+	}
+	return AT_OK;
+}
+
+static at_error_t get_cwe (at_modem_t *m, void *data)
+{
+	plugin_t *p = data;
+
+	return at_intermediate (m, "\r\n+CCWE: %u", p->ccwe_filter != NULL);
+}
+
+static at_error_t list_cwe (at_modem_t *m, void *data)
+{
+	(void) data;
+	return at_intermediate (m, "\r\n+CCWE: (0,1)");
+}
+
+static at_error_t handle_cwe (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_cwe, get_cwe, list_cwe);
+}
+
+
 /*** Registration ***/
 
 void call_meter_register (at_commands_t *set, plugin_t *p)
@@ -192,4 +262,12 @@ void call_meter_register (at_commands_t *set, plugin_t *p)
 	at_register (set, "+CACM", handle_acm, p);
 	at_register (set, "+CAMM", handle_amm, p);
 	at_register (set, "+CPUC", handle_puc, p);
+	p->ccwe_filter = NULL;
+	at_register (set, "+CCWE", handle_cwe, p);
+}
+
+void call_meter_unregister (plugin_t *p)
+{
+	if (p->ccwe_filter != NULL)
+		ofono_signal_unwatch (p->ccwe_filter);
 }

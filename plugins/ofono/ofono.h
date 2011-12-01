@@ -258,6 +258,7 @@ void modem_register (at_commands_t *, plugin_t *);
 void agps_register (at_commands_t *, plugin_t *);
 void call_forwarding_register (at_commands_t *, plugin_t *);
 void call_meter_register (at_commands_t *, plugin_t *);
+void call_meter_unregister (plugin_t *);
 void call_settings_register (at_commands_t *, plugin_t *);
 void gprs_register (at_commands_t *, plugin_t *);
 void gprs_unregister (plugin_t *);

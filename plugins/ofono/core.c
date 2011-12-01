@@ -629,6 +629,7 @@ void at_plugin_unregister (void *opaque)
 	if (p == NULL)
 		return;
 
+	call_meter_unregister (p);
 	gprs_unregister (p);
 	network_unregister (p);
 	voicecallmanager_unregister (p);
