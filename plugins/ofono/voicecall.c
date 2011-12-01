@@ -443,17 +443,29 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 			case '1':
 				return voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
 
-			//case '2': TODO: private chat
+			case '2':
+			{
+				char *call;
+				at_error_t ret;
 
-			default:
-				return AT_CME_ENOTSUP;
+				if (asprintf (&call, "%s/voicecall%u", p->modemv[p->modem],
+				              id) == -1)
+					return AT_CME_ENOMEM;
+
+				ret = modem_request (p, "VoiceCallManager", "PrivateChat",
+				                     DBUS_TYPE_OBJECT_PATH, &call,
+				                     DBUS_TYPE_INVALID);
+				free (call);
+				return ret;
+			}
 		}
 	}
+	return AT_CME_ENOTSUP;
 }
 
 static at_error_t list_chld (at_modem_t *modem, void *data)
 {
-	at_intermediate (modem, "\r\n+CHLD: (1,1x,2,3,4)");
+	at_intermediate (modem, "\r\n+CHLD: (1,1x,2,2x,3,4)");
 
 	(void)data;
 	return AT_OK;
