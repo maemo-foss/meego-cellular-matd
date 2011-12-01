@@ -420,13 +420,13 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 			{
 				/* XXX: race-prone. Use a single call list */
 				at_error_t ret;
-				int id = find_call_by_state(p, "waiting", &ret);
+				int id = find_call_by_state (p, "waiting", &ret);
 				if (id != -1)
-					return voicecall_request(p, id, "Hangup",
+					return voicecall_request (p, id, "Hangup",
 					                         DBUS_TYPE_INVALID);
 
-				while ((id = find_call_by_state(p, "held", &ret)) != -1)
-					voicecall_request(p, id, "Hangup", DBUS_TYPE_INVALID);
+				while ((id = find_call_by_state (p, "held", &ret)) != -1)
+					voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
 				return AT_OK;
 			}
 
