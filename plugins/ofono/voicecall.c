@@ -361,20 +361,22 @@ out:
 
 /*** AT+CHUP  ***/
 
-/* XXX: review AT+CHUP and ATH when data mode is implemented */
-static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
+static at_error_t set_chup (at_modem_t *modem, const char *req, void *data)
 {
 	plugin_t *p = data;
 	at_error_t ret;
+	int id;
 
-	ret = modem_request (p, "VoiceCallManager", "HangupAll",
-	                     DBUS_TYPE_INVALID);
-	if (ret == AT_CME_ERROR_0)
-		ret = AT_OK; /* there was no ongoing call */
-
-	(void) modem; /* maybe NULL with AT+CVHU=2 */
+	while ((id = find_call_by_state (p, "active", &ret)) != -1)
+		voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
+	(void) modem;
 	(void) req;
-	return ret;
+	return AT_OK;
+}
+
+static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_chup, NULL, NULL);
 }
 
 
@@ -384,14 +386,13 @@ static at_error_t handle_hangup (at_modem_t *modem, unsigned val, void *data)
 {
 	plugin_t *p = data;
 
-	if (val != 0)
-		return AT_CME_ENOTSUP;
-
-	if (p->vhu == 1)
-		return AT_OK; /* ignore ATH */
-
-	/* We don't do alternating calls, so ATH is the same as AT+CHUP */
-	return handle_chup (modem, "+CHUP", data) ? AT_ERROR : AT_OK;
+	at_error_t ret = modem_request (p, "VoiceCallManager", "HangupAll",
+	                     DBUS_TYPE_INVALID);
+	if (ret == AT_CME_ERROR_0)
+		ret = AT_OK; /* there was no ongoing call */
+	(void) modem; /* maybe NULL with AT+CVHU=2 */
+	(void) val;
+	return ret;
 }
 
 
@@ -788,5 +789,5 @@ void voicecallmanager_unregister (plugin_t *p)
 {
 	ofono_signal_unwatch (p->ring_filter);
 	if (p->vhu == 2)
-		handle_chup (NULL, "+CHUP", p);
+		handle_hangup (NULL, 'H', p);
 }
