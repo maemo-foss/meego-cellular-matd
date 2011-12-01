@@ -195,6 +195,42 @@ static at_error_t handle_dial (at_modem_t *modem, const char *str, void *data)
 	                      DBUS_TYPE_INVALID);
 }
 
+/*** AT+CSTA ***/
+static at_error_t set_csta (at_modem_t *modem, const char *req, void *data)
+{
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		mode = 145;
+	switch (mode)
+	{
+		case 129:
+		case 145:
+			break;
+		default:
+			return AT_CME_ENOTSUP;
+	}
+	(void) modem; (void) data;
+	return AT_OK;
+}
+
+static at_error_t get_csta (at_modem_t *modem, void *data)
+{
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSTA: 145");
+}
+
+static at_error_t list_csta (at_modem_t *modem, void *data)
+{
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSTA: (129,145)");
+}
+
+static at_error_t handle_csta (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, set_csta, get_csta, list_csta);
+}
+
 
 /*** RING ***/
 static void incoming_call (plugin_t *p, DBusMessageIter *call, at_modem_t *m)
@@ -788,6 +824,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 {
 	at_register_alpha (set, 'A', handle_answer, p);
 	at_register_dial (set, true, handle_dial, p);
+	at_register (set, "+CSTA", handle_csta, p);
 	at_register (set, "+CLCC", handle_clcc, p);
 	at_register (set, "+CHUP", handle_chup, p);
 	at_register_alpha (set, 'H', handle_hangup, p);
