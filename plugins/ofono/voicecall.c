@@ -416,7 +416,19 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 
 		switch (op)
 		{
-			//case '0': TODO: release help
+			case '0':
+			{
+				/* XXX: race-prone. Use a single call list */
+				at_error_t ret;
+				int id = find_call_by_state(p, "waiting", &ret);
+				if (id != -1)
+					return voicecall_request(p, id, "Hangup",
+					                         DBUS_TYPE_INVALID);
+
+				while ((id = find_call_by_state(p, "held", &ret)) != -1)
+					voicecall_request(p, id, "Hangup", DBUS_TYPE_INVALID);
+				return AT_OK;
+			}
 
 			case '1':
 				method = "ReleaseAndAnswer";
@@ -465,7 +477,7 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 
 static at_error_t list_chld (at_modem_t *modem, void *data)
 {
-	at_intermediate (modem, "\r\n+CHLD: (1,1x,2,2x,3,4)");
+	at_intermediate (modem, "\r\n+CHLD: (0,1,1x,2,2x,3,4)");
 
 	(void)data;
 	return AT_OK;
