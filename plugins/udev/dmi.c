@@ -47,6 +47,7 @@
 #include <libudev.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/utsname.h>
 
 #include <at_command.h>
 #include <at_thread.h>
@@ -151,6 +152,41 @@ static int show_model (at_modem_t *modem, struct udev_device *dev)
 	return 0;
 }
 
+static int show_revision (at_modem_t *modem, struct udev_device *dev)
+{
+	const char *vendor = udev_device_get_sysattr_value (dev, "sys_vendor");
+	if (vendor == NULL)
+		vendor = "NONAME\n";
+
+	const char *model = udev_device_get_sysattr_value (dev, "product_name");
+	if (model == NULL)
+		model = "\n";
+
+	const char *rev = udev_device_get_sysattr_value (dev, "product_version");
+	if (rev == NULL)
+		rev = "\n";
+
+	int vndlen = strcspn (vendor, "\r\n");
+	int mdllen = strcspn (model, "\r\n");
+	int revlen = strcspn (rev, "\r\n");
+
+	at_intermediate (modem, "\r\n%.*s %.*s version %.*s",
+	                 vndlen, vendor, mdllen, model, revlen, rev);
+
+	struct utsname uts;
+	if (uname (&uts))
+		at_intermediate (modem, "\r\nUnknown system");
+	else
+		at_intermediate (modem, "\r\n%s version %s %s (%s)",
+		                 uts.sysname, uts.release, uts.version, uts.machine);
+	at_intermediate (modem, "\r\n"PACKAGE" version "VERSION);
+
+	/* Hook for modem revision */
+	at_execute (modem, "*OFGMR");
+
+	return 0;
+}
+
 
 void *at_plugin_register (at_commands_t *set)
 {
@@ -158,6 +194,8 @@ void *at_plugin_register (at_commands_t *set)
 	at_register (set, "+CGMI", handle_gm, show_manuf);
 	at_register (set, "+GMM", handle_gm, show_model);
 	at_register (set, "+CGMM", handle_gm, show_model);
+	at_register (set, "+GMR", handle_gm, show_revision);
+	at_register (set, "+CGMR", handle_gm, show_revision);
 
 	return NULL;
 }
