@@ -107,17 +107,6 @@ static at_error_t handle_reset (at_modem_t *modem, unsigned value, void *data)
 }
 
 
-/* Stub handlers for AT+GM{I,M,R} */
-static at_error_t redirect_cellular (at_modem_t *modem,
-                                     const char *req, void *data)
-{
-	const char *cmd = data;
-
-	(void) req;
-	return (at_execute_string (modem, cmd) == AT_OK) ? AT_OK : AT_ERROR;
-}
-
-
 static at_error_t set_cmee (at_modem_t *m, const char *req, void *opaque)
 {
 	unsigned mode = atoi (req);
@@ -229,9 +218,5 @@ void *at_plugin_register (at_commands_t *set)
 
 	at_register (set, "+CMEE", handle_cmee, NULL);
 	at_register (set, "+CSCS", handle_cscs, NULL);
-	at_register (set, "+GMI", redirect_cellular, (void *)"+CGMI");
-	at_register (set, "+GMM", redirect_cellular, (void *)"+CGMM");
-	at_register (set, "+GMR", redirect_cellular, (void *)"+CGMR");
-	at_register (set, "+GSN", redirect_cellular, (void *)"+CGSN");
 	return NULL;
 }
