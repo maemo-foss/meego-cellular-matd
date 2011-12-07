@@ -152,8 +152,11 @@ static at_error_t handle_cfun (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CGSN ***/
 
-static at_error_t handle_cgsn (at_modem_t *modem, const char *req, void *data)
+static at_error_t show_gsn (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	char *imei = modem_prop_get_string (data, "Modem", "Serial");
 	if (imei == NULL)
 		return AT_CME_UNKNOWN;
@@ -162,6 +165,11 @@ static at_error_t handle_cgsn (at_modem_t *modem, const char *req, void *data)
 	free (imei);
 	(void) req;
 	return AT_OK;
+}
+
+static at_error_t handle_gsn (at_modem_t *modem, const char *req, void *data)
+{
+	return at_setting (modem, req, data, show_gsn, NULL, NULL);
 }
 
 
@@ -188,6 +196,7 @@ static at_error_t handle_gmr (at_modem_t *modem, const char *req, void *data)
 void modem_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+CFUN", handle_cfun, p);
-	at_register (set, "+CGSN", handle_cgsn, p);
+	at_register (set, "+CGSN", handle_gsn, p);
+	at_register (set, "+GSN", handle_gsn, p);
 	at_register (set, "*OFGMR", handle_gmr, p);
 }
