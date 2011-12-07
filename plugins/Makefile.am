@@ -61,6 +61,12 @@ plugins_LTLIBRARIES += libtimezone_at.la
 #
 # Udev plugins
 #
+# DMI class
+libudev_dmi_at_la_SOURCES = udev/dmi.c
+libudev_dmi_at_la_CFLAGS = $(LIBUDEV_CFLAGS)
+libudev_dmi_at_la_LIBADD = $(AM_LIBADD) $(LIBUDEV_LIBS)
+plugins_LTLIBRARIES += libudev_dmi_at.la
+
 # Power class
 libudev_power_at_la_SOURCES = udev/power.c
 libudev_power_at_la_CFLAGS = $(LIBUDEV_CFLAGS)
