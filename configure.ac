@@ -45,19 +45,6 @@ AS_IF([test "$enable_coverage" != "no"], [
 ])
 
 
-dnl Vendor
-AC_ARG_ENABLE([vendor],
-  [AS_HELP_STRING([--enable-vendor],
-                  [Set the vendor name (default MeeGo)])],, [
-  enable_vendor="no"
-])
-VENDOR="MeeGo"
-AS_IF([test "${enable_vendor}" != "no"], [
-  VENDOR="${enable_vendor}"
-])
-AC_SUBST(VENDOR)
-
-
 dnl Input controls
 AC_ARG_ENABLE([keypad],
   [AS_HELP_STRING([--enable-keypad],
