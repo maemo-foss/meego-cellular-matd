@@ -73,12 +73,12 @@ static struct udev *at_udev_new (void)
 	return udev;
 }
 
-static at_error_t show_gmi (at_modem_t *m, const char *req, void *data)
+static at_error_t at_udev_enum (at_modem_t *m, const char *req, void *data)
 {
 	if (*req)
 		return AT_CME_ENOTSUP;
 
-	(void)data;
+	int (*show) (at_modem_t *, struct udev_device *) = data;
 
 	int canc = at_cancel_disable ();
 	at_error_t ret = AT_CME_ENOENT;
@@ -101,18 +101,8 @@ static at_error_t show_gmi (at_modem_t *m, const char *req, void *data)
 		struct udev_device *d;
 
 		d = udev_device_new_from_syspath (udev, udev_list_entry_get_name (i));
-		debug ("Device: %s", udev_device_get_devpath(d));
-
-		const char *vendor = udev_device_get_sysattr_value (d, "sys_vendor");
-		if (vendor != NULL)
-		{
-			int len = strcspn (vendor, "\r\n");
-			if (len > 0)
-			{
-				at_intermediate (m, "\r\n%.*s", len, vendor);
-				ret = AT_OK;
-			}
-		}
+		if (show (m, d) == 0)
+			ret = AT_OK;
 		udev_device_unref(d);
 	}
 	udev_enumerate_unref(en);
@@ -123,15 +113,51 @@ end:
 	return ret;
 }
 
-static at_error_t handle_gmi (at_modem_t *m, const char *req, void *data)
+static at_error_t handle_gm (at_modem_t *m, const char *req, void *data)
 {
-	return at_setting (m, req, data, show_gmi, NULL, NULL);
+	return at_setting (m, req, data, at_udev_enum, NULL, data);
 }
+
+static int show_manuf (at_modem_t *modem, struct udev_device *dev)
+{
+	const char *vendor = udev_device_get_sysattr_value (dev, "sys_vendor");
+	if (vendor == NULL)
+		return -1;
+
+	int vndlen = strcspn (vendor, "\r\n");
+	if (vndlen <= 0)
+		return -1;
+
+	at_intermediate (modem, "\r\n%.*s", vndlen, vendor);
+	return 0;
+}
+
+static int show_model (at_modem_t *modem, struct udev_device *dev)
+{
+	const char *vendor = udev_device_get_sysattr_value (dev, "sys_vendor");
+	if (vendor == NULL)
+		vendor = "NONAME\n";
+
+	const char *model = udev_device_get_sysattr_value (dev, "product_name");
+	if (model == NULL)
+		return -1;
+
+	int vndlen = strcspn (vendor, "\r\n");
+	int mdllen = strcspn (model, "\r\n");
+	if (mdllen <= 0)
+		return -1;
+
+	at_intermediate (modem, "\r\n%.*s %.*s", vndlen, vendor, mdllen, model);
+	return 0;
+}
+
 
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "+GMI", handle_gmi, NULL);
-	at_register (set, "+CGMI", handle_gmi, NULL);
+	at_register (set, "+GMI", handle_gm, show_manuf);
+	at_register (set, "+CGMI", handle_gm, show_manuf);
+	at_register (set, "+GMM", handle_gm, show_model);
+	at_register (set, "+CGMM", handle_gm, show_model);
 
 	return NULL;
 }
