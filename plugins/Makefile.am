@@ -58,11 +58,14 @@ libtimezone_at_la_SOURCES = timezone.c
 libtimezone_at_la_LIBADD = $(AM_LIBADD) -lpthread
 plugins_LTLIBRARIES += libtimezone_at.la
 
-# udev (ACPI battery plugin)
-libudev_at_la_SOURCES = udev.c
-libudev_at_la_CFLAGS = $(LIBUDEV_CFLAGS)
-libudev_at_la_LIBADD = $(AM_LIBADD) $(LIBUDEV_LIBS)
-plugins_LTLIBRARIES += libudev_at.la
+#
+# Udev plugins
+#
+# Power class
+libudev_power_at_la_SOURCES = udev/power.c
+libudev_power_at_la_CFLAGS = $(LIBUDEV_CFLAGS)
+libudev_power_at_la_LIBADD = $(AM_LIBADD) $(LIBUDEV_LIBS)
+plugins_LTLIBRARIES += libudev_power_at.la
 
 
 #

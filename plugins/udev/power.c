@@ -1,6 +1,6 @@
 /**
- * @file udev.c
- * @brief AT commands using udev
+ * @file power.c
+ * @brief AT commands using udev power_supply class
  */
 
 /* ***** BEGIN LICENSE BLOCK *****
