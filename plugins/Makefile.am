@@ -109,14 +109,6 @@ libzzztest_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libperf_at.la libzzztest_at.la libunusable.la
 
 
-#
-# System management plug-ins
-#
-libinfo_at_la_SOURCES = sysinfo.c
-libinfo_at_la_CFLAGS = $(DBUS_CFLAGS) -DVENDOR=\"$(VENDOR)\"
-libinfo_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
-plugins_LTLIBRARIES += libinfo_at.la
-
 if HAVE_MCE
 libmce_backlight_at_la_SOURCES = mce/backlight.c
 libmce_backlight_at_la_CFLAGS = $(DBUS_CFLAGS)
