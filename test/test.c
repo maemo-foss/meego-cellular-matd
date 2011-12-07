@@ -938,44 +938,24 @@ CASE (vendor)
 {
 	REQUEST ("ATI");
 	RESPONSE ();
-	if (strcmp (line, VENDOR"\r\n"))
-	{
-		fprintf (stderr, "Bad info: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
 
 	REQUEST ("AT I0");
 	RESPONSE ();
-	if (strcmp (line, VENDOR"\r\n"))
-	{
-		fprintf (stderr, "Bad info 0: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
 
 	REQUEST ("AT+GMI");
 	RESPONSE ();
-	if (strcmp (line, VENDOR"\r\n"))
-	{
-		fprintf (stderr, "Bad vendor name: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
 
 	REQUEST ("AT+CGMI");
 	RESPONSE ();
-	if (strcmp (line, VENDOR"\r\n"))
-	{
-		fprintf (stderr, "Bad cellular vendor name: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
@@ -986,33 +966,18 @@ CASE (product)
 {
 	REQUEST ("AT I3");
 	RESPONSE ();
-	if (strncmp (line, VENDOR" ", 6))
-	{
-		fprintf (stderr, "Bad info 3: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
 
 	REQUEST ("AT+GMM");
 	RESPONSE ();
-	if (strncmp (line, VENDOR" ", 6))
-	{
-		fprintf (stderr, "Bad product name: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();
 
 	REQUEST ("AT+CGMM");
 	RESPONSE ();
-	if (strncmp (line, VENDOR" ", 6))
-	{
-		fprintf (stderr, "Bad cellular product name: %s\n", line);
-		return -1;
-	}
 	RESPONSE ();
 	RESPONSE ();
 	CHECK_OK ();

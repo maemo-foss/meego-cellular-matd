@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DVENDOR=\"$(VENDOR)\"
+AM_CPPFLAGS = -DBINDIR=\"$(bindir)\"
 TESTS = mat-tests $(check_SCRIPTS) test-cli
 EXTRA_DIST =
 MOSTLYCLEANFILES = $(check_SCRIPTS)
