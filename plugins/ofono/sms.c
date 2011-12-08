@@ -51,8 +51,10 @@
 
 #include <at_command.h>
 #include <at_thread.h>
+#include <at_log.h>
 
 #include "ofono.h"
+#include "core.h"
 
 /*** AT+CGSMS ***/
 
@@ -180,38 +182,38 @@ static at_error_t get_csca (at_modem_t *modem, void *data)
 
 /*** AT+CMGF ***/
 
-/* TODO: PDU mode */
-
 static at_error_t set_cmgf (at_modem_t *m, const char *req, void *data)
 {
+	plugin_t *p = data;
 	unsigned mode;
 
 	if (sscanf (req, " %u", &mode) != 1)
 		return AT_ERROR;
-	if (mode != 1)
+	if (mode > 1)
 		return AT_CMS_ENOTSUP;
 
+	p->text_mode = mode;
 	(void)m;
-	(void)data;
 	return AT_OK;
 }
 
 static at_error_t get_cmgf (at_modem_t *m, void *data)
 {
-	(void)data;
-	return at_intermediate (m, "\r\n+CMGF: 1");
+	plugin_t *p = data;
+
+	return at_intermediate (m, "\r\n+CMGF: %u", p->text_mode);
 }
 
 static at_error_t list_cmgf (at_modem_t *m, void *data)
 {
 	(void)data;
-	return at_intermediate (m, "\r\n+CMGF: (1)");
+	return at_intermediate (m, "\r\n+CMGF: (0-1)");
 }
 
 
 /*** AT+CMGS ***/
 
-static at_error_t set_cmgs (at_modem_t *m, const char *req, void *data)
+static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 {
 	char number[21];
 	unsigned type;
@@ -271,6 +273,105 @@ out:
 	return ret;
 }
 
+static int hexdigit (char c)
+{
+	if ((unsigned)(c - '0') < 10u)
+		return c - '0';
+	if ((unsigned)(c - 'A') < 6u)
+		return c + 10 - 'A';
+	if ((unsigned)(c - 'a') < 6u)
+		return c + 10 - 'a';
+	return -1;
+}
+
+static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
+{
+	unsigned len;
+
+	if (sscanf (req, " %u", &len) != 1)
+		return AT_CMS_PDU_EINVAL;
+
+	plugin_t *p = data;
+	/* Read hexadecimal PDU */
+	char *pdu = at_read_text (m, "\r\n> ");
+	if (pdu == NULL)
+		return AT_OK;
+
+	/* Convert to binary */
+	dbus_uint32_t bytes = 0;
+	for (char *in = pdu, *out = pdu; bytes < len; bytes++)
+	{
+		int hinib = hexdigit (*(in++));
+		int lonib = hexdigit (*(in++));
+
+		if (hinib < 0 || lonib < 0)
+		{
+			free (pdu);
+			return AT_CMS_PDU_EINVAL;
+		}
+
+		*(out++) = (hinib << 4) | lonib;
+	}
+
+	debug ("sending SMS PDU (%u bytes)", (unsigned)bytes);
+
+	at_error_t ret = AT_CMS_ENOMEM;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *msg = modem_req_new (p, "MessageManager", "SendMessagePDU");
+	if (msg == NULL)
+		goto out;
+
+	DBusMessageIter args, pdus, payload;
+	dbus_message_iter_init_append (msg, &args);
+	if (!dbus_message_iter_open_container (&args, DBUS_TYPE_ARRAY, "ay", &pdus)
+	 || !dbus_message_iter_open_container (&pdus, DBUS_TYPE_ARRAY, "y",
+	                                       &payload)
+	 || !dbus_message_iter_append_fixed_array (&payload, DBUS_TYPE_BYTE,
+	                                           &pdu, bytes)
+	 || !dbus_message_iter_close_container (&pdus, &payload)
+	 || !dbus_message_iter_close_container (&args, &pdus)
+	 || !dbus_message_iter_open_container (&args, DBUS_TYPE_ARRAY, "{sv}",
+	                                       &pdus)
+	 || !dbus_message_iter_close_container (&args, &pdus))
+	{
+		dbus_message_unref (msg);
+		goto out;
+	}
+
+	msg = ofono_query (msg, &ret);
+	if (msg == NULL)
+		goto out;
+
+	const char *path;
+	uint8_t mr;
+	if (!dbus_message_get_args (msg, NULL,
+	                            DBUS_TYPE_OBJECT_PATH, &path,
+	                            DBUS_TYPE_INVALID))
+	{
+		dbus_message_unref (msg);
+		ret = AT_CMS_UNKNOWN;
+		goto out;
+	}
+	/* This message reference is totally fake. FIXME? */
+	if (sscanf (path, "%*[^_]_%2"SCNx8, &mr) != 1)
+		mr = 0;
+	dbus_message_unref (msg);
+	ret = at_intermediate (m, "\r\n+CMGS: %"PRIu8, mr);
+out:
+	at_cancel_enable (canc);
+	return ret;
+}
+
+
+static at_error_t set_cmgs (at_modem_t *m, const char *req, void *data)
+{
+	plugin_t *p = data;
+	at_set_t send_cb = p->text_mode ? send_text : send_pdu;
+
+	return send_cb (m, req, data);
+}
+
 
 /*** AT+CMMS (stub) ***/
 
@@ -307,6 +408,7 @@ void sms_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CGSMS", set_cgsms, get_cgsms, list_cgsms, p);
 	at_register_ext (set, "+CSMS", set_csms, get_csms, list_csms, p);
 	at_register_ext (set, "+CSCA", set_csca, get_csca, NULL, p);
+	p->text_mode = true;
 	at_register_ext (set, "+CMGF", set_cmgf, get_cmgf, list_cmgf, p);
 	at_register_ext (set, "+CMGS", set_cmgs, NULL, NULL, p);
 	at_register_ext (set, "+CMMS", set_mms, get_mms, list_mms, p);

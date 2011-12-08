@@ -69,4 +69,6 @@ struct plugin
 	ofono_watch_t *caoc_filter; /**< AT+CAOC */
 #endif
 	ofono_watch_t *ccwe_filter; /**< AT+CCWE */
+
+	bool text_mode; /**< AT+CGMF */
 };
