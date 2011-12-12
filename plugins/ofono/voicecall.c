@@ -875,6 +875,18 @@ static at_error_t get_auto_answer (at_modem_t *m, void *data)
 }
 
 
+/*** AT+BDLN ***/
+static at_error_t handle_redial (at_modem_t *m, const char *req, void *data)
+{
+	plugin_t *p = data;
+
+	if (*req)
+		return AT_CME_EINVAL;
+	(void) m;
+	return modem_request (p, "VoiceCallManager", "Redial", DBUS_TYPE_INVALID);
+}
+
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -896,6 +908,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CPAS", show_cpas, NULL, list_cpas, p);
 	at_register_pb (set, "EN", NULL, read_en, NULL, NULL, count_en, p);
 	at_register_s (set, 0, set_auto_answer, get_auto_answer, p);
+	at_register_ext (set, "+BLDN", handle_redial, NULL, NULL, p);
 
 	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,
