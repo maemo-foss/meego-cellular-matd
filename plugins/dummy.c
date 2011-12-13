@@ -61,6 +61,9 @@ typedef struct
 	unsigned ds_nego:1;
 	uint16_t ds_dict;
 	uint8_t  ds_string;
+	unsigned char s7;
+	unsigned char s8;
+	unsigned char s10;
 } dummy_t;
 
 static at_error_t alpha_nothing (at_modem_t *modem, unsigned value,
@@ -203,6 +206,26 @@ static at_error_t get_s6 (at_modem_t *m, void *data)
 }
 
 
+/*** ATS7, ATS8, ATS8 (all faked) ***/
+static at_error_t set_byte (at_modem_t *m, unsigned val, void *data)
+{
+	unsigned char *byte = data;
+
+	if (val < 1 || val > 255)
+		return AT_ERROR;
+	*byte = val;
+	(void)m;
+	return AT_OK;
+}
+
+static at_error_t get_byte (at_modem_t *m, void *data)
+{
+	unsigned char *byte = data;
+
+	return at_intermediate (m, "\r\n%03hhu\r\n", *byte);
+}
+
+
 /*** AT+DR (data compression reporting) ***/
 static at_error_t set_dr (at_modem_t *m, const char *req, void *data)
 {
@@ -310,11 +333,21 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_alpha (set, 'P', alpha_nothing, NULL);
 	/* tone dialing */
 	at_register_alpha (set, 'T', alpha_nothing, NULL);
-	/* pause before blind calling */
 	if (d != NULL)
 	{
+		/* pause before blind calling */
 		d->s6 = 2;
 		at_register_s (set, 6, set_s6, get_s6, d);
+
+		/* fake: call answering/alerting timeout */
+		d->s7 = 50;
+		at_register_s (set, 7, set_byte, get_byte, &d->s7);
+		/* fake: dial string comma duration */
+		d->s8 = 2;
+		at_register_s (set, 8, set_byte, get_byte, &d->s8);
+		/* fake: disconnection timeout */
+		d->s10 = 2;
+		at_register_s (set, 10, set_byte, get_byte, &d->s10);
 	}
 
 	/* return to data mode */
