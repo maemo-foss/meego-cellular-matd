@@ -66,7 +66,9 @@ typedef struct at_handler
 {
 	char name[15];
 	bool wildcard;
-	at_request_cb request;
+	bool extended;
+	at_set_cb set;
+	at_get_cb get, test;
 	void *opaque;
 } at_handler_t;
 
@@ -89,7 +91,7 @@ struct at_commands
 		} ampersand[26]; /**< ampersand + character commands */
 		struct
 		{
-			at_request_cb handler;
+			at_set_cb handler;
 			void *opaque;
 		} dial[2]; /**< D command */
 		struct
@@ -197,8 +199,9 @@ static int ext_match (const void *a, const void *b)
 	return 0; // proper match!
 }
 
-static int at_register_ext (at_commands_t *bank, const char *name,
-                            at_request_cb req, void *opaque, bool wildcard)
+static int at_register_common (at_commands_t *bank, const char *name,
+                               at_set_cb set, at_get_cb get, at_get_cb test,
+                               void *opaque, bool wildcard, bool extended)
 {
 	if (strlen (name) >= AT_NAME_MAX)
 		return ENAMETOOLONG;
@@ -209,7 +212,10 @@ static int at_register_ext (at_commands_t *bank, const char *name,
 
 	strcpy (h->name, name);
 	h->wildcard = wildcard;
-	h->request = req;
+	h->extended = extended;
+	h->set = set;
+	h->get = get;
+	h->test = test;
 	h->opaque = opaque;
 
 	void **proot = &bank->cmd.extended;
@@ -230,16 +236,25 @@ static int at_register_ext (at_commands_t *bank, const char *name,
 	return 0;
 }
 
-int at_register (at_commands_t *bank, const char *name,
-                 at_request_cb req, void *opaque)
+int at_register_ext (at_commands_t *bank, const char *name, at_set_cb set,
+                     at_get_cb get, at_get_cb test, void *opaque)
 {
-	return at_register_ext (bank, name, req, opaque, false);
+	return at_register_common (bank, name, set, get, test, opaque,
+	                           false, true);
+}
+
+int at_register (at_commands_t *bank, const char *name,
+                 at_set_cb req, void *opaque)
+{
+	return at_register_common (bank, name, req, NULL, NULL, opaque,
+	                           false, false);
 }
 
 int at_register_wildcard (at_commands_t *bank, const char *name,
-                          at_request_cb req, void *opaque)
+                          at_set_cb req, void *opaque)
 {
-	return at_register_ext (bank, name, req, opaque, true);
+	return at_register_common (bank, name, req, NULL, NULL, opaque,
+	                           true, false);
 }
 
 int at_register_alpha (at_commands_t *bank, char cmd, at_alpha_cb req,
@@ -277,7 +292,7 @@ int at_register_ampersand (at_commands_t *bank, char cmd, at_alpha_cb req,
 	return 0;
 }
 
-int at_register_dial (at_commands_t *bank, bool voice, at_request_cb req,
+int at_register_dial (at_commands_t *bank, bool voice, at_set_cb req,
                       void *opaque)
 {
 	if (bank->cmd.dial[voice].handler != NULL)
@@ -331,7 +346,7 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		if (c == 'D')
 		{
 			bool voice = strchr (req, ';') != NULL;
-			at_request_cb cb = bank->cmd.dial[voice].handler;
+			at_set_cb cb = bank->cmd.dial[voice].handler;
 
 			if (cb == NULL)
 				return AT_NO_DIALTONE;
@@ -402,7 +417,12 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 	struct at_handler **p = tfind (req, &bank->cmd.extended, ext_match);
 	if (p == NULL)
 		goto unknown;
-	return (*p)->request (m, req, (*p)->opaque);
+
+	struct at_handler *h = *p;
+	if (h->extended)
+		return at_setting (m, req, h->opaque, h->set, h->get, h->test);
+	else
+		return h->set (m, req, h->opaque);
 
 unknown:
 	warning ("Unknown request \"AT%s\"", req);

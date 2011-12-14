@@ -6,6 +6,7 @@ at_register
 at_register_alpha
 at_register_ampersand
 at_register_dial
+at_register_ext
 at_register_s
 at_register_wildcard
 at_intermediate

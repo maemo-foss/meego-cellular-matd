@@ -133,7 +133,7 @@ enum at_error
 #define AT_CMS_ERROR(x) (AT_CMS_ERROR_0+(x))
 
 /**
- * Return type for AT command handlers (see @ref at_request_cb).
+ * Return type for AT command handlers (see @ref at_set_cb).
  */
 typedef unsigned at_error_t;
 
@@ -175,26 +175,38 @@ void at_plugin_unregister (void *opaque);
 #define AT_COMMANDS_MODEM(set) (*((at_modem_t **)(set)))
 
 /**
- * Callback prototype to execute an AT command.
+ * Callback prototype to execute an extended AT command (AT+FOO=...).
  * @param m AT modem object
- * @param str text of the AT command (<b>without the AT prefix</b>)
+ * @param str parameters of the AT command (text after the equal sign)
  * @param ctx opaque pointer (as provided to at_register())
  * @return the AT command result
  */
-typedef at_error_t (*at_request_cb) (at_modem_t *m, const char *str,
-                                     void *ctx);
+typedef at_error_t (*at_set_cb) (at_modem_t *m, const char *str, void *ctx);
+
+/**
+ * Callback prototype to query current (AT+FOO?) or supported paramaters
+ * (AT+FOO=?) of an extended AT command.
+ * @param m AT modem object
+ * @param ctx opaque pointer (as provided to at_register())
+ * @return the AT command result
+ */
+typedef at_error_t (*at_get_cb) (at_modem_t *m, void *ctx);
 
 /**
  * Registers a handler for an extended AT command.
  *
  * @param set AT commands list to register in
  * @param name ASCIIz name of the AT command to register
- * @param req AT command execution callback (mandatory)
+ * @param setter AT command execution callback (mandatory, cannot be NULL)
+ * @param getter AT command query callback (or NULL)
+ * @param tester AT command test callback (or NULL)
  * @param opaque data pointer for the callbacks
  * @return 0 on success, an error code otherwise
  */
-int at_register (at_commands_t *set, const char *name,
-                 at_request_cb req, void *opaque);
+int at_register_ext (at_commands_t *set, const char *name, at_set_cb setter,
+                 at_get_cb getter, at_get_cb tester, void *opaque);
+int at_register (at_commands_t *set, const char *name, at_set_cb setter,
+                 void *opaque);
 
 /**
  * Registers a handler for all extended AT commands
@@ -202,12 +214,17 @@ int at_register (at_commands_t *set, const char *name,
  *
  * @param set AT commands list to register in
  * @param name ASCIIz prefix of the AT commands to register
- * @param req AT command execution callback (mandatory)
+ * @param setter AT command execution callback (mandatory, cannot be NULL)
+ * @param getter AT command query callback (or NULL)
+ * @param tester AT command test callback (or NULL)
  * @param opaque data pointer for the callbacks
  * @return 0 on success, an error code otherwise
  */
+/*int at_register_wildcard (at_commands_t *set, const char *name,
+                          at_set_cb setter, at_get_cb getter, at_get_cb tester,
+                          void *opaque);*/
 int at_register_wildcard (at_commands_t *set, const char *name,
-                          at_request_cb req, void *opaque);
+                          at_set_cb setter, void *opaque);
 
 
 /**
@@ -255,7 +272,7 @@ int at_register_ampersand (at_commands_t *set, char cmd,
  * @return 0 on success, an error code otherwise
  */
 int at_register_dial (at_commands_t *set, bool voice,
-                      at_request_cb req, void *opaque);
+                      at_set_cb req, void *opaque);
 
 /**
  * Callback prototype to execute an ATS setting command
