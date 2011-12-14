@@ -61,6 +61,9 @@
 
 static at_error_t handle_cimi (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	char *imsi = modem_prop_get_string (data, "SimManager",
 	                                    "SubscriberIdentity");
 	if (imsi == NULL)
@@ -68,7 +71,6 @@ static at_error_t handle_cimi (at_modem_t *modem, const char *req, void *data)
 
 	at_intermediate (modem, "\r\n%s\r\n", imsi);
 	free (imsi);
-	(void) req;
 	return AT_OK;
 }
 
@@ -77,6 +79,9 @@ static at_error_t handle_cimi (at_modem_t *modem, const char *req, void *data)
 
 static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	at_error_t ret = AT_OK;
 	int canc = at_cancel_disable ();
 	DBusMessage *msg = modem_props_get (data, "SimManager");
@@ -108,7 +113,6 @@ static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 
 out:
 	at_cancel_enable (canc);
-	(void) req;
 	return ret;
 }
 
@@ -265,12 +269,6 @@ out:
 }
 
 
-static at_error_t handle_cpin (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cpin, get_cpin, NULL);
-}
-
-
 /*** AT+CPINR ***/
 
 static at_error_t query_pinr (at_modem_t *m, const char *req, void *data)
@@ -341,11 +339,6 @@ error:
 	at_cancel_enable (canc);
 	free (pattern);
 	return ret;
-}
-
-static at_error_t handle_cpinr (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, query_pinr, NULL, NULL);
 }
 
 
@@ -446,12 +439,6 @@ static at_error_t list_clck (at_modem_t *modem, void *data)
 }
 
 
-static at_error_t handle_clck (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_clck, NULL, list_clck);
-}
-
-
 /*** AT+CPWD ***/
 
 static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
@@ -500,12 +487,6 @@ static at_error_t list_cpwd (at_modem_t *modem, void *data)
 }
 
 
-static at_error_t handle_cpwd (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cpwd, NULL, list_cpwd);
-}
-
-
 /*** AT+CSUS ***/
 
 static at_error_t set_csus (at_modem_t *modem, const char *req, void *data)
@@ -545,21 +526,16 @@ static at_error_t list_csus (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_csus (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_csus, get_csus, list_csus);
-}
-
 
 /*** Registration ***/
 
 void sim_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set ,"+CIMI", handle_cimi, p);
-	at_register (set ,"+CNUM", handle_cnum, p);
-	at_register (set, "+CLCK", handle_clck, p);
-	at_register (set, "+CPIN", handle_cpin, p);
-	at_register (set, "+CPINR", handle_cpinr, p);
-	at_register (set, "+CPWD", handle_cpwd, p);
-	at_register (set, "+CSUS", handle_csus, p);
+	at_register_ext (set ,"+CIMI", handle_cimi, NULL, NULL, p);
+	at_register_ext (set ,"+CNUM", handle_cnum, NULL, NULL, p);
+	at_register_ext (set, "+CLCK", set_clck, NULL, list_clck, p);
+	at_register_ext (set, "+CPIN", set_cpin, get_cpin, NULL, p);
+	at_register_ext (set, "+CPINR", query_pinr, NULL, NULL, p);
+	at_register_ext (set, "+CPWD", set_cpwd, NULL, list_cpwd, p);
+	at_register_ext (set, "+CSUS", set_csus, get_csus, list_csus, p);
 }

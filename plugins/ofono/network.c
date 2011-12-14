@@ -125,10 +125,6 @@ static at_error_t list_ws46 (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_ws46 (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_ws46, get_ws46, list_ws46);
-}
 
 /*** AT+COPS ***/
 
@@ -506,11 +502,6 @@ end:
 	return ret;
 }
 
-static at_error_t handle_cops (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cops, get_cops, list_cops);
-}
-
 
 /*** AT+CREG ***/
 
@@ -685,11 +676,6 @@ static at_error_t list_creg (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_creg (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_creg, get_creg, list_creg);
-}
-
 
 /*** AT+CSQ ***/
 
@@ -721,24 +707,18 @@ static at_error_t list_csq (at_modem_t *modem, void *data)
 }
 
 
-static at_error_t handle_csq (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, do_csq, NULL, list_csq);
-}
-
-
 /*** Registration ***/
 
 void network_register (at_commands_t *set, plugin_t *p)
 {
 	at_register (set, "+GCAP", handle_gcap, p);
-	at_register (set, "+WS46", handle_ws46, p);
-	at_register (set, "+COPS", handle_cops, p);
+	at_register_ext (set, "+WS46", set_ws46, get_ws46, list_ws46, p);
+	at_register_ext (set, "+COPS", set_cops, get_cops, list_cops, p);
 	p->cops = 2;
-	at_register (set, "+CREG", handle_creg, p);
+	at_register_ext (set, "+CREG", set_creg, get_creg, list_creg, p);
 	p->creg = 0;
 	p->creg_filter = NULL;
-	at_register (set, "+CSQ", handle_csq, p);
+	at_register_ext (set, "+CSQ", do_csq, NULL, list_csq, p);
 }
 
 void network_unregister (plugin_t *p)

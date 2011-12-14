@@ -113,11 +113,6 @@ end:
 	return ret;
 }
 
-static at_error_t handle_gm (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, at_udev_enum, NULL, data);
-}
-
 static int show_manuf (at_modem_t *modem, struct udev_device *dev)
 {
 	const char *vendor = udev_device_get_sysattr_value (dev, "sys_vendor");
@@ -189,12 +184,12 @@ static int show_revision (at_modem_t *modem, struct udev_device *dev)
 
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "+GMI", handle_gm, show_manuf);
-	at_register (set, "+CGMI", handle_gm, show_manuf);
-	at_register (set, "+GMM", handle_gm, show_model);
-	at_register (set, "+CGMM", handle_gm, show_model);
-	at_register (set, "+GMR", handle_gm, show_revision);
-	at_register (set, "+CGMR", handle_gm, show_revision);
+	at_register_ext (set, "+GMI", at_udev_enum, NULL, NULL, show_manuf);
+	at_register_ext (set, "+CGMI", at_udev_enum, NULL, NULL, show_manuf);
+	at_register_ext (set, "+GMM", at_udev_enum, NULL, NULL, show_model);
+	at_register_ext (set, "+CGMM", at_udev_enum, NULL, NULL, show_model);
+	at_register_ext (set, "+GMR", at_udev_enum, NULL, NULL, show_revision);
+	at_register_ext (set, "+CGMR", at_udev_enum, NULL, NULL, show_revision);
 
 	return NULL;
 }

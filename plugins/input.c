@@ -325,11 +325,6 @@ static at_error_t list_cmer (at_modem_t *m, void *opaque)
 	return AT_OK;
 }
 
-static at_error_t handle_cmer (at_modem_t *m, const char *req, void *opaque)
-{
-	return at_setting (m, req, opaque, set_cmer, get_cmer, list_cmer);
-}
-
 void *at_plugin_register (at_commands_t *set)
 {
 	cmer_t *cmer = malloc (sizeof (*cmer));
@@ -342,7 +337,7 @@ void *at_plugin_register (at_commands_t *set)
 	cmer->depressed = false;
 	cmer->x = cmer->y = 0;
 
-	at_register (set, "+CMER", handle_cmer, cmer);
+	at_register_ext (set, "+CMER", set_cmer, get_cmer, list_cmer, cmer);
 	return cmer;
 }
 

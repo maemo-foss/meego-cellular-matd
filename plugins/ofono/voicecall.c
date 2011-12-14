@@ -226,11 +226,6 @@ static at_error_t list_csta (at_modem_t *modem, void *data)
 	return at_intermediate (modem, "\r\n+CSTA: (129,145)");
 }
 
-static at_error_t handle_csta (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_csta, get_csta, list_csta);
-}
-
 
 /*** RING ***/
 static void incoming_call (plugin_t *p, DBusMessageIter *call, at_modem_t *m)
@@ -336,16 +331,14 @@ static at_error_t list_ring (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_ring (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_ring, get_ring, list_ring);
-}
-
 
 /*** AT+CLCC ***/
 
 static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	plugin_t *p = data;
 	at_error_t ret;
 	int canc = at_cancel_disable ();
@@ -411,7 +404,6 @@ static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 	ret = AT_OK;
 out:
 	at_cancel_enable (canc);
-	(void) req;
 	return ret;
 }
 
@@ -420,6 +412,9 @@ out:
 
 static at_error_t set_chup (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	plugin_t *p = data;
 	at_error_t ret;
 	int id;
@@ -427,13 +422,7 @@ static at_error_t set_chup (at_modem_t *modem, const char *req, void *data)
 	while ((id = find_call_by_state (p, "active", &ret)) != -1)
 		voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
 	(void) modem;
-	(void) req;
 	return AT_OK;
-}
-
-static at_error_t handle_chup (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_chup, NULL, NULL);
 }
 
 
@@ -541,11 +530,6 @@ static at_error_t list_chld (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_chld (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_chld, NULL, list_chld);
-}
-
 
 /*** AT+CVHU ***/
 
@@ -585,10 +569,6 @@ static at_error_t list_cvhu (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cvhu (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cvhu, get_cvhu, list_cvhu);
-}
 
 /*** AT+VTS ***/
 
@@ -661,10 +641,6 @@ static at_error_t list_vts (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_vts (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_vts, NULL, list_vts);
-}
 
 /*** AT+VTD ***/
 
@@ -699,10 +675,6 @@ static at_error_t list_vtd (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_vtd (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_vtd, get_vtd, list_vtd);
-}
 
 /*** AT+CTFR ***/
 
@@ -735,18 +707,6 @@ static at_error_t do_ctfr (at_modem_t *modem, const char *req, void *data)
 	return voicecall_request (p, id, "Deflect",
 	                          DBUS_TYPE_STRING, &(const char *){ number },
 	                          DBUS_TYPE_INVALID);
-}
-
-static at_error_t list_ctfr (at_modem_t *modem, void *data)
-{
-	at_intermediate (modem, "\r\n+CTFR: ");
-	(void) data;
-	return AT_OK;
-}
-
-static at_error_t handle_ctfr (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, do_ctfr, NULL, list_ctfr);
 }
 
 
@@ -812,11 +772,6 @@ static at_error_t list_cpas (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cpas (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, show_cpas, NULL, list_cpas);
-}
-
 
 /*** Registration ***/
 
@@ -824,19 +779,19 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 {
 	at_register_alpha (set, 'A', handle_answer, p);
 	at_register_dial (set, true, handle_dial, p);
-	at_register (set, "+CSTA", handle_csta, p);
-	at_register (set, "+CLCC", handle_clcc, p);
-	at_register (set, "+CHUP", handle_chup, p);
+	at_register_ext (set, "+CSTA", set_csta, get_csta, list_csta, p);
+	at_register_ext (set, "+CLCC", handle_clcc, NULL, NULL, p);
+	at_register_ext (set, "+CHUP", set_chup, NULL, NULL, p);
 	at_register_alpha (set, 'H', handle_hangup, p);
-	at_register (set, "+CHLD", handle_chld, p);
+	at_register_ext (set, "+CHLD", set_chld, NULL, list_chld, p);
 	p->cring = false;
-	at_register (set, "+CRC", handle_ring, p);
+	at_register_ext (set, "+CRC", set_ring, get_ring, list_ring, p);
 	p->vhu = 0;
-	at_register (set, "+CVHU", handle_cvhu, &p->vhu);
-	at_register (set, "+VTS", handle_vts, p);
-	at_register (set, "+VTD", handle_vtd, p);
-	at_register (set, "+CTFR", handle_ctfr, p);
-	at_register (set, "+CPAS", handle_cpas, p);
+	at_register_ext (set, "+CVHU", set_cvhu, get_cvhu, list_cvhu, &p->vhu);
+	at_register_ext (set, "+VTS", set_vts, NULL, list_vts, p);
+	at_register_ext (set, "+VTD", set_vtd, get_vtd, list_vtd, p);
+	at_register_ext (set, "+CTFR", do_ctfr, NULL, NULL, p);
+	at_register_ext (set, "+CPAS", show_cpas, NULL, list_cpas, p);
 
 	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,

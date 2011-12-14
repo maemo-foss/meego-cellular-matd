@@ -619,7 +619,7 @@ void *at_plugin_register (at_commands_t *set)
 	sim_register (set, p);
 	sms_register (set, p);
 	voicecallmanager_register (set, p);
-	at_register (set, "*CNTI", handle_cnti, p);
+	at_register_ext (set, "*CNTI", set_cnti, NULL, list_cnti, p);
 	return p;
 }
 

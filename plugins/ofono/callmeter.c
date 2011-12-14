@@ -79,11 +79,6 @@ static at_error_t get_acm (at_modem_t *m, void *data)
 	return at_intermediate (m, "\r\n+CACM: \"%06"PRIX32"\"", (uint32_t)acm);
 }
 
-static at_error_t handle_acm (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, reset_acm, get_acm, NULL);
-}
-
 
 /*** AT+CAMM ***/
 
@@ -119,11 +114,6 @@ static at_error_t get_amm (at_modem_t *m, void *data)
 	if (amm == -1)
 		return AT_CME_ENOTSUP;
 	return at_intermediate (m, "\r\n+CAMM: \"%06"PRIX32"\"", (uint32_t)amm);
-}
-
-static at_error_t handle_amm (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_amm, get_amm, NULL);
 }
 
 
@@ -178,11 +168,6 @@ static at_error_t get_puc (at_modem_t *m, void *data)
 	}
 	at_cancel_enable (canc);
 	return ret;
-}
-
-static at_error_t handle_puc (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_puc, get_puc, NULL);
 }
 
 
@@ -249,21 +234,16 @@ static at_error_t list_cwe (at_modem_t *m, void *data)
 	return at_intermediate (m, "\r\n+CCWE: (0,1)");
 }
 
-static at_error_t handle_cwe (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cwe, get_cwe, list_cwe);
-}
-
 
 /*** Registration ***/
 
 void call_meter_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CACM", handle_acm, p);
-	at_register (set, "+CAMM", handle_amm, p);
-	at_register (set, "+CPUC", handle_puc, p);
+	at_register_ext (set, "+CACM", reset_acm, get_acm, NULL, p);
+	at_register_ext (set, "+CAMM", set_amm, get_amm, NULL, p);
+	at_register_ext (set, "+CPUC", set_puc, get_puc, NULL, p);
 	p->ccwe_filter = NULL;
-	at_register (set, "+CCWE", handle_cwe, p);
+	at_register_ext (set, "+CCWE", set_cwe, get_cwe, list_cwe, p);
 }
 
 void call_meter_unregister (plugin_t *p)

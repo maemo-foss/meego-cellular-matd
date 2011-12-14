@@ -268,4 +268,5 @@ void sim_register (at_commands_t *, plugin_t *);
 void sms_register (at_commands_t *, plugin_t *);
 void voicecallmanager_register (at_commands_t *, plugin_t *);
 void voicecallmanager_unregister (plugin_t *);
-at_error_t handle_cnti (at_modem_t *, const char *, void *);
+at_error_t set_cnti (at_modem_t *, const char *, void *);
+at_error_t list_cnti (at_modem_t *, void *);

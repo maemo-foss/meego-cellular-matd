@@ -203,14 +203,8 @@ static at_error_t list_ccfc (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_ccfc (at_modem_t *modem, const char *req,
-                                 void *data)
-{
-	return at_setting (modem, req, data, set_ccfc, NULL, list_ccfc);
-}
-
 
 void call_forwarding_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CCFC", handle_ccfc, p);
+	at_register_ext (set, "+CCFC", set_ccfc, NULL, list_ccfc, p);
 }

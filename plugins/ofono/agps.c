@@ -78,12 +78,7 @@ static at_error_t do_cpos (at_modem_t *modem, const char *req, void *data)
 }
 
 
-static at_error_t handle_cpos (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, do_cpos, NULL, NULL);
-}
-
 void agps_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CPOS", handle_cpos, p);
+	at_register_ext (set, "+CPOS", do_cpos, NULL, NULL, p);
 }

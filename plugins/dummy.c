@@ -113,11 +113,6 @@ static at_error_t list_zero (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_zero (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_zero, get_zero, list_zero);
-}
-
 
 /*** AT+CPNSTAT (UMA status) ***/
 static at_error_t set_cpnstat (at_modem_t *modem, const char *req, void *data)
@@ -150,11 +145,6 @@ static at_error_t list_cpnstat (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cpnstat (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_cpnstat, get_cpnstat, list_cpnstat);
-}
-
 
 /*** AT+FLCASS ***/
 static at_error_t set_fclass (at_modem_t *m, const char *req, void *data)
@@ -177,12 +167,6 @@ static at_error_t get_fclass (at_modem_t *m, void *data)
 
 	(void)data;
 	return AT_OK;
-}
-
-static at_error_t handle_fclass (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data,
-	                   set_fclass, get_fclass, get_fclass);
 }
 
 
@@ -257,11 +241,6 @@ static at_error_t list_dr (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_dr (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_dr, get_dr, list_dr);
-}
-
 
 /*** AT+DS (data compression) ***/
 static at_error_t set_ds (at_modem_t *m, const char *req, void *data)
@@ -312,14 +291,13 @@ static at_error_t list_ds (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_ds (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_ds, get_ds, list_ds);
-}
-
-
 
 /*** Plugin registration ***/
+static void at_register_zero (at_commands_t *set, const char *cmd)
+{
+	at_register_ext (set, cmd, set_zero, get_zero, list_zero, (void *)cmd);
+}
+
 void *at_plugin_register (at_commands_t *set)
 {
 	dummy_t *d = malloc  (sizeof (*d));
@@ -355,27 +333,29 @@ void *at_plugin_register (at_commands_t *set)
 	/* CONNECT result codes */
 	at_register_alpha (set, 'X', alpha_nothing, NULL);
 
-	at_register (set, "+CMOD", handle_zero, (void *)"+CMOD");
-	at_register (set, "+CVMOD", handle_zero, (void *)"+CVMOD");
-	at_register (set, "+CSNS", handle_zero, (void *)"+CSNS");
-	at_register (set, "+CPNET", handle_zero, (void *)"+CPNET");
+	at_register_zero (set, "+CMOD");
+	at_register_zero (set, "+CVMOD");
+	at_register_zero (set, "+CSNS");
+	at_register_zero (set, "+CPNET");
+
 	if (d != NULL)
 	{
 		d->cpnstat = 0;
-		at_register (set, "+CPNSTAT", handle_cpnstat, d);
+		at_register_ext (set, "+CPNSTAT", set_cpnstat, get_cpnstat,
+		                 list_cpnstat, d);
 	}
 
-	at_register (set, "+FCLASS", handle_fclass, NULL);
+	at_register_ext (set, "+FCLASS", set_fclass, get_fclass, NULL, NULL);
 
 	if (d != NULL)
 	{
 		d->dr = 0;
-		at_register (set, "+DR", handle_dr, d);
+		at_register_ext (set, "+DR", set_dr, get_dr, list_dr, d);
 		d->ds_dir = 3;
 		d->ds_nego = 0;
 		d->ds_dict = 512;
 		d->ds_string = 6;
-		at_register (set, "+DS", handle_ds, d);
+		at_register_ext (set, "+DS", set_ds, get_ds, list_ds, d);
 	}
 	return d;
 }

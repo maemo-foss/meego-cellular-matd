@@ -132,11 +132,6 @@ static at_error_t list_cmee (at_modem_t *m, void *opaque)
 	return AT_OK;
 }
 
-static at_error_t handle_cmee (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cmee, get_cmee, list_cmee);
-}
-
 
 static at_error_t set_cscs (at_modem_t *m, const char *req, void *opaque)
 {
@@ -190,12 +185,6 @@ static at_error_t list_cscs (at_modem_t *m, void *opaque)
 }
 
 
-static at_error_t handle_cscs (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cscs, get_cscs, list_cscs);
-}
-
-
 void *at_plugin_register (at_commands_t *set)
 {
 	at_register_alpha (set, 'E', handle_bool, at_set_echo);
@@ -216,7 +205,7 @@ void *at_plugin_register (at_commands_t *set)
 
 	at_register_ampersand (set, 'F', handle_reset, NULL);
 
-	at_register (set, "+CMEE", handle_cmee, NULL);
-	at_register (set, "+CSCS", handle_cscs, NULL);
+	at_register_ext (set, "+CMEE", set_cmee, get_cmee, list_cmee, NULL);
+	at_register_ext (set, "+CSCS", set_cscs, get_cscs, list_cscs, NULL);
 	return NULL;
 }

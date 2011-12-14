@@ -314,11 +314,6 @@ static at_error_t list_bklt (at_modem_t *modem, void *opaque)
 }
 
 
-static at_error_t handle_cbklt (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_bklt, get_bklt, list_bklt);
-}
-
 /*** Plugin registration ***/
 
 void *at_plugin_register (at_commands_t *set)
@@ -329,7 +324,7 @@ void *at_plugin_register (at_commands_t *set)
 
 	backlight->active = false;
 
-	at_register (set, "+CBKLT", handle_cbklt, backlight);
+	at_register_ext (set, "+CBKLT", set_bklt, get_bklt, list_bklt, backlight);
 
 	return backlight;
 }

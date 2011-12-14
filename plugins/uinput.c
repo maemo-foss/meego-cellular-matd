@@ -195,7 +195,7 @@ static at_error_t handle_keypad (at_modem_t *modem, const char *req,
 	if (!input->cmec)
 		return AT_CME_EPERM;
 
-	switch (sscanf (req, "+%*4s = %1023[^,], %"SCNu8" , %"SCNu8, keys,
+	switch (sscanf (req, " %1023[^,], %"SCNu8" , %"SCNu8, keys,
 	                &presstime, &pausetime))
 	{
 		case 1:
@@ -449,11 +449,6 @@ static at_error_t list_ctsa (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_ctsa (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_ctsa, NULL, list_ctsa);
-}
-
 
 /*** AT+CSS ***/
 
@@ -461,9 +456,12 @@ static at_error_t handle_css (at_modem_t *m, const char *req, void *data)
 {
 	unsigned width, height;
 
+	if (*req)
+		return AT_CME_EINVAL;
+
 	get_screen_size (&width, &height);
 	at_intermediate (m, "\r\n+CSS: %u,%u", width, height);
-	(void) req; (void) data;
+	(void) data;
 	return AT_OK;
 }
 
@@ -517,11 +515,6 @@ static at_error_t list_cmec (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cmec (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_cmec, get_cmec, list_cmec);
-}
-
 
 /*** Registration ***/
 
@@ -533,14 +526,14 @@ void *at_plugin_register (at_commands_t *set)
 
 	input[0].fd = -1;
 	input[0].cmec = 2;
-	at_register (set, "+CKPD", handle_keypad, input + 0);
+	at_register_ext (set, "+CKPD", handle_keypad, NULL, NULL, input + 0);
 
 	input[1].fd = -1;
 	input[1].cmec = 2;
-	at_register (set, "+CTSA", handle_ctsa, input + 1);
-	at_register (set, "+CSS", handle_css, NULL);
+	at_register_ext (set, "+CTSA", set_ctsa, NULL, list_ctsa, input + 1);
+	at_register_ext (set, "+CSS", handle_css, NULL, NULL, NULL);
 
-	at_register (set, "+CMEC", handle_cmec, input);
+	at_register_ext (set, "+CMEC", set_cmec, get_cmec, list_cmec, input);
 	return input;
 }
 

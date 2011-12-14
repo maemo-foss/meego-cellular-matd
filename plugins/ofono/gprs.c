@@ -90,12 +90,6 @@ static at_error_t list_attach (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_attach (at_modem_t *modem, const char *req,
-                                 void *data)
-{
-	return at_setting (modem, req, data, set_attach, get_attach, list_attach);
-}
-
 
 /*** AT+CGREG ***/
 static void gprs_att_cb (plugin_t *p, DBusMessage *msg, void *data)
@@ -185,20 +179,15 @@ static at_error_t list_cgreg (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cgreg (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cgreg, get_cgreg, list_cgreg);
-}
-
 
 /*** Registration ***/
 void gprs_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CGATT", handle_attach, p);
+	at_register_ext (set, "+CGATT", set_attach, get_attach, list_attach, p);
 	p->cgreg = 0;
 	p->cgreg_filter = NULL;
 	p->cgatt_filter = NULL;
-	at_register (set, "+CGREG", handle_cgreg, p);
+	at_register_ext (set, "+CGREG", set_cgreg, get_cgreg, list_cgreg, p);
 }
 
 void gprs_unregister (plugin_t *p)

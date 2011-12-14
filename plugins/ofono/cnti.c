@@ -112,7 +112,7 @@ static at_error_t list_available (at_modem_t *modem, plugin_t *p)
 }
 
 
-static at_error_t set_cnti (at_modem_t *modem, const char *req, void *data)
+at_error_t set_cnti (at_modem_t *modem, const char *req, void *data)
 {
 	switch (atoi (req))
 	{
@@ -131,15 +131,9 @@ static at_error_t set_cnti (at_modem_t *modem, const char *req, void *data)
 	return AT_CME_ENOTSUP;
 }
 
-static at_error_t list_cnti (at_modem_t *modem, void *data)
+at_error_t list_cnti (at_modem_t *modem, void *data)
 {
 	at_intermediate (modem, "\r\n*CNTI: (0-2)");
 	(void) data;
 	return AT_OK;
-}
-
-
-at_error_t handle_cnti (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cnti, NULL, list_cnti);
 }

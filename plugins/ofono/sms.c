@@ -107,12 +107,6 @@ static at_error_t list_cgsms (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cgsms (at_modem_t *modem, const char *req,
-                                 void *data)
-{
-	return at_setting (modem, req, data, set_cgsms, get_cgsms, list_cgsms);
-}
-
 
 /*** AT+CSMS ***/
 
@@ -139,12 +133,6 @@ static at_error_t list_csms (at_modem_t *modem, void *data)
 {
 	(void) data;
 	return at_intermediate (modem, "\r\n+CSMS: (0)");
-}
-
-static at_error_t handle_csms (at_modem_t *modem, const char *req,
-                               void *data)
-{
-	return at_setting (modem, req, data, set_csms, get_csms, list_csms);
 }
 
 
@@ -189,12 +177,6 @@ static at_error_t get_csca (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_csca (at_modem_t *modem, const char *req,
-                                 void *data)
-{
-	return at_setting (modem, req, data, set_csca, get_csca, NULL);
-}
-
 
 /*** AT+CMGF ***/
 
@@ -224,11 +206,6 @@ static at_error_t list_cmgf (at_modem_t *m, void *data)
 {
 	(void)data;
 	return at_intermediate (m, "\r\n+CMGF: (1)");
-}
-
-static at_error_t handle_cmgf (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_cmgf, get_cmgf, list_cmgf);
 }
 
 
@@ -294,19 +271,14 @@ out:
 	return ret;
 }
 
-static at_error_t handle_cmgs (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_cmgs, NULL, NULL);
-}
-
 
 /*** Registration ***/
 
 void sms_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CGSMS", handle_cgsms, p);
-	at_register (set, "+CSMS", handle_csms, p);
-	at_register (set, "+CSCA", handle_csca, p);
-	at_register (set, "+CMGF", handle_cmgf, p);
-	at_register (set, "+CMGS", handle_cmgs, p);
+	at_register_ext (set, "+CGSMS", set_cgsms, get_cgsms, list_cgsms, p);
+	at_register_ext (set, "+CSMS", set_csms, get_csms, list_csms, p);
+	at_register_ext (set, "+CSCA", set_csca, get_csca, NULL, p);
+	at_register_ext (set, "+CMGF", set_cmgf, get_cmgf, list_cmgf, p);
+	at_register_ext (set, "+CMGS", set_cmgs, NULL, NULL, p);
 }

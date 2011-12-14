@@ -95,11 +95,6 @@ static at_error_t list_clip (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_clip (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_clip, get_clip, list_clip);
-}
-
 
 /*** AT+CLIR ***/
 
@@ -173,12 +168,6 @@ static at_error_t list_clir (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_clir (at_modem_t *modem, const char *req,
-                                 void *data)
-{
-	return at_setting (modem, req, data, set_clir, get_clir, list_clir);
-}
-
 
 /*** AT+COLP ***/
 
@@ -222,11 +211,6 @@ static at_error_t list_colp (at_modem_t *modem, void *data)
 	at_intermediate (modem, "\r\n+COLP: (0-1)");
 	(void) data;
 	return AT_OK;
-}
-
-static at_error_t handle_colp (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_colp, get_colp, list_colp);
 }
 
 
@@ -273,11 +257,6 @@ static at_error_t list_cdip (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cdip (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cdip, get_cdip, list_cdip);
-}
-
 
 /** AT+CNAP */
 static at_error_t set_cnap (at_modem_t *modem, const char *req, void *data)
@@ -321,16 +300,14 @@ static at_error_t list_cnap (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cnap (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cnap, get_cnap, list_cnap);
-}
-
 
 /*** AT+COLR ***/
 
 static at_error_t do_colr (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	plugin_t *p = data;
 	char *str;
 	unsigned m = 2;
@@ -347,7 +324,6 @@ static at_error_t do_colr (at_modem_t *modem, const char *req, void *data)
 	}
 
 	at_intermediate (modem, "\r\n+COLR: %u", m);
-	(void) req;
 	return AT_OK;
 }
 
@@ -434,26 +410,21 @@ static at_error_t list_ccwa (at_modem_t *modem, void *data)
 	return at_intermediate (modem, "\r\n+CCWA: (0,1)");
 }
 
-static at_error_t handle_ccwa (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_ccwa, get_ccwa, list_ccwa);
-}
-
 
 /*** Registration ***/
 
 void call_settings_register (at_commands_t *set, plugin_t *p)
 {
 	p->clip = false;
-	at_register (set, "+CLIP", handle_clip, p);
-	at_register (set, "+CLIR", handle_clir, p);
+	at_register_ext (set, "+CLIP", set_clip, get_clip, list_clip, p);
+	at_register_ext (set, "+CLIR", set_clir, get_clir, list_clir, p);
 	p->colp = false;
-	at_register (set, "+COLP", handle_colp, p);
+	at_register_ext (set, "+COLP", set_colp, get_colp, list_colp, p);
 	p->cdip = false;
-	at_register (set, "+CDIP", handle_cdip, p);
+	at_register_ext (set, "+CDIP", set_cdip, get_cdip, list_cdip, p);
 	p->cnap = false;
-	at_register (set, "+CNAP", handle_cnap, p);
-	at_register (set, "+COLR", do_colr, p);
+	at_register_ext (set, "+CNAP", set_cnap, get_cnap, list_cnap, p);
+	at_register_ext (set, "+COLR", do_colr, NULL, NULL, p);
 	p->ccwa = false;
-	at_register (set, "+CCWA", handle_ccwa, p);
+	at_register_ext (set, "+CCWA", set_ccwa, get_ccwa, list_ccwa, p);
 }

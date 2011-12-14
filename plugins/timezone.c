@@ -169,11 +169,6 @@ static at_error_t list_ctzr (at_modem_t *m, void *opaque)
 	return AT_OK;
 }
 
-static at_error_t handle_ctzr (at_modem_t *m, const char *req, void *opaque)
-{
-	return at_setting (m, req, opaque, set_ctzr, get_ctzr, list_ctzr);
-}
-
 void *at_plugin_register (at_commands_t *set)
 {
 	ctzr_t *ctzr = malloc (sizeof (*ctzr));
@@ -182,7 +177,7 @@ void *at_plugin_register (at_commands_t *set)
 
 	ctzr->enabled = false;
 
-	at_register (set, "+CTZR", handle_ctzr, ctzr);
+	at_register_ext (set, "+CTZR", set_ctzr, get_ctzr, list_ctzr, ctzr);
 	return ctzr;
 }
 

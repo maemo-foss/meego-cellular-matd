@@ -105,14 +105,11 @@ static at_error_t set_cclk (at_modem_t *modem, const char *req, void *data)
 	return AT_OK;
 }
 
-static at_error_t do_cclk (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cclk, get_cclk, NULL);
-}
-
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "+CCLK", do_cclk, (void *)(intptr_t)'+');
-	at_register (set, "$CCLK", do_cclk, (void *)(intptr_t)'$'); /* AT&T */
+	at_register_ext (set, "+CCLK", set_cclk, get_cclk, NULL,
+	                 (void *)(intptr_t)'+');
+	at_register_ext (set, "$CCLK", set_cclk, get_cclk, NULL,
+	                 (void *)(intptr_t)'$'); /* AT&T */
 	return NULL;
 }

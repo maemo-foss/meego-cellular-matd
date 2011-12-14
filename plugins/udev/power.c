@@ -172,14 +172,9 @@ static at_error_t list_cbc (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cbc (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, do_cbc, NULL, list_cbc);
-}
-
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "+CBC", handle_cbc, NULL);
+	at_register_ext (set, "+CBC", do_cbc, NULL, list_cbc, NULL);
 
 	return NULL;
 }

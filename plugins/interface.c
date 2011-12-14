@@ -189,11 +189,6 @@ static at_error_t list_rate (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_rate (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_rate, get_rate, list_rate);
-}
-
 
 /*** AT+ICF (character framing) ***/
 
@@ -292,11 +287,6 @@ static at_error_t list_framing (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_framing (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_framing, get_framing, list_framing);
-}
-
 
 /*** AT+IFC (flow control) ***/
 
@@ -350,11 +340,6 @@ static at_error_t list_fc (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_fc (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_fc, get_fc, list_fc);
-}
-
 
 /*** AT+ILRR (local rate report) ***/
 
@@ -383,13 +368,6 @@ static at_error_t list_rate_report (at_modem_t *m, void *data)
 	at_intermediate (m, "\r\n+ILRR: (0,1)");
 	(void) data;
 	return AT_OK;
-}
-
-static at_error_t handle_rate_report (at_modem_t *m, const char *req,
-                                      void *data)
-{
-	return at_setting (m, req, data, set_rate_report,
-	                   get_rate_report, list_rate_report);
 }
 
 
@@ -422,11 +400,6 @@ static at_error_t list_dsr (at_modem_t *m, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_dsr (at_modem_t *m, const char *req, void *data)
-{
-	return at_setting (m, req, data, set_dsr, get_dsr, list_dsr);
-}
-
 
 typedef struct
 {
@@ -438,16 +411,18 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_ampersand (set, 'C', handle_dcd, NULL);
 	at_register_ampersand (set, 'D', handle_dtr, NULL);
 	at_register_ampersand (set, 'K', redirect_flow, NULL);
-	at_register (set, "+IPR", handle_rate, NULL);
-	at_register (set, "+ICF", handle_framing, NULL);
-	at_register (set, "+ILRR", handle_rate_report, NULL);
-	at_register (set, "+IDSR", handle_dsr, NULL);
+	at_register_ext (set, "+IPR", set_rate, get_rate, list_rate, NULL);
+	at_register_ext (set, "+ICF", set_framing, get_framing, list_framing,
+	                 NULL);
+	at_register_ext (set, "+ILRR", set_rate_report, get_rate_report,
+	                 list_rate_report, NULL);
+	at_register_ext (set, "+IDSR", set_dsr, get_dsr, list_dsr, NULL);
 
 	plugin_t *p = malloc (sizeof (*p));
 	if (p == NULL)
 		return NULL;
 	p->fc[0] = p->fc[1] = 2;
-	at_register (set, "+IFC", handle_fc, p);
+	at_register_ext (set, "+IFC", set_fc, get_fc, list_fc, p->fc);
 	return p;
 }
 

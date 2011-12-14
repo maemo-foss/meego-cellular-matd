@@ -144,11 +144,6 @@ static at_error_t list_cfun (at_modem_t *modem, void *data)
 	return AT_OK;
 }
 
-static at_error_t handle_cfun (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, set_cfun, get_cfun, list_cfun);
-}
-
 
 /*** AT+CGSN ***/
 
@@ -163,13 +158,7 @@ static at_error_t show_gsn (at_modem_t *modem, const char *req, void *data)
 
 	at_intermediate (modem, "\r\n%s\r\n", imei);
 	free (imei);
-	(void) req;
 	return AT_OK;
-}
-
-static at_error_t handle_gsn (at_modem_t *modem, const char *req, void *data)
-{
-	return at_setting (modem, req, data, show_gsn, NULL, NULL);
 }
 
 
@@ -177,6 +166,9 @@ static at_error_t handle_gsn (at_modem_t *modem, const char *req, void *data)
 
 static at_error_t handle_gmr (at_modem_t *modem, const char *req, void *data)
 {
+	if (*req)
+		return AT_CME_EINVAL;
+
 	char *revision = modem_prop_get_string (data, "Modem", "Revision");
 	if (revision == NULL)
 		return AT_ERROR;
@@ -186,7 +178,6 @@ static at_error_t handle_gmr (at_modem_t *modem, const char *req, void *data)
 
 	at_intermediate (modem, "\r\nModem %s", revision);
 	free (revision);
-	(void) req;
 	return AT_OK;
 }
 
@@ -195,8 +186,8 @@ static at_error_t handle_gmr (at_modem_t *modem, const char *req, void *data)
 
 void modem_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+CFUN", handle_cfun, p);
-	at_register (set, "+CGSN", handle_gsn, p);
-	at_register (set, "+GSN", handle_gsn, p);
-	at_register (set, "*OFGMR", handle_gmr, p);
+	at_register_ext (set, "+CFUN", set_cfun, get_cfun, list_cfun, p);
+	at_register_ext (set, "+CGSN", show_gsn, NULL, NULL, p);
+	at_register_ext (set, "+GSN", show_gsn, NULL, NULL, p);
+	at_register_ext (set, "*OFGMR", handle_gmr, NULL, NULL, p);
 }
