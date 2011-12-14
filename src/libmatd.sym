@@ -34,7 +34,6 @@ at_get_cmee
 at_set_cmee
 at_hangup
 at_reset
-at_setting
 at_trace
 at_vtrace
 at_thread_create

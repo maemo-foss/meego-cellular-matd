@@ -419,10 +419,38 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 		goto unknown;
 
 	struct at_handler *h = *p;
-	if (h->extended)
-		return at_setting (m, req, h->opaque, h->set, h->get, h->test);
-	else
+	assert (h->set != NULL);
+	if (!h->extended)
 		return h->set (m, req, h->opaque);
+
+	int offset;
+
+	if (sscanf (req, "%*[^?= ] %c%n", &c, &offset) < 1)
+		return h->set (m, "", h->opaque);
+
+	req += offset;
+
+	switch (c)
+	{
+		case '?':
+			/* "AT+FOO?" */
+			return (h->get != NULL) ? h->get (m, h->opaque) : AT_CME_EINVAL;
+		case '=':
+			if (sscanf (req, " %n%c", &offset, &c) < 1)
+				/* "AT+FOO=" */
+				return h->set (m, "", h->opaque);
+
+			if (c == '?')
+				/* "AT+FOO=?" */
+				return (h->test != NULL) ? h->test (m, h->opaque) : AT_OK;
+
+			req += offset;
+			/* "AT+FOO=BAR" */
+			return h->set (m, req, h->opaque);
+	}
+
+	/* "AT+FOOjunk" */
+	return AT_ERROR;
 
 unknown:
 	warning ("Unknown request \"AT%s\"", req);
