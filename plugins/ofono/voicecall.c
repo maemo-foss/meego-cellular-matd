@@ -853,6 +853,28 @@ out:
 	return ret;
 }
 
+
+/*** ATS0 ***/
+static at_error_t set_auto_answer (at_modem_t *m, unsigned val, void *data)
+{
+	plugin_t *p = data;
+
+	if (val > 1)
+		return AT_ERROR;
+
+	(void) m;
+	return modem_prop_set_bool (p, "VoiceCallManager", "AutoAnswer", val != 0);
+}
+
+static at_error_t get_auto_answer (at_modem_t *m, void *data)
+{
+	plugin_t *p = data;
+	unsigned s0 = modem_prop_get_bool (p, "VoiceCallManager", "AutoAnswer");
+
+	return at_intermediate (m, "\r\n%u", s0 > 0);
+}
+
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -873,6 +895,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CTFR", do_ctfr, NULL, NULL, p);
 	at_register_ext (set, "+CPAS", show_cpas, NULL, list_cpas, p);
 	at_register_pb (set, "EN", NULL, read_en, NULL, NULL, count_en, p);
+	at_register_s (set, 0, set_auto_answer, get_auto_answer, p);
 
 	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,
