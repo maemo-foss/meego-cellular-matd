@@ -118,6 +118,9 @@ static at_error_t forward (at_modem_t *modem, const char *req, void *data)
 	void *(*func) (void *) = data;
 	int fds[2];
 
+	if (*req)
+		return AT_CME_EINVAL;
+
 #ifdef SOCK_CLOEXEC
 	if (socketpair (PF_LOCAL, SOCK_STREAM|SOCK_CLOEXEC, 0, fds)
 	 && errno == EINVAL)
@@ -152,9 +155,9 @@ static at_error_t forward (at_modem_t *modem, const char *req, void *data)
 
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "@CHARGEN", forward, chargen);
-	at_register (set, "@DISCARD", forward, discard);
-	at_register (set, "@ECHO", forward, echo);
+	at_register_ext (set, "@CHARGEN", forward, NULL, NULL, chargen);
+	at_register_ext (set, "@DISCARD", forward, NULL, NULL, discard);
+	at_register_ext (set, "@ECHO", forward, NULL, NULL, echo);
 
 	return NULL;
 }

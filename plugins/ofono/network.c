@@ -60,11 +60,10 @@
 
 static at_error_t handle_gcap (at_modem_t *modem, const char *req, void *data)
 {
-	(void) req;
+	if (*req)
+		return AT_ERROR;
 	(void) data;
-
-	at_intermediate (modem, "\r\n+GCAP: +CGSM,+W");
-	return AT_OK;
+	return at_intermediate (modem, "\r\n+GCAP: +CGSM,+W");
 }
 
 /*** AT+WS46 ***/
@@ -711,7 +710,7 @@ static at_error_t list_csq (at_modem_t *modem, void *data)
 
 void network_register (at_commands_t *set, plugin_t *p)
 {
-	at_register (set, "+GCAP", handle_gcap, p);
+	at_register_ext (set, "+GCAP", handle_gcap, NULL, NULL, NULL);
 	at_register_ext (set, "+WS46", set_ws46, get_ws46, list_ws46, p);
 	at_register_ext (set, "+COPS", set_cops, get_cops, list_cops, p);
 	p->cops = 2;

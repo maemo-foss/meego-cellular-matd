@@ -130,7 +130,7 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 
 	at_load_plugins ();
 	bank->plugins = at_instantiate_plugins (bank);
-	at_register (bank, "+CLAC", handle_clac, bank);
+	at_register_ext (bank, "+CLAC", handle_clac, NULL, NULL, bank);
 	at_cancel_enable (canc);
 	return bank;
 }
@@ -481,6 +481,9 @@ static at_error_t handle_clac (at_modem_t *m, const char *req, void *data)
 {
 	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	at_commands_t *bank = data;
+
+	if (*req)
+		return AT_CME_EINVAL;
 
 	for (unsigned i = 0; i < 3; i++)
 		if (bank->cmd.alpha[i].handler != NULL)

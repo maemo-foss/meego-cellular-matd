@@ -115,20 +115,26 @@ static at_error_t sh (at_modem_t *modem, const char *req, void *data)
 {
 	const char *argv[3] = { "/bin/sh", "-", NULL };
 
+	if (*req)
+		return AT_CME_ENOTSUP;
+
 	execute (modem, argv);
-	(void)req; (void) data;
+	(void) data;
 	return AT_NO_CARRIER;
 }
 
 
 static at_error_t shell (at_modem_t *modem, const char *req, void *data)
 {
-	at_error_t ret;
+	if (*req)
+		return AT_CME_ENOTSUP;
 
+	at_error_t ret = AT_NO_CARRIER;
 	size_t buflen = sysconf (_SC_GETPW_R_SIZE_MAX);
 	char *buf = malloc (buflen);
 	if (buf == NULL)
 		return AT_CME_ENOMEM;
+
 	pthread_cleanup_push (free, buf);
 
 	struct passwd pwbuf, *pw;
@@ -145,10 +151,9 @@ static at_error_t shell (at_modem_t *modem, const char *req, void *data)
 
 	const char *argv[3] = { pw->pw_shell, "-", NULL };
 	execute (modem, argv);
-	ret = AT_NO_CARRIER;
 out:
 	pthread_cleanup_pop (1); /* free (buf) */
-	(void)req; (void) data;
+	(void) data;
 	return ret;
 }
 
@@ -157,17 +162,20 @@ static at_error_t login (at_modem_t *modem, const char *req, void *data)
 {
 	const char *argv[3] = { "/bin/login", "-", NULL };
 
+	if (*req)
+		return AT_CME_ENOTSUP;
+
 	execute (modem, argv);
-	(void)req; (void) data;
+	(void) data;
 	return AT_NO_CARRIER;
 }
 
 
 void *at_plugin_register (at_commands_t *set)
 {
-	at_register (set, "@SH", sh, NULL);
-	at_register (set, "@SHELL", shell, NULL);
-	at_register (set, "@LOGIN", login, NULL);
+	at_register_ext (set, "@SH", sh, NULL, NULL, NULL);
+	at_register_ext (set, "@SHELL", shell, NULL, NULL, NULL);
+	at_register_ext (set, "@LOGIN", login, NULL, NULL, NULL);
 
 	return NULL;
 }
