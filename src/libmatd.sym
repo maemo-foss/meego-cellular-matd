@@ -22,16 +22,9 @@ at_execute
 at_executev
 at_set_attr
 at_get_attr
-at_set_echo
 at_set_rate_report
 at_get_rate_report
-at_set_quiet
-at_get_quiet
-at_set_verbose
-at_get_cmee
-at_set_cmee
 at_hangup
-at_reset
 at_trace
 at_vtrace
 at_thread_create
