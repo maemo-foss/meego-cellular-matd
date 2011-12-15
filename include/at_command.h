@@ -209,25 +209,6 @@ int at_register (at_commands_t *set, const char *name, at_set_cb setter,
                  void *opaque);
 
 /**
- * Registers a handler for all extended AT commands
- * starting with a certain prefix.
- *
- * @param set AT commands list to register in
- * @param name ASCIIz prefix of the AT commands to register
- * @param setter AT command execution callback (mandatory, cannot be NULL)
- * @param getter AT command query callback (or NULL)
- * @param tester AT command test callback (or NULL)
- * @param opaque data pointer for the callbacks
- * @return 0 on success, an error code otherwise
- */
-/*int at_register_wildcard (at_commands_t *set, const char *name,
-                          at_set_cb setter, at_get_cb getter, at_get_cb tester,
-                          void *opaque);*/
-int at_register_wildcard (at_commands_t *set, const char *name,
-                          at_set_cb setter, void *opaque);
-
-
-/**
  * Callback prototype to execute an AT alpha or ampersand command
  * (except for ATD and ATS).
  * @param m AT modem object

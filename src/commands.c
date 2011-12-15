@@ -65,7 +65,6 @@
 typedef struct at_handler
 {
 	char name[15];
-	bool wildcard;
 	bool extended;
 	at_set_cb set;
 	at_get_cb get, test;
@@ -165,7 +164,7 @@ static int ext_cmp (const void *a, const void *b)
 		val = strncasecmp (ha->name, hb->name, blen);
 		if (val != 0)
 			return val;
-		return hb->wildcard ? 0 : +1;
+		return +1;
 	}
 	else
 	if (alen < blen)
@@ -173,7 +172,7 @@ static int ext_cmp (const void *a, const void *b)
 		val = strncasecmp (ha->name, hb->name, alen);
 		if (val != 0)
 			return val;
-		return ha->wildcard ? 0 : -1;
+		return -1;
 	}
 	else
 		return strcasecmp (ha->name, hb->name);
@@ -191,8 +190,6 @@ static int ext_match (const void *a, const void *b)
 
 	/* Handler is equal to, or has fewer characters than, command */
 	assert (strlen (cmd) >= len);
-	if (handler->wildcard)
-		return 0;
 	cmd += len;
 	if (isalnum ((unsigned char)cmd[0]))
 		return 1; // command is longer, e.g. "+CRC=..." vs "+CR" */
@@ -201,7 +198,7 @@ static int ext_match (const void *a, const void *b)
 
 static int at_register_common (at_commands_t *bank, const char *name,
                                at_set_cb set, at_get_cb get, at_get_cb test,
-                               void *opaque, bool wildcard, bool extended)
+                               void *opaque, bool extended)
 {
 	if (strlen (name) >= AT_NAME_MAX)
 		return ENAMETOOLONG;
@@ -211,7 +208,6 @@ static int at_register_common (at_commands_t *bank, const char *name,
 		return errno;
 
 	strcpy (h->name, name);
-	h->wildcard = wildcard;
 	h->extended = extended;
 	h->set = set;
 	h->get = get;
@@ -240,21 +236,14 @@ int at_register_ext (at_commands_t *bank, const char *name, at_set_cb set,
                      at_get_cb get, at_get_cb test, void *opaque)
 {
 	return at_register_common (bank, name, set, get, test, opaque,
-	                           false, true);
+	                           true);
 }
 
 int at_register (at_commands_t *bank, const char *name,
                  at_set_cb req, void *opaque)
 {
 	return at_register_common (bank, name, req, NULL, NULL, opaque,
-	                           false, false);
-}
-
-int at_register_wildcard (at_commands_t *bank, const char *name,
-                          at_set_cb req, void *opaque)
-{
-	return at_register_common (bank, name, req, NULL, NULL, opaque,
-	                           true, false);
+	                           false);
 }
 
 int at_register_alpha (at_commands_t *bank, char cmd, at_alpha_cb req,

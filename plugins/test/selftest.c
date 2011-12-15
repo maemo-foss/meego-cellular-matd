@@ -104,8 +104,6 @@ void *at_plugin_register (at_commands_t *set)
 	if (at_register_ext (set, "@ERROR", fail_generic, NULL, NULL,
 	                     NULL) == 0)
 		abort ();
-	if (at_register_wildcard (set, "@ERR", fail_generic, NULL) == 0)
-		abort ();
 
 	/* Too big ATS value - should fail */
 	if (at_register_s (set, 4000000000, fail_set, fail_get, NULL) == 0)
