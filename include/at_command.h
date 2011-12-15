@@ -205,8 +205,6 @@ typedef at_error_t (*at_get_cb) (at_modem_t *m, void *ctx);
  */
 int at_register_ext (at_commands_t *set, const char *name, at_set_cb setter,
                  at_get_cb getter, at_get_cb tester, void *opaque);
-int at_register (at_commands_t *set, const char *name, at_set_cb setter,
-                 void *opaque);
 
 /**
  * Callback prototype to execute an AT alpha or ampersand command

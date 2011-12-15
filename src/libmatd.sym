@@ -2,7 +2,6 @@ at_modem_start
 at_modem_stop
 at_load_plugins
 at_unload_plugins
-at_register
 at_register_alpha
 at_register_ampersand
 at_register_dial

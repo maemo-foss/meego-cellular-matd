@@ -65,7 +65,6 @@
 typedef struct at_handler
 {
 	char name[15];
-	bool extended;
 	at_set_cb set;
 	at_get_cb get, test;
 	void *opaque;
@@ -196,9 +195,8 @@ static int ext_match (const void *a, const void *b)
 	return 0; // proper match!
 }
 
-static int at_register_common (at_commands_t *bank, const char *name,
-                               at_set_cb set, at_get_cb get, at_get_cb test,
-                               void *opaque, bool extended)
+int at_register_ext (at_commands_t *bank, const char *name, at_set_cb set,
+                     at_get_cb get, at_get_cb test, void *opaque)
 {
 	if (strlen (name) >= AT_NAME_MAX)
 		return ENAMETOOLONG;
@@ -208,7 +206,6 @@ static int at_register_common (at_commands_t *bank, const char *name,
 		return errno;
 
 	strcpy (h->name, name);
-	h->extended = extended;
 	h->set = set;
 	h->get = get;
 	h->test = test;
@@ -230,20 +227,6 @@ static int at_register_common (at_commands_t *bank, const char *name,
 		return EALREADY;
 	}
 	return 0;
-}
-
-int at_register_ext (at_commands_t *bank, const char *name, at_set_cb set,
-                     at_get_cb get, at_get_cb test, void *opaque)
-{
-	return at_register_common (bank, name, set, get, test, opaque,
-	                           true);
-}
-
-int at_register (at_commands_t *bank, const char *name,
-                 at_set_cb req, void *opaque)
-{
-	return at_register_common (bank, name, req, NULL, NULL, opaque,
-	                           false);
 }
 
 int at_register_alpha (at_commands_t *bank, char cmd, at_alpha_cb req,
@@ -409,11 +392,8 @@ at_error_t at_commands_execute (const at_commands_t *bank,
 
 	struct at_handler *h = *p;
 	assert (h->set != NULL);
-	if (!h->extended)
-		return h->set (m, req, h->opaque);
 
 	int offset;
-
 	if (sscanf (req, "%*[^?= ] %c%n", &c, &offset) < 1)
 		return h->set (m, "", h->opaque);
 
