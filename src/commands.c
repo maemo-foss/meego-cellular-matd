@@ -128,6 +128,7 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 
 	at_load_plugins ();
 	bank->plugins = at_instantiate_plugins (bank);
+	at_register_basic (bank);
 	at_register_ext (bank, "+CLAC", handle_clac, NULL, NULL, bank);
 	at_cancel_enable (canc);
 	return bank;

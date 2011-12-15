@@ -51,6 +51,7 @@
 #include <string.h>
 
 #include <at_command.h>
+#include "commands.h"
 
 static at_error_t handle_bool (at_modem_t *modem, unsigned val, void *data)
 {
@@ -83,7 +84,7 @@ static at_error_t handle_get (at_modem_t *modem, void *data)
 }
 
 
-/* AT&F */
+/*** AT&F ***/
 static at_error_t handle_reset (at_modem_t *modem, unsigned value, void *data)
 {
 	at_reset (modem);
@@ -93,6 +94,7 @@ static at_error_t handle_reset (at_modem_t *modem, unsigned value, void *data)
 }
 
 
+/*** AT+CMEE ****/
 static at_error_t set_cmee (at_modem_t *m, const char *req, void *opaque)
 {
 	unsigned mode = atoi (req);
@@ -119,6 +121,7 @@ static at_error_t list_cmee (at_modem_t *m, void *opaque)
 }
 
 
+/*** AT+CSCS ***/
 static at_error_t set_cscs (at_modem_t *m, const char *req, void *opaque)
 {
 	/* WARNING! VARO! SE UPP! ACHTUNG! ATTENTION!
@@ -171,7 +174,7 @@ static at_error_t list_cscs (at_modem_t *m, void *opaque)
 }
 
 
-void *at_plugin_register (at_commands_t *set)
+void at_register_basic (at_commands_t *set)
 {
 	at_register_alpha (set, 'E', handle_bool, at_set_echo);
 	at_register_alpha (set, 'Q', handle_bool, at_set_quiet);
@@ -192,5 +195,4 @@ void *at_plugin_register (at_commands_t *set)
 
 	at_register_ext (set, "+CMEE", set_cmee, get_cmee, list_cmee, NULL);
 	at_register_ext (set, "+CSCS", set_cscs, get_cscs, list_cscs, NULL);
-	return NULL;
 }

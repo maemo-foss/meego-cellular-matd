@@ -22,10 +22,6 @@ MOSTLYCLEANFILES = $(BUILT_SOURCES)
 #
 # Generic plugins
 #
-libbasic_at_la_SOURCES = basic.c
-libbasic_at_la_LIBADD = $(AM_LIBADD)
-plugins_LTLIBRARIES += libbasic_at.la
-
 libclock_at_la_SOURCES = clock.c
 libclock_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libclock_at.la

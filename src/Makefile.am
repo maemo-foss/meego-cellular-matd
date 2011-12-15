@@ -12,6 +12,7 @@ libmatd_la_SOURCES = \
 	parser.c parser.h \
 	plugins.c plugins.h \
 	commands.c commands.h \
+	basic.c \
 	dbus.c \
 	at_modem.c
 libmatd_la_DEPENDENCIES = libmatd.sym

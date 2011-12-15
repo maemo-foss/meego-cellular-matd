@@ -63,3 +63,5 @@ void at_commands_deinit (at_commands_t *bank);
  */
 at_error_t at_commands_execute (const at_commands_t *bank, at_modem_t *modem,
                                 const char *str);
+
+void at_register_basic (at_commands_t *);
