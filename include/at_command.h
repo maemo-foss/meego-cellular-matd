@@ -66,7 +66,7 @@ extern "C" {
  *
  * Plugins are loaded when the modem instance is created.
  * At that point, each plugin's at_plugin_register() function is invoked.
- * Plugins can register which commands they handle with at_register().
+ * Plugins can register which commands they handle with at_register_ext().
  *
  * This defines the interface between the core and plugins that implement
  * one or more AT commands.
@@ -141,10 +141,10 @@ typedef unsigned at_error_t;
  * Each plugin must provide this entry point.
  * It will be called when a modem instance is created. This is a good time
  * to perform some initialization, and register supported commands with
- * at_register(), at_register_alpha(), at_register_ampersand(),
+ * at_register_ext(), at_register_alpha(), at_register_ampersand(),
  * at_register_dial() and/or at_register_s().
  *
- * @param set AT commands set to pass to at_register() and the like.
+ * @param set AT commands set to pass to at_register_ext() and the like.
  *
  * @return opaque data passed to at_plugin_unregister()
  */
@@ -178,7 +178,7 @@ void at_plugin_unregister (void *opaque);
  * Callback prototype to execute an extended AT command (AT+FOO=...).
  * @param m AT modem object
  * @param str parameters of the AT command (text after the equal sign)
- * @param ctx opaque pointer (as provided to at_register())
+ * @param ctx opaque pointer (as provided to at_register_ext())
  * @return the AT command result
  */
 typedef at_error_t (*at_set_cb) (at_modem_t *m, const char *str, void *ctx);
@@ -187,7 +187,7 @@ typedef at_error_t (*at_set_cb) (at_modem_t *m, const char *str, void *ctx);
  * Callback prototype to query current (AT+FOO?) or supported paramaters
  * (AT+FOO=?) of an extended AT command.
  * @param m AT modem object
- * @param ctx opaque pointer (as provided to at_register())
+ * @param ctx opaque pointer (as provided to at_register_ext())
  * @return the AT command result
  */
 typedef at_error_t (*at_get_cb) (at_modem_t *m, void *ctx);
