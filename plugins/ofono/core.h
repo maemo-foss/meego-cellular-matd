@@ -65,5 +65,8 @@ struct plugin
 	ofono_watch_t *cgreg_filter;
 	ofono_watch_t *cgatt_filter;
 
+#if 0
+	ofono_watch_t *caoc_filter; /**< AT+CAOC */
+#endif
 	ofono_watch_t *ccwe_filter; /**< AT+CCWE */
 };

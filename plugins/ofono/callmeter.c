@@ -54,6 +54,76 @@
 #include "core.h"
 
 
+/*** AT+CAOC ***/
+
+static at_error_t set_aoc (at_modem_t *m, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned mode;
+
+	if (sscanf (req, " %u", &mode) != 1)
+		mode = 0;
+
+	switch (mode)
+	{
+		case 0:
+		{
+			uint32_t cmm = modem_prop_get_u32 (p, "CallMeter", "CallMeter");
+			if (cmm > 0xFFFFFF)
+				return AT_CME_ERROR_0;
+			return at_intermediate (m, "\r\n+CAOC: \"%06"PRIX32"\"", cmm);
+		}
+
+		case 1:
+#if 0
+			if (p->caoc_filter != NULL)
+			{
+				ofono_signal_unwatch (p->caoc_filter);
+				p->caoc_filter = NULL;
+			}
+#endif
+			break;
+
+		case 2:
+#if 0
+			if (p->caoc_filter == NULL)
+			{
+				p->caoc_filter = ofono_signal_watch (p, NULL, "CallMeter",
+					"PropertyChanged", "CallMeter", cmm_callback, m);
+				if (p->caoc_filter == NULL)
+					return AT_CME_ENOMEM;
+			}
+			break;
+#else
+			(void) p;
+			return AT_CME_ENOTSUP;
+#endif
+
+		default:
+			return AT_CME_EINVAL;
+	}
+	return AT_OK;
+}
+
+static at_error_t get_aoc (at_modem_t *m, void *data)
+{
+#if 0
+	plugin_t *p = data;
+
+	return at_intermediate (m, "\r\n+CAOC: %u", p->caoc_filter ? 2 : 1);
+#else
+	(void) data;
+	return at_intermediate (m, "\r\n+CAOC: 1");
+#endif
+}
+
+static at_error_t list_aoc (at_modem_t *m, void *data)
+{
+	(void) data;
+	return at_intermediate (m, "\r\n+CAOC: (0-1)" /* 2 */);
+}
+
+
 /*** AT+CACM ***/
 
 static at_error_t reset_acm (at_modem_t *modem, const char *req, void *data)
@@ -239,6 +309,10 @@ static at_error_t list_cwe (at_modem_t *m, void *data)
 
 void call_meter_register (at_commands_t *set, plugin_t *p)
 {
+#if 0
+	p->caoc_filter = NULL;
+#endif
+	at_register_ext (set, "+CAOC", set_aoc, get_aoc, list_aoc, p);
 	at_register_ext (set, "+CACM", reset_acm, get_acm, NULL, p);
 	at_register_ext (set, "+CAMM", set_amm, get_amm, NULL, p);
 	at_register_ext (set, "+CPUC", set_puc, get_puc, NULL, p);
@@ -250,4 +324,8 @@ void call_meter_unregister (plugin_t *p)
 {
 	if (p->ccwe_filter != NULL)
 		ofono_signal_unwatch (p->ccwe_filter);
+#if 0
+	if (p->caoc_filter != NULL)
+		ofono_signal_unwatch (p->caoc_filter);
+#endif
 }
