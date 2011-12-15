@@ -83,20 +83,6 @@ static at_error_t handle_get (at_modem_t *modem, void *data)
 }
 
 
-static at_error_t handle_info (at_modem_t *modem, unsigned i, void *data)
-{
-	static const char reqs[4][3] = { "MI", "SN", "MR", "MM" };
-
-	(void) data;
-
-	if (i > sizeof (reqs) / sizeof (reqs[0]))
-		return AT_ERROR;
-	if (i == sizeof (reqs) / sizeof (reqs[0]))
-		return AT_OK;
-	return at_execute (modem, "+CG%s", reqs[i]);
-}
-
-
 /* AT&F */
 static at_error_t handle_reset (at_modem_t *modem, unsigned value, void *data)
 {
@@ -190,7 +176,6 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_alpha (set, 'E', handle_bool, at_set_echo);
 	at_register_alpha (set, 'Q', handle_bool, at_set_quiet);
 	at_register_alpha (set, 'V', handle_bool, at_set_verbose);
-	at_register_alpha (set, 'I', handle_info, NULL);
 	at_register_alpha (set, 'Z', handle_reset, NULL);
 
 	/* Custom S2, S4 and S12 would be relatively easy to implement,

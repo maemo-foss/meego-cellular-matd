@@ -182,6 +182,22 @@ static int show_revision (at_modem_t *modem, struct udev_device *dev)
 }
 
 
+/*** ATI ***/
+static at_error_t handle_info (at_modem_t *modem, unsigned i, void *data)
+{
+	static const char reqs[4][3] = { "MI", "SN", "MR", "MM" };
+
+	(void) data;
+
+	if (i > sizeof (reqs) / sizeof (reqs[0]))
+		return AT_ERROR;
+	if (i == sizeof (reqs) / sizeof (reqs[0]))
+		return AT_OK;
+	return at_execute (modem, "+CG%s", reqs[i]);
+}
+
+
+/*** Registration ***/
 void *at_plugin_register (at_commands_t *set)
 {
 	at_register_ext (set, "+GMI", at_udev_enum, NULL, NULL, show_manuf);
@@ -190,6 +206,7 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_ext (set, "+CGMM", at_udev_enum, NULL, NULL, show_model);
 	at_register_ext (set, "+GMR", at_udev_enum, NULL, NULL, show_revision);
 	at_register_ext (set, "+CGMR", at_udev_enum, NULL, NULL, show_revision);
+	at_register_alpha (set, 'I', handle_info, NULL);
 
 	return NULL;
 }
