@@ -101,6 +101,7 @@ struct at_commands
 		void *extended; /**< extended commands */
 	} cmd;
 	void **plugins;
+	void *phonebooks;
 };
 
 static at_error_t handle_clac (at_modem_t *, const char *, void *);
@@ -126,10 +127,12 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 	/* Load all plugins */
 	int canc = at_cancel_disable ();
 
+	at_register_basic (bank);
+	bank->phonebooks = at_register_phonebooks (bank);
+	at_register_ext (bank, "+CLAC", handle_clac, NULL, NULL, bank);
+
 	at_load_plugins ();
 	bank->plugins = at_instantiate_plugins (bank);
-	at_register_basic (bank);
-	at_register_ext (bank, "+CLAC", handle_clac, NULL, NULL, bank);
 	at_cancel_enable (canc);
 	return bank;
 }
@@ -140,6 +143,7 @@ void at_commands_deinit (at_commands_t *bank)
 		return;
 
 	int canc = at_cancel_disable ();
+	at_unregister_phonebooks (bank->phonebooks);
 	at_deinstantiate_plugins (bank->plugins);
 	tdestroy (bank->cmd.extended, free);
 	free (bank);
@@ -300,6 +304,17 @@ int at_register_s (at_commands_t *bank, unsigned param,
 	return 0;
 }
 
+
+int at_register_pb (at_commands_t *set, unsigned id, at_pb_pw_cb pw_cb,
+                    at_pb_read_cb read_cb, at_pb_write_cb write_cb,
+                    at_pb_find_cb find_cb, at_pb_range_cb range_cb,
+                    void *opaque)
+{
+	if (set->phonebooks == NULL)
+		return ENOMEM;
+	return at_register_phonebook (set->phonebooks, id, pw_cb, read_cb,
+	                              write_cb, find_cb, range_cb, opaque);
+}
 
 /*** Command execution ***/
 

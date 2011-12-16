@@ -522,6 +522,78 @@ void at_reset (at_modem_t *);
 void at_hangup (at_modem_t *);
 
 /** @} */
+
+/**
+ * @defgroup phonebooks Phonebook functions
+ * @{
+ */
+
+/** Known phonebooks (for AT+CPBS) */
+enum at_phonebook {
+	AT_PB_DC, /**< Dialled calls */
+	AT_PB_EN, /**< Emergency number */
+	AT_PB_FD, /**< SIM fixed dialling */
+	AT_PB_LD, /**< SIM last dialling */
+	AT_PB_MC, /**< Missed calls */
+	AT_PB_ME, /**< MT contacts */
+	AT_PB_MT, /**< ME and SM combination */
+	AT_PB_ON, /**< Own numbers (MSIDSN) */
+	AT_PB_RC, /**< Received calls */
+	AT_PB_SM, /**< SIM contacts */
+	AT_PB_TA, /**< TA contacts */
+	AT_PB_AP, /**< Selection application contacts */
+	AT_PB_MAX,
+};
+
+/**
+ * Password check callback for phonebook selection (AT+CPBS).
+ * @param pw specified password.
+ * @param data opaque data as provided to at_register_pb().
+ * @return AT_OK on success or an AT command error code.
+ */
+typedef at_error_t (*at_pb_pw_cb) (const char *pw, void *data);
+
+/**
+ * Phonebook read callback (AT+CPBR).
+ * @param idx phonebook entry index.
+ * @param data opaque data as provided to at_register_pb().
+ */
+typedef at_error_t (*at_pb_read_cb) (at_modem_t *, unsigned idx, void *data);
+
+/**
+ * Phonebook write callback (AT+CPBW).
+ * @param idx pointer to the contact index [IN/OUT]:
+ *            overwritten contact index on entry or -1 for new contact,
+ *            written contact index on return.
+ * @param data opaque data as provided to at_register_pb().
+ */
+typedef at_error_t (*at_pb_write_cb) (at_modem_t *, unsigned *idx,
+	const char *number, const char *text, const char *group,
+	const char *text2, const char *email, const char *sip, const char *tel,
+	bool hidden, void *data);
+
+typedef at_error_t (*at_pb_find_cb) (at_modem_t *, const char *search_text,
+                                     void *data);
+
+typedef at_error_t (*at_pb_range_cb) (unsigned *min, unsigned *max,
+                                      void *data);
+
+/**
+ * Registers a phonebook (for AT+CBP{S,R,F,W} commands).
+ * @param id phonebook identifier (from @ref enum at_phonebook).
+ * @param pw_cb password callback for phonebook selection or NULL
+ * @param read_cb read callback (mandatory, cannot be NULL)
+ * @param write_cb write callback or NULL
+ * @param find_cb find callback or NULL
+ * @param range_cb phonebook index range callback (mandatory, cannot be NULL)
+ * @param opaque opaque data pointer for callbacks
+ */
+int at_register_pb (at_commands_t *, unsigned id, at_pb_pw_cb pw_cb,
+                    at_pb_read_cb read_cb, at_pb_write_cb write_cb,
+                    at_pb_find_cb find_cb, at_pb_range_cb range_cb,
+                    void *opaque);
+
+/** @} */
 /** @} */
 
 # ifdef __cplusplus
