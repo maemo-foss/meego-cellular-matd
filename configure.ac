@@ -28,7 +28,6 @@ CFLAGS="${CFLAGS} -Wpointer-arith -Wbad-function-cast"
 CFLAGS="${CFLAGS} -Wmissing-declarations -Wmissing-prototypes"
 CFLAGS="${CFLAGS} -Wstrict-prototypes -Wredundant-decls"
 CFLAGS="${CFLAGS} -Wunused-parameter -Wold-style-definition"
-CFLAGS="${CFLAGS} -Winline"
 dnl -Wunreachable-code
 
 AC_DEFINE(_FORTIFY_SOURCE, 2, [Define to 2 to get glibc warnings.])
