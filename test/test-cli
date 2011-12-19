@@ -10,6 +10,8 @@ cd ..
 ! ./mat --does-not-exist
 ! ./mat /does-not-exist
 ! ./mat /does-not-exist/very/very/very/very/very/very/long/file/name
+! ./mat /dev/null too many arguments
+! ./mat -p too_many_arguments
 
 # Plugins path tests
 AT_PLUGINS_PATH="/does-not-exist" ./src/mat /dev/null

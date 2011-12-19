@@ -214,6 +214,12 @@ done:
 	}
 	fcntl (fd, F_SETFD, FD_CLOEXEC);
 
+	if (optind < argc)
+	{
+		fprintf (stderr, "%s: too many arguments\n", argv[0]);
+		return 2;
+	}
+
 	struct termios oldtp;
 	bool term = !tcgetattr (fd, &oldtp);
 	if (term)
