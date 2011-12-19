@@ -77,14 +77,14 @@ static at_error_t handle_cimi (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CNUM ***/
 
-static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
-{
-	if (*req)
-		return AT_CME_EINVAL;
+typedef at_error_t (*msisdn_cb) (const char *, void *);
 
+static at_error_t foreach_msisdn (plugin_t *p, msisdn_cb cb, void *opaque)
+{
 	at_error_t ret = AT_OK;
+
 	int canc = at_cancel_disable ();
-	DBusMessage *msg = modem_props_get (data, "SimManager");
+	DBusMessage *msg = modem_props_get (p, "SimManager");
 	if (msg == NULL)
 	{
 		ret = AT_CME_UNKNOWN;
@@ -104,14 +104,31 @@ static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 		const char *msisdn;
 
 		dbus_message_iter_get_basic (&it, &msisdn);
-		at_intermediate (modem, "\r\n+CNUM: ,\"%s\",0", msisdn);
+		ret = cb (msisdn, opaque);
+		if (ret != AT_OK)
+			break;
 		dbus_message_iter_next (&it);
 	}
 	dbus_message_unref (msg);
-
 out:
 	at_cancel_enable (canc);
 	return ret;
+}
+
+static at_error_t show_cnum (const char *msisdn, void *data)
+{
+	at_modem_t *modem = data;
+
+	return at_intermediate (modem, "\r\n+CNUM: ,\"%s\",0", msisdn);
+}
+
+static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+
+	if (*req)
+		return AT_CME_EINVAL;
+	return foreach_msisdn (p, show_cnum, modem);
 }
 
 
