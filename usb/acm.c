@@ -178,7 +178,7 @@ int main (void)
 			goto error;
 		}
 
-		struct at_modem *m = at_modem_start (fd, hangup_cb, &self);
+		struct at_modem *m = at_modem_start (fd, fd, hangup_cb, &self);
 		if (m == NULL)
 		{
 			syslog (LOG_CRIT, "Cannot start USB modem: %m");

@@ -65,12 +65,15 @@ typedef void (*at_hangup_cb) (struct at_modem *, void *);
 
 /**
  * Creates and starts an AT modem.
- * @param fd file descriptor to the DTE
+ * @param ifd file descriptor for input from the DTE
+ * @param ofd file descriptor for output to the DTE
  * @param cb callback invoked asynchronously at the end of the input stream
  * @param opaque data pointer for the callback
+ * @note Both file descriptors may be identical or represent the same file.
  * @return NULL on error
  */
-struct at_modem *at_modem_start (int fd, at_hangup_cb cb, void *opaque);
+struct at_modem *at_modem_start (int ifd, int ofd, at_hangup_cb cb,
+                                 void *opaque);
 
 /**
  * Stops and destroys an AT modem.

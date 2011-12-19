@@ -243,7 +243,7 @@ done:
 
 	pthread_t self = pthread_self ();
 
-	struct at_modem *m = at_modem_start (fd, hangup_cb, &self);
+	struct at_modem *m = at_modem_start (fd, fd, hangup_cb, &self);
 	if (m == NULL)
 	{
 		syslog (LOG_CRIT, "Cannot start AT modem: %m");

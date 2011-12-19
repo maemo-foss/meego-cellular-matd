@@ -624,14 +624,15 @@ void at_reset (at_modem_t *m)
 static const int dsr = TIOCM_LE;
 
 /*** Main thread ***/
-struct at_modem *at_modem_start (int fd, at_hangup_cb cb, void *opaque)
+struct at_modem *at_modem_start (int ifd, int ofd, at_hangup_cb cb,
+                                 void *opaque)
 {
 	struct at_modem *m = malloc (sizeof (*m));
 	if (m == NULL)
 		return NULL;
 
-	m->fd_in = fd;
-	m->fd_out = fd;
+	m->fd_in = ifd;
+	m->fd_out = ofd;
 	at_reset (m);
 	m->hangup.cb = cb;
 	m->hangup.opaque = opaque;
