@@ -104,7 +104,8 @@ static void at_log_dump (const uint8_t *buf, size_t len, bool out)
 /** Internal state of an AT command parser instance. */
 struct at_modem
 {
-	int fd; /**< File to read data from (DTE) */
+	int fd_in; /**< File to read data from (DTE) */
+	int fd_out; /**< File to write data to (DTE) */
 	unsigned echo:1; /**< ATE on or off */
 	unsigned quiet:1; /**< ATQ on or off */
 	unsigned verbose:1; /**< ATV on or off */
@@ -134,7 +135,7 @@ static int at_write_unlocked (at_modem_t *m,
 {
 	while (len > 0)
 	{
-		ssize_t val = write (m->fd, blob, len);
+		ssize_t val = write (m->fd_out, blob, len);
 		if (val == -1)
 		{
 			if (errno == EINTR)
@@ -215,7 +216,7 @@ static int at_getchar (at_modem_t *m)
 		ssize_t val;
 
 		do
-			val = read (m->fd, m->in_buf, sizeof (m->in_buf));
+			val = read (m->fd_in, m->in_buf, sizeof (m->in_buf));
 		while (val == -1 && errno == EINTR);
 
 		switch (val)
@@ -375,7 +376,6 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 	} stamp;
 #endif
 	size_t len[2] = { 0, 0 }, offset[2] = { 0, 0 };
-	int dte = m->fd;
 
 	uint8_t *bufs = malloc (2 * mtu);
 	if (bufs == NULL)
@@ -393,30 +393,40 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 	at_print_reply (m, AT_CONNECT);
 	m->data = true;
 
-	fcntl (dte, F_SETFL, fcntl (dte, F_GETFL) | O_NONBLOCK);
+	fcntl (m->fd_in, F_SETFL, fcntl (m->fd_in, F_GETFL) | O_NONBLOCK);
+	fcntl (m->fd_out, F_SETFL, fcntl (m->fd_out, F_GETFL) | O_NONBLOCK);
 	fcntl (dce, F_SETFL, fcntl (dce, F_GETFL) | O_NONBLOCK);
 #if PERF_COUNT
 	stamp.real = timestamp (CLOCK_MONOTONIC);
 	stamp.process = timestamp (CLOCK_PROCESS_CPUTIME_ID);
 	stamp.thread = timestamp (CLOCK_THREAD_CPUTIME_ID);
 #endif
+
+	struct pollfd ufd[4];
+	ufd[0].fd = m->fd_in;
+	ufd[1].fd = dce;
+	ufd[2].fd = m->fd_out;
+	ufd[3].fd = dce;
+
 	for (;;)
 	{
-		struct pollfd ufd[2] = {
-			{ .fd = dte, .events = 0, },
-			{ .fd = dce, .events = 0, },
-		};
 		uint64_t delay;
 
 		for (int i = 0; i < 2; i++)
 			if (len[i] > 0)
-				ufd[1 - i].events |= POLLOUT;
+			{
+				ufd[i].events = 0;
+				ufd[3 - i].events = POLLOUT;
+			}
 			else
-				ufd[i].events |= POLLIN;
+			{
+				ufd[i].events = POLLIN;
+				ufd[3 - i].events = 0;
+			}
 #if PERF_COUNT
 		delay = timestamp (CLOCK_MONOTONIC);
 #endif
-		while (poll (ufd, 2, -1) < 0);
+		while (poll (ufd, 4, -1) < 0);
 #if PERF_COUNT
 		delay = timestamp (CLOCK_MONOTONIC) - delay;
 		for (int i = 0; i < 2; i++)
@@ -459,10 +469,10 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 				len[i] = val;
 				offset[i] = 0;
 			}
-			if (ufd[i].revents & POLLOUT)
+			if (ufd[i + 2].revents & (POLLOUT|POLLERR|POLLHUP))
 			{
 				const uint8_t *buf = bufs + ((!i) * mtu);
-				ssize_t val = write (ufd[i].fd, buf + offset[!i], len[!i]);
+				ssize_t val = write (ufd[i + 2].fd, buf + offset[!i], len[!i]);
 				if (val == -1)
 				{
 					if (errno == EINTR || errno == EAGAIN)
@@ -483,7 +493,8 @@ out:
 	stamp.process = timestamp (CLOCK_PROCESS_CPUTIME_ID) - stamp.process;
 	stamp.real = timestamp (CLOCK_MONOTONIC) - stamp.real;
 #endif
-	fcntl (dte, F_SETFL, fcntl (dte, F_GETFL) & ~O_NONBLOCK);
+	fcntl (m->fd_in, F_SETFL, fcntl (m->fd_in, F_GETFL) & ~O_NONBLOCK);
+	fcntl (m->fd_out, F_SETFL, fcntl (m->fd_out, F_GETFL) & ~O_NONBLOCK);
 	fcntl (dce, F_SETFL, fcntl (dce, F_GETFL) & ~O_NONBLOCK);
 	m->data = false;
 	pthread_cleanup_pop (1);
@@ -621,7 +632,8 @@ struct at_modem *at_modem_start (int fd, at_hangup_cb cb, void *opaque)
 	if (m == NULL)
 		return NULL;
 
-	m->fd = fd;
+	m->fd_in = fd;
+	m->fd_out = fd;
 	at_reset (m);
 	m->hangup.cb = cb;
 	m->hangup.opaque = opaque;
@@ -639,7 +651,7 @@ struct at_modem *at_modem_start (int fd, at_hangup_cb cb, void *opaque)
 
 	if (at_thread_create (&m->reader, dte_thread, m))
 		goto error;
-	ioctl (m->fd, TIOCMBIS, &dsr);
+	ioctl (m->fd_in, TIOCMBIS, &dsr);
 	return m;
 
 error:
@@ -653,7 +665,7 @@ void at_modem_stop (struct at_modem *m)
 	if (m == NULL)
 		return;
 
-	ioctl (m->fd, TIOCMBIC, &dsr);
+	ioctl (m->fd_in, TIOCMBIC, &dsr);
 	pthread_cancel (m->reader);
 	pthread_join (m->reader, NULL);
 	pthread_mutex_destroy (&m->lock);
@@ -742,13 +754,13 @@ bool at_get_rate_report (at_modem_t *m)
 
 void at_get_attr (at_modem_t *m, struct termios *tp)
 {
-	if (tcgetattr (m->fd, tp))
+	if (tcgetattr (m->fd_in, tp))
 		memset (tp, 0, sizeof (*tp));
 }
 
 int at_set_attr (at_modem_t *m, const struct termios *tp)
 {
-	if (tcsetattr (m->fd, TCSADRAIN, tp))
+	if (tcsetattr (m->fd_in, TCSADRAIN, tp))
 		return errno;
 	return 0;
 }
