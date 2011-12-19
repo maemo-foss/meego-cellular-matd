@@ -238,6 +238,27 @@ DBusMessage *modem_props_get (const plugin_t *p, const char *iface)
 	return msg;
 }
 
+int ofono_prop_find (DBusMessage *msg, const char *name, int type,
+                     DBusMessageIter *value)
+{
+	DBusMessageIter dict;
+
+	if (!dbus_message_iter_init (msg, &dict))
+		return -1;
+	return ofono_dict_find (&dict, name, type, value);
+}
+
+int ofono_prop_find_basic (DBusMessage *msg, const char *name, int type,
+                           void *buf)
+{
+	DBusMessageIter value;
+
+	if (ofono_prop_find (msg, name, type, &value))
+		return -1;
+	dbus_message_iter_get_basic (&value, buf);
+	return 0;
+}
+
 char *modem_prop_get_string (const plugin_t *p, const char *iface,
                              const char *name)
 {
