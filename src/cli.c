@@ -169,50 +169,42 @@ done:
 	setlogmask (logmask);
 	openlog ("cellular: matd", logopts, LOG_DAEMON);
 
-	int fd;
-
 	if (pts)
 	{
-		fd = posix_openpt (O_RDWR|O_NOCTTY|O_CLOEXEC);
-		if (fd == -1)
+		(void) close (0);
+		if (posix_openpt (O_RDWR | O_NOCTTY) != 0)
 		{
 			syslog (LOG_CRIT, "Cannot open %s: %m", "pseudo terminal");
 			return 1;
 		}
 
-		char *name = ptsname (fd);
+		char *name = ptsname (0);
 		if (name == NULL)
-		{
-			close (fd);
 			return 1;
-		}
-		unlockpt (fd);
+		unlockpt (0);
 		puts (name);
 		fflush (stdout);
+
+		if (dup2 (0, 1) != 1)
+			return 1;
 	}
 	else
 	if (optind < argc)
 	{
 		char *path = argv[optind++];
-		fd = open (path, O_RDWR|O_NOCTTY|O_CLOEXEC);
-		if (fd == -1)
+
+		(void) close (0);
+		if (open (path, O_RDWR | O_NOCTTY) != 0)
 		{
 			if (memchr (path, 0, 40) == NULL)
 				strcpy (path + 37, "...");
 			syslog (LOG_CRIT, "Cannot open %s: %m", path);
 			return 1;
 		}
-	}
-	else
-	{
-		fd = dup (0);
-		if (fd == -1)
-		{
-			syslog (LOG_CRIT, "Cannot open %s: %m", "standard input");
+
+		if (dup2 (0, 1) != 1)
 			return 1;
-		}
 	}
-	fcntl (fd, F_SETFD, FD_CLOEXEC);
 
 	if (optind < argc)
 	{
@@ -221,21 +213,21 @@ done:
 	}
 
 	struct termios oldtp;
-	bool term = !tcgetattr (fd, &oldtp);
+	bool term = !tcgetattr (0, &oldtp);
 	if (term)
 	{
 		struct termios tp = oldtp;
 
 		/* XXX: Unfortunately, this does not ensure exclusive access.
 		 * Another process could have opened the TTY before this: */
-		ioctl (fd, TIOCEXCL);
+		ioctl (0, TIOCEXCL);
 		tp.c_iflag &= ~(IGNBRK | BRKINT | PARMRK |
 		                INLCR | IGNCR | ICRNL | ISTRIP | IXON);
 		tp.c_oflag &= ~(OPOST | ONLCR | OCRNL | ONOCR | ONLRET | OFILL);
 		tp.c_cflag &= ~(CSIZE | PARENB);
 		tp.c_cflag |= CS8 | CLOCAL;
 		tp.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-		tcsetattr (fd, TCSADRAIN, &tp);
+		tcsetattr (0, TCSADRAIN, &tp);
 	}
 
 	/* Prepare signal handling before allocating modem pipe */
@@ -243,7 +235,7 @@ done:
 
 	pthread_t self = pthread_self ();
 
-	struct at_modem *m = at_modem_start (fd, fd, hangup_cb, &self);
+	struct at_modem *m = at_modem_start (0, 1, hangup_cb, &self);
 	if (m == NULL)
 	{
 		syslog (LOG_CRIT, "Cannot start AT modem: %m");
@@ -258,8 +250,7 @@ done:
 out:
 	pthread_sigmask (SIG_UNBLOCK, &set, NULL);
 	if (term)
-		tcsetattr (fd, TCSAFLUSH, &oldtp);
-	close (fd);
+		tcsetattr (0, TCSAFLUSH, &oldtp);
 	closelog ();
 	return -ret;
 }
