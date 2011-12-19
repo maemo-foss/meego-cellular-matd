@@ -223,6 +223,18 @@ double ofono_prop_find_double (DBusMessage *msg, const char *name)
 	return val;
 }
 
+static inline
+int ofono_prop_find_array (DBusMessage *msg, const char *name,
+                           DBusMessageIter *it)
+{
+	DBusMessageIter array;
+	int val = ofono_prop_find (msg, name, DBUS_TYPE_ARRAY, &array);
+	if (val == 0)
+		dbus_message_iter_recurse (&array, it);
+	return val;
+}
+
+
 /* D-Bus oFono signal handling */
 typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
 typedef struct ofono_watch ofono_watch_t;
