@@ -131,6 +131,53 @@ static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 	return foreach_msisdn (p, show_cnum, modem);
 }
 
+/*** Own Numbers */
+static at_error_t show_isdn (const char *on, void *data)
+{
+	struct { at_modem_t *modem; unsigned start, end, idx; } *cbd = data;
+
+	if (cbd->idx >= cbd->start && cbd->idx <= cbd->end)
+		at_intermediate (cbd->modem, "\r\n+CPBR: %u,\"+%s\",145,\"\"",
+		                 cbd->idx, on);
+	cbd->idx++;
+	return AT_OK;
+}
+
+static at_error_t read_on (at_modem_t *modem, unsigned start, unsigned end,
+                           void *data)
+{
+	plugin_t *p = data;
+	struct { at_modem_t *modem; unsigned start, end, idx; } cbd = {
+	    modem, start, end, 0
+    };
+
+	return foreach_msisdn (p, show_isdn, &cbd);
+}
+
+static at_error_t count_isdn (const char *on, void *data)
+{
+	unsigned *count = data;
+
+	(*count)++;
+	(void) on;
+	return AT_OK;
+}
+
+static at_error_t count_on (unsigned *a, unsigned *b, void *data)
+{
+	plugin_t *p = data;
+	unsigned count = 0;
+
+	at_error_t ret = foreach_msisdn (p, count_isdn, &count);
+	if (ret != AT_OK)
+		return ret;
+	if (count == 0)
+		return AT_CME_ENOENT;
+	*a = 0;
+	*b = count - 1;
+	return AT_OK;
+}
+
 
 /*** List of passwords ***/
 struct pin
@@ -547,6 +594,7 @@ void sim_register (at_commands_t *set, plugin_t *p)
 {
 	at_register_ext (set ,"+CIMI", handle_cimi, NULL, NULL, p);
 	at_register_ext (set ,"+CNUM", handle_cnum, NULL, NULL, p);
+	at_register_pb (set, "ON", NULL, read_on, NULL, NULL, count_on, p);
 	at_register_ext (set, "+CLCK", set_clck, NULL, list_clck, p);
 	at_register_ext (set, "+CPIN", set_cpin, get_cpin, NULL, p);
 	at_register_ext (set, "+CPINR", query_pinr, NULL, NULL, p);
