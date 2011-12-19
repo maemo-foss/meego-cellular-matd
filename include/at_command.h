@@ -528,23 +528,6 @@ void at_hangup (at_modem_t *);
  * @{
  */
 
-/** Known phonebooks (for AT+CPBS) */
-enum at_phonebook {
-	AT_PB_DC, /**< Dialled calls */
-	AT_PB_EN, /**< Emergency number */
-	AT_PB_FD, /**< SIM fixed dialling */
-	AT_PB_LD, /**< SIM last dialling */
-	AT_PB_MC, /**< Missed calls */
-	AT_PB_ME, /**< MT contacts */
-	AT_PB_MT, /**< ME and SM combination */
-	AT_PB_ON, /**< Own numbers (MSIDSN) */
-	AT_PB_RC, /**< Received calls */
-	AT_PB_SM, /**< SIM contacts */
-	AT_PB_TA, /**< TA contacts */
-	AT_PB_AP, /**< Selection application contacts */
-	AT_PB_MAX,
-};
-
 /**
  * Password check callback for phonebook selection (AT+CPBS).
  * @param pw specified password.
@@ -580,7 +563,7 @@ typedef at_error_t (*at_pb_range_cb) (unsigned *min, unsigned *max,
 
 /**
  * Registers a phonebook (for AT+CBP{S,R,F,W} commands).
- * @param id phonebook identifier (from @ref enum at_phonebook).
+ * @param id 2-letters phonebook identifier string (e.g. "ME").
  * @param pw_cb password callback for phonebook selection or NULL
  * @param read_cb read callback (mandatory, cannot be NULL)
  * @param write_cb write callback or NULL
@@ -588,7 +571,7 @@ typedef at_error_t (*at_pb_range_cb) (unsigned *min, unsigned *max,
  * @param range_cb phonebook index range callback (mandatory, cannot be NULL)
  * @param opaque opaque data pointer for callbacks
  */
-int at_register_pb (at_commands_t *, unsigned id, at_pb_pw_cb pw_cb,
+int at_register_pb (at_commands_t *, const char *id, at_pb_pw_cb pw_cb,
                     at_pb_read_cb read_cb, at_pb_write_cb write_cb,
                     at_pb_find_cb find_cb, at_pb_range_cb range_cb,
                     void *opaque);

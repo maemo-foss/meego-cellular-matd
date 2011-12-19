@@ -69,6 +69,6 @@ void at_register_basic (at_commands_t *);
 typedef struct at_phonebooks at_phonebooks_t;
 at_phonebooks_t *at_register_phonebooks (at_commands_t *);
 void at_unregister_phonebooks (at_phonebooks_t *);
-int at_register_phonebook (at_phonebooks_t *, unsigned, at_pb_pw_cb,
+int at_register_phonebook (at_phonebooks_t *, const char *, at_pb_pw_cb,
                            at_pb_read_cb, at_pb_write_cb, at_pb_find_cb,
                            at_pb_range_cb, void *);

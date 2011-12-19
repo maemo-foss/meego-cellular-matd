@@ -305,7 +305,7 @@ int at_register_s (at_commands_t *bank, unsigned param,
 }
 
 
-int at_register_pb (at_commands_t *set, unsigned id, at_pb_pw_cb pw_cb,
+int at_register_pb (at_commands_t *set, const char *id, at_pb_pw_cb pw_cb,
                     at_pb_read_cb read_cb, at_pb_write_cb write_cb,
                     at_pb_find_cb find_cb, at_pb_range_cb range_cb,
                     void *opaque)
