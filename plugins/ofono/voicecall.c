@@ -773,6 +773,86 @@ static at_error_t list_cpas (at_modem_t *modem, void *data)
 }
 
 
+/*** Emergency Numbers */
+static at_error_t read_en (at_modem_t *modem, unsigned start, unsigned end,
+                           void *data)
+{
+	plugin_t *p = data;
+	at_error_t ret = AT_OK;
+
+	int canc = at_cancel_disable ();
+	DBusMessage *props = modem_props_get (p, "VoiceCallManager");
+	if (props == NULL)
+	{
+		ret = AT_CME_ERROR_0;
+		goto out;
+	}
+
+	DBusMessageIter it;
+	unsigned idx = 0;
+	if (ofono_prop_find_array (props, "EmergencyNumbers", &it))
+	{
+		dbus_message_unref (props);
+		ret = AT_CME_UNKNOWN;
+		goto out;
+	}
+
+	while (dbus_message_iter_get_arg_type (&it) == DBUS_TYPE_STRING)
+	{
+		const char *en;
+
+		dbus_message_iter_get_basic (&it, &en);
+		if (idx >= start && idx <= end)
+			at_intermediate (modem, "\r\n+CPBR: %u,\"%s\",129,\"\"", idx, en);
+		idx++;
+		dbus_message_iter_next (&it);
+	}
+	dbus_message_unref (props);
+out:
+	at_cancel_enable (canc);
+	return ret;
+}
+
+
+static at_error_t count_en (unsigned *a, unsigned *b, void *data)
+{
+	plugin_t *p = data;
+	at_error_t ret = AT_OK;
+
+	int canc = at_cancel_disable ();
+	DBusMessage *props = modem_props_get (p, "VoiceCallManager");
+	if (props == NULL)
+	{
+		ret = AT_CME_ERROR_0;
+		goto out;
+	}
+
+	DBusMessageIter it;
+	unsigned idx = 0;
+	if (ofono_prop_find_array (props, "EmergencyNumbers", &it))
+	{
+		dbus_message_unref (props);
+		ret = AT_CME_UNKNOWN;
+		goto out;
+	}
+
+	while (dbus_message_iter_get_arg_type (&it) == DBUS_TYPE_STRING)
+	{
+		idx++;
+		dbus_message_iter_next (&it);
+	}
+	dbus_message_unref (props);
+
+	*a = 0;
+	if (idx == 0)
+		ret = AT_CME_ENOENT;
+	else
+		*b = idx - 1;
+out:
+	at_cancel_enable (canc);
+	return ret;
+}
+
 /*** Registration ***/
 
 void voicecallmanager_register (at_commands_t *set, plugin_t *p)
@@ -792,6 +872,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+VTD", set_vtd, get_vtd, list_vtd, p);
 	at_register_ext (set, "+CTFR", do_ctfr, NULL, NULL, p);
 	at_register_ext (set, "+CPAS", show_cpas, NULL, list_cpas, p);
+	at_register_pb (set, "EN", NULL, read_en, NULL, NULL, count_en, p);
 
 	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,
