@@ -538,10 +538,12 @@ typedef at_error_t (*at_pb_pw_cb) (const char *pw, void *data);
 
 /**
  * Phonebook read callback (AT+CPBR).
- * @param idx phonebook entry index.
+ * @param start index of first entry to read.
+ * @param end index of last entry to read.
  * @param data opaque data as provided to at_register_pb().
  */
-typedef at_error_t (*at_pb_read_cb) (at_modem_t *, unsigned idx, void *data);
+typedef at_error_t (*at_pb_read_cb) (at_modem_t *, unsigned start,
+                                     unsigned end, void *data);
 
 /**
  * Phonebook write callback (AT+CPBW).

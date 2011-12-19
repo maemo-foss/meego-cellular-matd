@@ -169,17 +169,8 @@ static at_error_t pb_read (at_modem_t *m, const char *req, void *data)
 		return AT_CME_ERROR_0;
 	if (pb->read_cb == NULL)
 		return AT_CME_ENOTSUP;
-	if (end == UINT_MAX)
-		end--;
 
-	for (unsigned i = start; i <= end; i++)
-	{
-		at_error_t ret = pb->read_cb (m, i, pb->opaque);
-		if (ret != AT_OK)
-			return ret;
-	}
-
-	return AT_OK;
+	return pb->read_cb (m, start, end, pb->opaque);
 }
 
 static at_error_t pb_read_test (at_modem_t *m, void *data)
