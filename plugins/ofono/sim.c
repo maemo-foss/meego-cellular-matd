@@ -91,17 +91,15 @@ static at_error_t handle_cnum (at_modem_t *modem, const char *req, void *data)
 		goto out;
 	}
 
-	DBusMessageIter array;
-	if (ofono_prop_find (msg, "SubscriberNumbers", DBUS_TYPE_ARRAY, &array))
+	DBusMessageIter it;
+	if (ofono_prop_find_array (msg, "SubscriberNumbers", &it))
 	{
 		dbus_message_unref (msg);
 		ret = AT_CME_UNKNOWN;
 		goto out;
 	}
 
-	DBusMessageIter it;
-	dbus_message_iter_recurse (&array, &it);
-	while (dbus_message_iter_get_arg_type (&it) != DBUS_TYPE_INVALID)
+	while (dbus_message_iter_get_arg_type (&it) == DBUS_TYPE_STRING)
 	{
 		const char *msisdn;
 
@@ -292,20 +290,25 @@ static at_error_t query_pinr (at_modem_t *m, const char *req, void *data)
 	}
 
 	plugin_t *p = data;
-	at_error_t ret = AT_CME_UNKNOWN;
+	at_error_t ret = AT_OK;
 	int canc = at_cancel_disable ();
 
 	DBusMessage *props = modem_props_get (p, "SimManager");
 	if (props == NULL)
+	{
+		ret = AT_CME_ERROR_0;
 		goto error;
+	}
 
-	DBusMessageIter prop, entry;
-	if (ofono_prop_find (props, "Retries", DBUS_TYPE_ARRAY, &prop)
-	 || dbus_message_iter_get_element_type (&prop) != DBUS_TYPE_DICT_ENTRY)
+	DBusMessageIter entry;
+	if (ofono_prop_find_array (props, "Retries", &entry))
+	{
+		dbus_message_unref (props);
+		ret = AT_CME_UNKNOWN;
 		goto error;
+	}
 
-	dbus_message_iter_recurse (&prop, &entry);
-	while (dbus_message_iter_get_arg_type (&entry) != DBUS_TYPE_INVALID)
+	while (dbus_message_iter_get_arg_type (&entry) == DBUS_TYPE_DICT_ENTRY)
 	{
 		DBusMessageIter value;
 		const char *pw;
@@ -332,10 +335,8 @@ static at_error_t query_pinr (at_modem_t *m, const char *req, void *data)
 	skip:
 		dbus_message_iter_next (&entry);
 	}
-	ret = AT_OK;
+	dbus_message_unref (props);
 error:
-	if (props != NULL)
-		dbus_message_unref (props);
 	at_cancel_enable (canc);
 	free (pattern);
 	return ret;
@@ -363,32 +364,28 @@ static at_error_t query_pin (plugin_t *p, const char *type, at_modem_t *m)
 {
 	DBusMessage *msg = modem_props_get (p, "SimManager");
 	if (msg == NULL)
-		return AT_CME_UNKNOWN;
+		return AT_CME_ERROR_0;
 
-	DBusMessageIter dict;
-	if (ofono_prop_find (msg, "LockedPins", DBUS_TYPE_ARRAY, &dict)
-	  || dbus_message_iter_get_element_type (&dict) != DBUS_TYPE_STRING)
+	DBusMessageIter it;
+	if (ofono_prop_find_array (msg, "LockedPins", &it))
 	{
 		dbus_message_unref (msg);
 		return AT_CME_UNKNOWN;
 	}
 
-	DBusMessageIter array;
-	dbus_message_iter_recurse (&dict, &array);
-
 	unsigned locked = 0;
 
-	while (dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID)
+	while (dbus_message_iter_get_arg_type (&it) == DBUS_TYPE_STRING)
 	{
 		const char *key;
 
-		dbus_message_iter_get_basic (&array, &key);
+		dbus_message_iter_get_basic (&it, &key);
 		if (!strcmp (key, type))
 		{
 			locked = 1;
 			break;
 		}
-		dbus_message_iter_next (&array);
+		dbus_message_iter_next (&it);
 	}
 	at_intermediate (m, "\r\n+CLCK: %u", locked);
 	return AT_OK;
