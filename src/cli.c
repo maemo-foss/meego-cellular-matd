@@ -205,6 +205,13 @@ done:
 		if (dup2 (0, 1) != 1)
 			return 1;
 	}
+	else
+	{	/* Make sure stdin, stdout and stderr are open. */
+		int fd = dup (0);
+		if (fd < 3)
+			return 1;
+		close (fd);
+	}
 
 	if (optind < argc)
 	{
