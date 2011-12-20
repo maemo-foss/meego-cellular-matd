@@ -393,7 +393,6 @@ void at_connect_mtu (at_modem_t *m, int dce, size_t mtu)
 	at_print_reply (m, AT_CONNECT);
 	m->data = true;
 
-	fcntl (m->fd_in, F_SETFL, fcntl (m->fd_in, F_GETFL) | O_NONBLOCK);
 	fcntl (m->fd_out, F_SETFL, fcntl (m->fd_out, F_GETFL) | O_NONBLOCK);
 	fcntl (dce, F_SETFL, fcntl (dce, F_GETFL) | O_NONBLOCK);
 #if PERF_COUNT
@@ -493,7 +492,6 @@ out:
 	stamp.process = timestamp (CLOCK_PROCESS_CPUTIME_ID) - stamp.process;
 	stamp.real = timestamp (CLOCK_MONOTONIC) - stamp.real;
 #endif
-	fcntl (m->fd_in, F_SETFL, fcntl (m->fd_in, F_GETFL) & ~O_NONBLOCK);
 	fcntl (m->fd_out, F_SETFL, fcntl (m->fd_out, F_GETFL) & ~O_NONBLOCK);
 	fcntl (dce, F_SETFL, fcntl (dce, F_GETFL) & ~O_NONBLOCK);
 	m->data = false;
