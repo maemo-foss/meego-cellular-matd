@@ -18,7 +18,7 @@ AM_CPPFLAGS = \
 noinst_PROGRAMS = mat
 
 mat_SOURCES = src/cli.c
-mat_LDADD = src/libmatd.la
+mat_LDADD = src/libmatd.la -lpthread
 mat_LDFLAGS = -no-install
 
 ### pkg-config ###

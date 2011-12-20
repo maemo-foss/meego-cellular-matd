@@ -36,6 +36,6 @@ noinst_HEADERS = mainpage.h
 
 bin_PROGRAMS = mat
 mat_SOURCES = cli.c
-mat_LDADD = libmatd.la
+mat_LDADD = libmatd.la -lpthread
 mat_LDFLAGS = -fast-install
 
