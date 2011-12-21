@@ -272,6 +272,34 @@ out:
 }
 
 
+/*** AT+CMMS (stub) ***/
+
+static at_error_t set_mms (at_modem_t *m, const char *req, void *data)
+{
+	unsigned n;
+
+	if (sscanf (req, " %u", &n) != 1)
+		return AT_CME_EINVAL;
+	if (n != 2)
+		return AT_CME_ENOTSUP;
+	(void) m;
+	(void) data;
+	return AT_OK;
+}
+
+static at_error_t get_mms (at_modem_t *m, void *data)
+{
+	(void) data;
+	return at_intermediate (m, "\r\n+CMMS: 2");
+}
+
+static at_error_t list_mms (at_modem_t *m, void *data)
+{
+	(void) data;
+	return at_intermediate (m, "\r\n+CMMS: (2)");
+}
+
+
 /*** Registration ***/
 
 void sms_register (at_commands_t *set, plugin_t *p)
@@ -281,4 +309,5 @@ void sms_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CSCA", set_csca, get_csca, NULL, p);
 	at_register_ext (set, "+CMGF", set_cmgf, get_cmgf, list_cmgf, p);
 	at_register_ext (set, "+CMGS", set_cmgs, NULL, NULL, p);
+	at_register_ext (set, "+CMMS", set_mms, get_mms, list_mms, p);
 }
