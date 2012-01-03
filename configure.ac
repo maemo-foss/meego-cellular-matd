@@ -71,7 +71,13 @@ PKG_CHECK_MODULES(DBUS, [dbus-1])
 
 
 dnl libudev
-PKG_CHECK_MODULES(LIBUDEV, [libudev])
+have_libudev="no"
+PKG_CHECK_MODULES(LIBUDEV, [libudev], [
+  have_libudev="yes"
+], [
+  AC_MSG_WARN([${LIBUDEV_PKG_ERRORS}])
+])
+AM_CONDITIONAL([HAVE_LIBUDEV], [test "${have_libudev}" != "no"])
 
 
 dnl Automake
