@@ -99,6 +99,17 @@ plugins_LTLIBRARIES += libofono_at.la
 
 
 #
+# Qt plugin
+#
+libqtcontacts_at_la_SOURCES = qt/contacts.cpp
+libqtcontacts_at_la_CXXFLAGS = $(QTCONTACTS_CFLAGS)
+libqtcontacts_at_la_LIBADD = $(QTCONTACTS_LIBS) $(AM_LIBADD)
+if HAVE_QTCONTACTS
+plugins_LTLIBRARIES += libqtcontacts_at.la
+endif
+
+
+#
 # Test cases
 #
 libperf_at_la_SOURCES = test/perf.c

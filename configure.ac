@@ -80,6 +80,16 @@ PKG_CHECK_MODULES(LIBUDEV, [libudev], [
 AM_CONDITIONAL([HAVE_LIBUDEV], [test "${have_libudev}" != "no"])
 
 
+dnl QtContacts
+have_qtcontacts="no"
+PKG_CHECK_MODULES(QTCONTACTS, [QtCore QtContacts], [
+  have_qtcontacts="yes"
+], [
+  AC_MSG_WARN([${QTCONTACTS_PKG_ERRORS}])
+])
+AM_CONDITIONAL([HAVE_QTCONTACTS], [test "${have_qtcontacts}" != "no"])
+
+
 dnl Automake
 AM_INIT_AUTOMAKE([1.11 color-tests])
 AM_SILENT_RULES([yes])
