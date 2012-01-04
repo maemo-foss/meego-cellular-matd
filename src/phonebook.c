@@ -55,9 +55,9 @@
 #include <at_command.h>
 #include "commands.h"
 
-typedef struct phonebook
+struct at_phonebook
 {
-	struct phonebook *next;
+	at_phonebook_t *next;
 	char name[2];
 	at_pb_pw_cb pw_cb;
 	at_pb_read_cb read_cb;
@@ -65,18 +65,11 @@ typedef struct phonebook
 	at_pb_find_cb find_cb;
 	at_pb_range_cb range_cb;
 	void *opaque;
-} phonebook_t;
-
-struct at_phonebooks
-{
-	struct phonebook *active;
-	struct phonebook *first;
-	unsigned written_index;
 };
 
-static struct phonebook *pb_byname (at_phonebooks_t *pbs, const char *name)
+static at_phonebook_t *pb_byname (at_phonebooks_t *pbs, const char *name)
 {
-	for (struct phonebook *pb = pbs->first; pb != NULL; pb = pb->next)
+	for (at_phonebook_t *pb = pbs->first; pb != NULL; pb = pb->next)
 		if (!strncasecmp (pb->name, name, 2))
 			return pb;
 	return NULL;
@@ -99,7 +92,7 @@ static at_error_t pb_select (at_modem_t *m, const char *req, void *data)
 			return AT_CME_EINVAL;
 	}
 
-	phonebook_t *pb = pb_byname(pbs, storage);
+	at_phonebook_t *pb = pb_byname(pbs, storage);
 	if (pb == NULL)
 		return AT_CME_ENOTSUP;
 
@@ -119,10 +112,8 @@ static at_error_t pb_select (at_modem_t *m, const char *req, void *data)
 static at_error_t pb_show (at_modem_t *m, void *data)
 {
 	const at_phonebooks_t *pbs = data;
-	const struct phonebook *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
 	return at_intermediate (m, "\r\n+CPBS: \"%s\"", pb->name);
 }
 
@@ -130,14 +121,14 @@ static at_error_t pb_list (at_modem_t *m, void *data)
 {
 	const at_phonebooks_t *pbs = data;
 	unsigned n = 0;
-	for (const struct phonebook *pb = pbs->first; pb != NULL; pb = pb->next)
+	for (const at_phonebook_t *pb = pbs->first; pb != NULL; pb = pb->next)
 		n++;
 
 	if (n == 0)
 		return AT_CME_ERROR_0;
 
 	char buf[5 * n], *ptr = buf;
-	for (const struct phonebook *pb = pbs->first; pb != NULL; pb = pb->next)
+	for (const at_phonebook_t *pb = pbs->first; pb != NULL; pb = pb->next)
 	{
 		*(ptr++) = '\"';
 		*(ptr++) = pb->name[0];
@@ -154,7 +145,7 @@ static at_error_t pb_list (at_modem_t *m, void *data)
 static at_error_t pb_read (at_modem_t *m, const char *req, void *data)
 {
 	at_phonebooks_t *pbs = data;
-	phonebook_t *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 	unsigned start, end;
 
 	switch (sscanf (req, " %u , %u", &start, &end))
@@ -167,8 +158,6 @@ static at_error_t pb_read (at_modem_t *m, const char *req, void *data)
 			return AT_CME_EINVAL;
 	}
 
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
 	if (pb->read_cb == NULL)
 		return AT_CME_ENOTSUP;
 
@@ -178,11 +167,9 @@ static at_error_t pb_read (at_modem_t *m, const char *req, void *data)
 static at_error_t pb_read_test (at_modem_t *m, void *data)
 {
 	at_phonebooks_t *pbs = data;
-	struct phonebook *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 	unsigned start, end;
 
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
 	if (pb->range_cb == NULL)
 		return AT_CME_ENOTSUP;
 
@@ -197,14 +184,12 @@ static at_error_t pb_read_test (at_modem_t *m, void *data)
 static at_error_t pb_find (at_modem_t *m, const char *req, void *data)
 {
 	at_phonebooks_t *pbs = data;
-	phonebook_t *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 	char needle[256];
 
 	if (sscanf (req, " \"%255[^\"]\"", needle) != 1)
 		return AT_CME_EINVAL;
 
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
 	if (pb->find_cb == NULL)
 		return AT_CME_ENOTSUP;
 
@@ -222,7 +207,7 @@ static at_error_t pb_find_test (at_modem_t *m, void *data)
 static at_error_t pb_write (at_modem_t *m, const char *req, void *data)
 {
 	at_phonebooks_t *pbs = data;
-	phonebook_t *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 	unsigned idx, type, adtype;
 	at_error_t ret;
 	unsigned char hidden;
@@ -278,11 +263,8 @@ static at_error_t pb_write (at_modem_t *m, const char *req, void *data)
 
 	if ((type != ((number[0] == '+') ? 145 : 129))
 	 || (adtype != ((adnumber[0] == '+') ? 145 : 129))
-	 || (hidden > 1))
-		return AT_CME_ENOTSUP;
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
-	if (pb->write_cb == NULL)
+	 || (hidden > 1)
+	 || (pb->write_cb == NULL))
 		return AT_CME_ENOTSUP;
 
 	ret = pb->write_cb (m, &idx, number, text, group, adnumber, adtext,
@@ -305,10 +287,8 @@ static at_error_t pb_offset (at_modem_t *m, void *data)
 static at_error_t pb_write_test (at_modem_t *m, void *data)
 {
 	at_phonebooks_t *pbs = data;
-	struct phonebook *pb = pbs->active;
+	at_phonebook_t *pb = pbs->active;
 
-	if (pb == NULL)
-		return AT_CME_ERROR_0;
 	if (pb->write_cb == NULL)
 		return AT_CME_ENOTSUP;
 
@@ -318,46 +298,32 @@ static at_error_t pb_write_test (at_modem_t *m, void *data)
 
 
 /*** Commands registration ***/
-at_phonebooks_t *at_register_phonebooks (at_commands_t *set)
+void at_phonebooks_init (at_phonebooks_t *pbs)
 {
-	at_phonebooks_t *pbs = malloc (sizeof (*pbs));
-	if (pbs == NULL)
-		return NULL;
-
-	pbs->active = NULL;
 	pbs->first = NULL;
 	pbs->written_index = UINT_MAX;
-
-	at_register_ext (set, "+CPBS", pb_select, pb_show, pb_list, pbs);
-	at_register_ext (set, "+CPBR", pb_read, NULL, pb_read_test, pbs);
-	at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);
-	at_register_ext (set, "+CPBW", pb_write, pb_offset, pb_write_test, pbs);
-	return pbs;
 }
 
-void at_unregister_phonebooks (at_phonebooks_t *pbs)
+void at_phonebooks_deinit (at_phonebooks_t *pbs)
 {
-	if (pbs == NULL)
-		return;
-
-	for (struct phonebook *pb = pbs->first, *next; pb != NULL; pb = next)
+	for (at_phonebook_t *pb = pbs->first, *next; pb != NULL; pb = next)
 	{
 		next = pb->next;
 		free (pb);
 	}
-	free (pbs);
 }
 
 
 /*** Phonebook registration ***/
-int at_register_phonebook (at_phonebooks_t *pbs, const char *name,
-                           at_pb_pw_cb pw_cb, at_pb_read_cb read_cb,
-                           at_pb_write_cb write_cb, at_pb_find_cb find_cb,
-                           at_pb_range_cb range_cb, void *opaque)
+int at_phonebooks_register (at_commands_t *set, at_phonebooks_t *pbs,
+                            const char *name,
+                            at_pb_pw_cb pw_cb, at_pb_read_cb read_cb,
+                            at_pb_write_cb write_cb, at_pb_find_cb find_cb,
+                            at_pb_range_cb range_cb, void *opaque)
 {
 	assert (strlen (name) == 2);
 
-	struct phonebook *pb = malloc (sizeof (*pb));
+	at_phonebook_t *pb = malloc (sizeof (*pb));
 	if (pb == NULL)
 		return ENOMEM;
 	memcpy (pb->name, name, 2);
@@ -371,8 +337,19 @@ int at_register_phonebook (at_phonebooks_t *pbs, const char *name,
 	pb->next = pbs->first;
 	pbs->first = pb;
 
+	if (pb->next == NULL)
+	{	/* We have a phonebook! Register phonebook commands */
+		at_register_ext (set, "+CPBS", pb_select, pb_show, pb_list, pbs);
+		at_register_ext (set, "+CPBR", pb_read, NULL, pb_read_test, pbs);
+		at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);
+		at_register_ext (set, "+CPBW", pb_write, pb_offset, pb_write_test,
+		                 pbs);
+		pbs->active = pb; /* Select this phonebook for the time being */
+	}
+
 	/* Select ME phonebook by default where available */
 	if (!strcmp (name, "ME"))
 		pbs->active = pb;
+
 	return 0;
 }
