@@ -193,6 +193,31 @@ static at_error_t pb_read_test (at_modem_t *m, void *data)
 }
 
 
+/*** AT+CPBF ***/
+static at_error_t pb_find (at_modem_t *m, const char *req, void *data)
+{
+	at_phonebooks_t *pbs = data;
+	phonebook_t *pb = pbs->active;
+	char needle[256];
+
+	if (sscanf (req, " \"%255[^\"]\"", needle) != 1)
+		return AT_CME_EINVAL;
+
+	if (pb == NULL)
+		return AT_CME_ERROR_0;
+	if (pb->find_cb == NULL)
+		return AT_CME_ENOTSUP;
+
+	return pb->find_cb (m, needle, pb->opaque);
+}
+
+static at_error_t pb_find_test (at_modem_t *m, void *data)
+{
+	(void) data;
+	return at_intermediate (m, "\r\n+CPBF: 31,255,255,255,255,255,255");
+}
+
+
 /*** AT+CPBW ***/
 static at_error_t pb_write (at_modem_t *m, const char *req, void *data)
 {
@@ -305,7 +330,7 @@ at_phonebooks_t *at_register_phonebooks (at_commands_t *set)
 
 	at_register_ext (set, "+CPBS", pb_select, pb_show, pb_list, pbs);
 	at_register_ext (set, "+CPBR", pb_read, NULL, pb_read_test, pbs);
-	/*at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);*/
+	at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);
 	at_register_ext (set, "+CPBW", pb_write, pb_offset, pb_write_test, pbs);
 	return pbs;
 }
