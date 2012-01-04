@@ -71,6 +71,7 @@ struct at_phonebooks
 {
 	struct phonebook *active;
 	struct phonebook *first;
+	unsigned written_index;
 };
 
 static struct phonebook *pb_byname (at_phonebooks_t *pbs, const char *name)
@@ -110,6 +111,7 @@ static at_error_t pb_select (at_modem_t *m, const char *req, void *data)
 	}
 
 	pbs->active = pb;
+	pbs->written_index = UINT_MAX;
 	(void) m;
 	return AT_OK;
 }
@@ -191,6 +193,105 @@ static at_error_t pb_read_test (at_modem_t *m, void *data)
 }
 
 
+/*** AT+CPBW ***/
+static at_error_t pb_write (at_modem_t *m, const char *req, void *data)
+{
+	at_phonebooks_t *pbs = data;
+	phonebook_t *pb = pbs->active;
+	unsigned idx, type, adtype;
+	at_error_t ret;
+	unsigned char hidden;
+	char number[32], adnumber[32], text[256], group[256], adtext[256];
+	char email[256], sip[256], tel[256];
+
+	int val = sscanf (req, " %u , \"%31[^\"]\" , %u , \"%255[^\"]\" , "
+                      "\"%255[^\"]\" , \"%31[^\"]\" , %u , \"%255[^\"]\" , "
+	                  "\"%255[^\"]\" , \"%255[^\"]\" , \"%255[^\"]\" , %hhu",
+	                  &idx, number, &type, text, group, adnumber, &adtype,
+	                  adtext, email, sip, tel, &hidden);
+	if (val == 0)
+	{	/* Index is optional */
+		idx = UINT_MAX;
+		val = sscanf (req, " , \"%31[^\"]\" , %u , \"%255[^\"]\" , "
+                      "\"%255[^\"]\" , \"%31[^\"]\" , %u , \"%255[^\"]\" , "
+	                  "\"%255[^\"]\" , \"%255[^\"]\" , \"%255[^\"]\" , %hhu",
+                      number, &type, text, group, adnumber, &adtype,
+	                  adtext, email, sip, tel, &hidden);
+		if (val > 0)
+			val++;
+	}
+
+	switch (val)
+	{
+		case 1:
+			*number = '\0';
+		case 2:
+			type = (number[0] == '+') ? 145 : 129;
+		case 3:
+			*text = '\0';
+		case 4:
+			*group = '\0';
+		case 5:
+			*adnumber = '\0';
+		case 6:
+			adtype = (adnumber[0] == '+') ? 145 : 129;
+		case 7:
+			*adtext = '\0';
+		case 8:
+			*email = '\0';
+		case 9:
+			*sip = '\0';
+		case 10:
+			*tel = '\0';
+		case 11:
+			hidden = 0;
+		case 12:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	if ((type != ((number[0] == '+') ? 145 : 129))
+	 || (adtype != ((adnumber[0] == '+') ? 145 : 129))
+	 || (hidden > 1))
+		return AT_CME_ENOTSUP;
+	if (pb == NULL)
+		return AT_CME_ERROR_0;
+	if (pb->write_cb == NULL)
+		return AT_CME_ENOTSUP;
+
+	ret = pb->write_cb (m, &idx, number, text, group, adnumber, adtext,
+	                    email, sip, tel, hidden, pb->opaque);
+	if (ret == AT_OK)
+		pbs->written_index = idx;
+	return ret;
+}
+
+static at_error_t pb_offset (at_modem_t *m, void *data)
+{
+	at_phonebooks_t *pbs = data;
+
+	if (pbs->written_index != UINT_MAX)
+		return at_intermediate (m, "\r\n+CPBW: %u", pbs->written_index);
+	else
+		return at_intermediate (m, "\r\n+CPBW: -1");
+}
+
+static at_error_t pb_write_test (at_modem_t *m, void *data)
+{
+	at_phonebooks_t *pbs = data;
+	struct phonebook *pb = pbs->active;
+
+	if (pb == NULL)
+		return AT_CME_ERROR_0;
+	if (pb->write_cb == NULL)
+		return AT_CME_ENOTSUP;
+
+	return at_intermediate (m, "\r\n+CPBW: (0-%u),31,(129,145),255,255,255,"
+	                        "255,255,255", INT_MAX);
+}
+
+
 /*** Commands registration ***/
 at_phonebooks_t *at_register_phonebooks (at_commands_t *set)
 {
@@ -200,11 +301,12 @@ at_phonebooks_t *at_register_phonebooks (at_commands_t *set)
 
 	pbs->active = NULL;
 	pbs->first = NULL;
+	pbs->written_index = UINT_MAX;
 
 	at_register_ext (set, "+CPBS", pb_select, pb_show, pb_list, pbs);
 	at_register_ext (set, "+CPBR", pb_read, NULL, pb_read_test, pbs);
-	/*at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);
-	at_register_ext (set, "+CPBW", pb_write, pb_offset, pb_write_test, pbs);*/
+	/*at_register_ext (set, "+CPBF", pb_find, NULL, pb_find_test, pbs);*/
+	at_register_ext (set, "+CPBW", pb_write, pb_offset, pb_write_test, pbs);
 	return pbs;
 }
 
