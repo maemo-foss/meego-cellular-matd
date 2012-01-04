@@ -149,7 +149,7 @@ static at_error_t read_on (at_modem_t *modem, unsigned start, unsigned end,
 	plugin_t *p = data;
 	struct { at_modem_t *modem; unsigned start, end, idx; } cbd = {
 	    modem, start, end, 0
-    };
+	};
 
 	return foreach_msisdn (p, show_isdn, &cbd);
 }
