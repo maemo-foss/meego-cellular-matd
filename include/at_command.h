@@ -554,8 +554,8 @@ typedef at_error_t (*at_pb_read_cb) (at_modem_t *, unsigned start,
  */
 typedef at_error_t (*at_pb_write_cb) (at_modem_t *, unsigned *idx,
 	const char *number, const char *text, const char *group,
-	const char *text2, const char *email, const char *sip, const char *tel,
-	bool hidden, void *data);
+	const char *number2, const char *text2, const char *email,
+	const char *sip, const char *tel, bool hidden, void *data);
 
 typedef at_error_t (*at_pb_find_cb) (at_modem_t *, const char *search_text,
                                      void *data);
