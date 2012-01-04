@@ -98,6 +98,25 @@ void at_cancel_assert (bool enabled);
 # define at_cancel_assert(enabled) (void)0
 #endif
 
+#ifdef __cplusplus
+class at_cancel_disabler
+{
+	private:
+		int state;
+
+	public:
+		at_cancel_disabler (void)
+		{
+			state = at_cancel_disable ();
+		}
+
+		~at_cancel_disabler (void)
+		{
+			at_cancel_enable (state);
+		}
+};
+#endif		
+
 /** @} */
 /** @} */
 
