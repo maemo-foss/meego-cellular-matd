@@ -243,5 +243,9 @@ int at_register_phonebook (at_phonebooks_t *pbs, const char *name,
 
 	pb->next = pbs->first;
 	pbs->first = pb;
+
+	/* Select ME phonebook by default where available */
+	if (!strcmp (name, "ME"))
+		pbs->active = pb;
 	return 0;
 }
