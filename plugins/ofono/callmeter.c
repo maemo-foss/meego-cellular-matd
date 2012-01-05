@@ -195,10 +195,8 @@ static at_error_t set_puc (at_modem_t *modem, const char *req, void *data)
 	double ppu;
 	char currency[4], pin[9];
 
-	/* FIXME: %lf assumes we do not set LC_NUMERIC. uselocale() should be used
-	 * to force POSIX numbers. */
-	switch (sscanf (req, " \"%3[^\"]\" , \"%lf\" , \"%8[0-9]\"", currency,
-	                &ppu, pin))
+	switch (at_sscanf (req, " \"%3[^\"]\" , \"%lf\" , \"%8[0-9]\"", currency,
+	                   &ppu, pin))
 	{
 		case 2:
 			*pin = '\0';
