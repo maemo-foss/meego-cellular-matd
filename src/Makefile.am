@@ -13,6 +13,7 @@ libmatd_la_SOURCES = \
 	plugins.c plugins.h \
 	commands.c commands.h \
 	basic.c \
+	charset.c \
 	phonebook.c \
 	dbus.c \
 	at_modem.c

@@ -79,3 +79,7 @@ void at_phonebooks_deinit (at_phonebooks_t *);
 int at_phonebooks_register (at_commands_t *set, at_phonebooks_t *, const char *,
                             at_pb_pw_cb, at_pb_read_cb, at_pb_write_cb,
                             at_pb_find_cb, at_pb_range_cb, void *);
+
+unsigned at_get_charset (at_modem_t *);
+void at_set_charset (at_modem_t *, unsigned);
+void at_register_charset (at_commands_t *);

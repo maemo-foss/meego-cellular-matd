@@ -26,6 +26,8 @@ at_get_attr
 at_set_rate_report
 at_get_rate_report
 at_hangup
+at_to_utf8
+at_from_utf8
 at_trace
 at_vtrace
 at_thread_create

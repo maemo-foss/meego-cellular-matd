@@ -128,6 +128,7 @@ at_commands_t *at_commands_init (at_modem_t *modem)
 	int canc = at_cancel_disable ();
 
 	at_register_basic (bank);
+	at_register_charset (bank);
 	at_phonebooks_init(&bank->phonebooks);
 	at_register_ext (bank, "+CLAC", handle_clac, NULL, NULL, bank);
 

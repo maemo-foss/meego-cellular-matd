@@ -121,59 +121,6 @@ static at_error_t list_cmee (at_modem_t *m, void *opaque)
 }
 
 
-/*** AT+CSCS ***/
-static at_error_t set_cscs (at_modem_t *m, const char *req, void *opaque)
-{
-	/* WARNING! VARO! SE UPP! ACHTUNG! ATTENTION!
-	 * The CSCS character set affects the input and/or output formats of a
-	 * number of AT commands, notably in modem and in oFono plugins.
-	 * The following commands are affected,
-	 *  per 3GPP 27.007:
-	 *   D (direct phonebook dialing), +CNUM, +CLIP, +CCWA, +CUSD, +CLCC,
-	 *   +CUUS1, +CDIS, +CMER (display events), +CPBR, +CPBW, +CSIM, +CRSM,
-	 *   +CPUC, +CGLA and +CRLA,
-	 *  per 3GPP 27.005 and in text mode:
-	 *   +CNMI, +CMGR, +CMGS, +CMGW.
-
-	 * There are two ways to add support for other character encodings:
-	 *
-	 * 1) Check that the underlying AT modem supports the encoding,
-	 * configure it to use that encoding (send it an AT+CSCS command).
-	 * Then AT commands sent directly to the modem are well-formatted.
-	 * For other commands, especially those sent to oFono, inputs and outputs
-	 * must be on-the-fly from/to UTF-8.
-	 *
-	 * 2) Keep track of the value in libmatd only, and convert on-the-fly
-	 * inputs and outputs from all affected plugins. This would be cleaner, but
-	 * may be far more complicated considering the number of affected commands.
-	 *
-	 * It is not very clear what should be done with HEX encoding either way.
-	 */
-
-	/* Only UTF-8 suppported at the moment */
-	if (strncasecmp (req, "\"UTF-8\"", 6))
-		return AT_ERROR;
-
-	(void)m;
-	(void)opaque;
-	return AT_OK;
-}
-
-static at_error_t get_cscs (at_modem_t *m, void *opaque)
-{
-	at_intermediate (m, "\r\n+CSCS: \"UTF-8\"");
-	(void)opaque;
-	return AT_OK;
-}
-
-static at_error_t list_cscs (at_modem_t *m, void *opaque)
-{
-	at_intermediate (m, "\r\n+CSCS: (\"UTF-8\")");
-	(void)opaque;
-	return AT_OK;
-}
-
-
 void at_register_basic (at_commands_t *set)
 {
 	at_register_alpha (set, 'E', handle_bool, at_set_echo);
@@ -194,5 +141,4 @@ void at_register_basic (at_commands_t *set)
 	at_register_ampersand (set, 'F', handle_reset, NULL);
 
 	at_register_ext (set, "+CMEE", set_cmee, get_cmee, list_cmee, NULL);
-	at_register_ext (set, "+CSCS", set_cscs, get_cscs, list_cscs, NULL);
 }

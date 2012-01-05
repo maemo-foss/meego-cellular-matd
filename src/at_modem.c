@@ -115,6 +115,8 @@ struct at_modem
 	unsigned cmee:2; /**< 3GPP CMEE error mode */
 	unsigned hungup:1; /**< Forcefully hung up on DCE side */
 	unsigned reset:1; /**< ATZ: plugins re-init pending */
+	unsigned charset:6; /**< AT+CSCS */
+	/* one bit left */
 	uint16_t in_size; /**< Input buffer fill length */
 	uint16_t in_offset; /**< Input buffer read offset */
 	uint8_t  in_buf[1024]; /**< Input buffer */
@@ -627,6 +629,7 @@ void at_reset (at_modem_t *m)
 	m->cmee = 0;
 	m->hungup = false;
 	m->reset = true;
+	m->charset = 0;
 }
 
 static const int dsr = TIOCM_LE;
@@ -785,4 +788,13 @@ int at_set_attr (at_modem_t *m, const struct termios *tp)
 void at_hangup (at_modem_t *m)
 {
 	m->hungup = 1;
+}
+
+unsigned at_get_charset (at_modem_t *m)
+{
+	return m->charset;
+}
+void at_set_charset (at_modem_t *m, unsigned cs)
+{
+	m->charset = cs;
 }

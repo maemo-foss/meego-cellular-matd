@@ -521,6 +521,22 @@ void at_reset (at_modem_t *);
  */
 void at_hangup (at_modem_t *);
 
+/**
+ * Converts a string from the AT+CSCS character set to UTF-8.
+ * @param str string to convert to UTF-8
+ * @return a nul-terminated UTF-8 string on success (use free() to destroy it)
+ * or NULL on error.
+ */
+char *at_to_utf8 (at_modem_t *, const char *str);
+
+/**
+ * Converts a string to the AT+CSCS character set from UTF-8.
+ * @param str string to convert from UTF-8
+ * @return a nul-terminated string on success (use free() to destroy it)
+ * or NULL on error.
+ */
+char *at_from_utf8 (at_modem_t *, const char *str);
+
 /** @} */
 
 /**
