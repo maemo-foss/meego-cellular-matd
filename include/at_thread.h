@@ -48,6 +48,7 @@
 # ifndef __cplusplus
 #  include <stdbool.h>
 # endif
+# include <stdarg.h>
 
 /**
  * @defgroup thread Threading
@@ -116,6 +117,27 @@ class at_cancel_disabler
 		}
 };
 #endif		
+
+#ifdef __GNUC__
+# define AT_SCANF(f,p) __attribute__ ((format(scanf,f,p)))
+#else
+/** Marker for printf-style functions */
+# define AT_SCANF(f,p)
+#endif
+
+/**
+ * Scans a string like sscanf().
+ * Regardless of the current locale settings, C/POSIX rules are used for
+ * numeric conversions.
+ * @param buf string to scan
+ * @param fmt scanf()-like format
+ */
+int at_sscanf (const char *buf, const char *fmt, ...) AT_SCANF (2, 3);
+
+/**
+ * Variadic variant of at_sscanf().
+ */
+int at_vsscanf (const char *, const char *, va_list);
 
 /** @} */
 /** @} */

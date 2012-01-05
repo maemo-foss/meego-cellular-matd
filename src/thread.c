@@ -81,3 +81,33 @@ void at_cancel_assert (bool enabled)
 		assert (state == PTHREAD_CANCEL_DISABLE);
 	at_cancel_enable (state);
 }
+
+/* Probably not a very good file to put these functions... */
+#include <stdio.h>
+#include <locale.h>
+
+int at_vsscanf (const char *buf, const char *fmt, va_list args)
+{
+	locale_t c = newlocale (LC_NUMERIC_MASK, "C", NULL);
+	if (c == (locale_t)0)
+		return EOF;
+	locale_t loc = uselocale (c);
+
+	int ret = vsscanf (buf, fmt, args);
+
+	uselocale (loc);
+	freelocale (c);
+	return ret;
+}
+
+int at_sscanf (const char *buf, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start (ap, fmt);
+	ret = at_vsscanf (buf, fmt, ap);
+	va_end (ap);
+
+	return ret;
+}
