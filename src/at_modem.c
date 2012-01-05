@@ -51,6 +51,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <locale.h>
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -126,6 +127,7 @@ struct at_modem
 
 	pthread_mutex_t lock; /**< Serializer for output to DTE */
 	pthread_t reader; /**< Thread handling data from the DTE */
+	locale_t locale; /**< C locale for formatted DTE input/output */
 
 	at_commands_t *commands; /**< Registered commands */
 };
@@ -180,8 +182,11 @@ int at_unsolicitedv (at_modem_t *m, const char *fmt, va_list ap)
 {
 	char *ptr;
 	volatile int val;
+	locale_t locale;
 
+	locale = uselocale (m->locale);
 	val = vasprintf (&ptr, fmt, ap);
+	uselocale (locale);
 	if (val == -1)
 	{
 		error ("Cannot output (%m)");
@@ -318,8 +323,11 @@ int at_intermediatev (at_modem_t *m, const char *fmt, va_list ap)
 {
 	char *ptr;
 	volatile int val;
+	locale_t locale;
 
+	locale = uselocale (m->locale);
 	val = vasprintf (&ptr, fmt, ap);
+	uselocale (locale);
 	if (val == -1)
 	{
 		error ("Cannot output (%m)");
@@ -646,6 +654,7 @@ struct at_modem *at_modem_start (int ifd, int ofd, at_hangup_cb cb,
 	pthread_mutex_init (&m->lock, &attr);
 	pthread_mutexattr_destroy (&attr);
 
+	m->locale = newlocale (LC_NUMERIC_MASK, "C", NULL);
 	m->commands = NULL;
 
 	if (at_thread_create (&m->reader, dte_thread, m))
@@ -654,6 +663,8 @@ struct at_modem *at_modem_start (int ifd, int ofd, at_hangup_cb cb,
 	return m;
 
 error:
+	if (m->locale != (locale_t)0)
+		freelocale (m->locale);
 	pthread_mutexattr_destroy (&attr);
 	free (m);
 	return NULL;
@@ -667,6 +678,8 @@ void at_modem_stop (struct at_modem *m)
 	ioctl (m->fd_in, TIOCMBIC, &dsr);
 	pthread_cancel (m->reader);
 	pthread_join (m->reader, NULL);
+	if (m->locale != (locale_t)0)
+		freelocale (m->locale);
 	pthread_mutex_destroy (&m->lock);
 
 	free (m);
@@ -680,7 +693,12 @@ at_error_t at_execute_string (at_modem_t *m, const char *cmd)
 at_error_t at_executev (at_modem_t *m, const char *fmt, va_list args)
 {
 	char *cmd;
-	int len = vasprintf (&cmd, fmt, args);
+	int len;
+	locale_t locale;
+
+	locale = uselocale (m->locale);
+	len = vasprintf (&cmd, fmt, args);
+	uselocale (locale);
 	if (len == -1)
 		return AT_ERROR;
 
