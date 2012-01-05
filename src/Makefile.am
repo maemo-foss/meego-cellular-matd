@@ -20,7 +20,7 @@ libmatd_la_DEPENDENCIES = libmatd.sym
 libmatd_la_LDFLAGS = \
 	-shared \
 	-export-symbols "$(srcdir)/libmatd.sym" \
-	-version-info 4:0:0
+	-version-info 5:0:1
 libmatd_la_LIBADD = \
 	$(DBUS_LIBS) \
 	-ldl -lpthread -lrt
