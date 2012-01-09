@@ -193,7 +193,13 @@ static at_error_t pb_find (at_modem_t *m, const char *req, void *data)
 	if (pb->find_cb == NULL)
 		return AT_CME_ENOTSUP;
 
-	return pb->find_cb (m, needle, pb->opaque);
+	char *findtext = at_to_utf8 (m, needle);
+	if (findtext == NULL)
+		return AT_CME_EINVAL;
+
+	at_error_t ret = pb->find_cb (m, findtext, pb->opaque);
+	free (findtext);
+	return ret;
 }
 
 static at_error_t pb_find_test (at_modem_t *m, void *data)
