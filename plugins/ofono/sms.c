@@ -235,15 +235,26 @@ static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 	if (text == NULL)
 		return AT_OK;
 
+	char *utf8 = at_to_utf8 (m, text);
+	free (text);
+	if (utf8 == NULL)
+		return AT_CMS_TXT_EINVAL;
+
 	at_error_t ret = AT_OK;
 	int canc = at_cancel_disable ();
 
 	DBusMessage *msg = modem_req_new (p, "MessageManager", "SendMessage");
-	if (msg == NULL
-	 || !dbus_message_append_args (msg,
+	if (msg != NULL
+	 && !dbus_message_append_args (msg,
 	                               DBUS_TYPE_STRING, &(const char *){ number },
-	                               DBUS_TYPE_STRING, &text,
+	                               DBUS_TYPE_STRING, &utf8,
 	                               DBUS_TYPE_INVALID))
+	{
+		dbus_message_unref (msg);
+		msg = NULL;
+	}
+	free (utf8);
+	if (msg == NULL)
 	{
 		ret = AT_CMS_ENOMEM;
 		goto out;
@@ -259,6 +270,7 @@ static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 	                            DBUS_TYPE_OBJECT_PATH, &path,
 	                            DBUS_TYPE_INVALID))
 	{
+		dbus_message_unref (msg);
 		ret = AT_CMS_UNKNOWN;
 		goto out;
 	}
@@ -267,8 +279,6 @@ static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 		mr = 0;
 	at_intermediate (m, "\r\n+CMGS: %"PRIu8, mr);
 out:
-	if (msg != NULL)
-		dbus_message_unref (msg);
 	at_cancel_enable (canc);
 	return ret;
 }
