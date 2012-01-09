@@ -267,10 +267,28 @@ static at_error_t pb_write (at_modem_t *m, const char *req, void *data)
 	 || (pb->write_cb == NULL))
 		return AT_CME_ENOTSUP;
 
-	ret = pb->write_cb (m, &idx, number, text, group, adnumber, adtext,
-	                    email, sip, tel, hidden, pb->opaque);
+	char *utext = at_to_utf8 (m, text);
+	char *ugroup = at_to_utf8 (m, group);
+	char *uadtext = at_to_utf8 (m, adtext);
+	char *uemail = at_to_utf8 (m, email);
+	char *usip = at_to_utf8 (m, sip);
+	char *utel = at_to_utf8 (m, tel);
+
+	if (utext == NULL || ugroup == NULL || uadtext == NULL || uemail == NULL
+	 || usip == NULL || utel == NULL)
+		ret = AT_CME_EINVAL;
+	else
+		ret = pb->write_cb (m, &idx, number, text, group, adnumber, adtext,
+		                    email, sip, tel, hidden, pb->opaque);
 	if (ret == AT_OK)
 		pbs->written_index = idx;
+
+	free (utel);
+	free (usip);
+	free (uemail);
+	free (uadtext);
+	free (ugroup);
+	free (utext);
 	return ret;
 }
 
