@@ -44,7 +44,7 @@
 # include <config.h>
 #endif
 
-#include <stddef.h>
+#include <stdlib.h>
 
 #include <QContactManager>
 #include <QContact>
@@ -54,6 +54,20 @@
 
 #include <at_command.h>
 #include <at_thread.h>
+
+static QByteArray toCscs (at_modem_t *modem, const QString& in)
+{
+	QByteArray u8 = in.toUtf8();
+	char *str = at_from_utf8 (modem, u8.constData());
+	if (str == NULL)
+		return QByteArray("", 1);
+
+	QByteArray out (str, strlen (str) + 1);
+	free (str);
+	return out;
+}
+
+#define cscs(qstr) (toCscs(m, (qstr)).constData())
 
 QTM_USE_NAMESPACE
 
@@ -127,9 +141,9 @@ at_error_t QATPhonebook::read(at_modem_t *m, unsigned start, unsigned end)
 		at_intermediate (m, "\r\n+CPBR: %u,\"%s\",%u,\"%s\",0,\"\",\"%s\",%u,"
 		                 "\"\",\"%s\"", i,
 		                 ph.toUtf8().constData(), (ph[0] == '+') ? 145 : 129,
-		                 name.toUtf8().constData(),
+		                 cscs(name),
 		                 ph2.toUtf8().constData(), (ph2[0] == '+') ? 145 : 129,
-		                 email.toUtf8().constData());
+		                 cscs(email));
 	}
 	return AT_OK;
 }
