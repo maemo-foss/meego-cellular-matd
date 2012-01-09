@@ -45,6 +45,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include <at_command.h>
@@ -193,9 +194,9 @@ static at_error_t set_puc (at_modem_t *modem, const char *req, void *data)
 {
 	plugin_t *p = data;
 	double ppu;
-	char currency[4], pin[9];
+	char encur[13], pin[9];
 
-	switch (at_sscanf (req, " \"%3[^\"]\" , \"%lf\" , \"%8[0-9]\"", currency,
+	switch (at_sscanf (req, " \"%12[^\"]\" , \"%lf\" , \"%8[0-9]\"", encur,
 	                   &ppu, pin))
 	{
 		case 2:
@@ -206,10 +207,15 @@ static at_error_t set_puc (at_modem_t *modem, const char *req, void *data)
 			return AT_CME_EINVAL;
 	}
 
+	char *currency = at_to_utf8 (modem, encur);
+	if (currency == NULL)
+		return AT_CME_EINVAL;
+
 	at_error_t ret;
 
 	ret = modem_prop_set_string_pw (p, "CallMeter", "Currency", currency,
 	                                *pin ? pin : NULL);
+	free (currency);
 	if (ret == AT_OK)
 		ret = modem_prop_set_double_pw (p, "CallMetter", "PricePerUnit", ppu,
 		                                *pin ? pin : NULL);
@@ -227,11 +233,13 @@ static at_error_t get_puc (at_modem_t *m, void *data)
 	if (props != NULL)
 	{
 		const char *currency = ofono_prop_find_string (props, "Currency");
+		char *encur = at_from_utf8 (m, currency);
 		double ppu = ofono_prop_find_double (props, "PricePerUnit");
 
-		if (currency != NULL && ppu >= 0.)
+		if (encur != NULL && ppu >= 0.)
 			ret = at_intermediate (m, "\r\n+CPUC: \"%s\",\"%lf\"",
-			                       currency, ppu);
+			                       encur, ppu);
+		free (encur);
 		dbus_message_unref (props);
 	}
 	at_cancel_enable (canc);
