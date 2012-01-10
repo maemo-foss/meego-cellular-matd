@@ -432,6 +432,8 @@ static DBusConnection *at_dbus_get (DBusBusType type)
 	if (bus->wakeup.fd == -1)
 		goto drop;
 
+	bus->conn = conn;
+
 	dbus_connection_set_wakeup_main_function (conn, at_dbus_wakeup, bus, NULL);
 	if (!dbus_connection_set_watch_functions (conn, at_dbus_add_watch,
 	                     at_dbus_remove_watch, at_dbus_toggle_watch, bus, NULL)
@@ -440,9 +442,9 @@ static DBusConnection *at_dbus_get (DBusBusType type)
 	 || at_thread_create (&bus->thread, at_dbus_thread, bus))
 	{
 		close (bus->wakeup.fd);
+		bus->conn = NULL;
 		goto drop;
 	}
-	bus->conn = conn;
 out:
 	pthread_mutex_unlock (&lock);
 	return conn;
