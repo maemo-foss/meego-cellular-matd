@@ -30,6 +30,10 @@ libdummy_at_la_SOURCES = dummy.c
 libdummy_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libdummy_at.la
 
+libexec_at_la_SOURCES = exec.c
+libexec_at_la_LIBADD = $(AM_LIBADD)
+plugins_LTLIBRARIES += libexec_at.la
+
 libinterface_at_la_SOURCES = interface.c
 libinterface_at_la_LIBADD = $(AM_LIBADD)
 plugins_LTLIBRARIES += libinterface_at.la
