@@ -51,7 +51,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <spawn.h>
 #include <pthread.h>
 
 #include <at_command.h>
