@@ -57,6 +57,16 @@
 
 /*** AT+CAOC ***/
 
+static void ccm_callback (plugin_t *p, DBusMessageIter *value, void *data)
+{
+	at_modem_t *modem = data;
+	dbus_uint32_t ccm;
+
+	dbus_message_iter_get_basic (value, &ccm);
+	at_unsolicited (modem, "\r\n+CCCM: \"%06"PRIX32"\"\r\n", ccm);
+	(void) p;
+}
+
 static at_error_t set_aoc (at_modem_t *m, const char *req, void *data)
 {
 	plugin_t *p = data;
@@ -76,29 +86,21 @@ static at_error_t set_aoc (at_modem_t *m, const char *req, void *data)
 		}
 
 		case 1:
-#if 0
-			if (p->caoc_filter != NULL)
-			{
-				ofono_signal_unwatch (p->caoc_filter);
-				p->caoc_filter = NULL;
-			}
-#endif
+			if (p->caoc_filter == NULL)
+				break;
+			ofono_prop_unwatch (p->caoc_filter);
+			p->caoc_filter = NULL;
 			break;
 
 		case 2:
-#if 0
+			if (p->caoc_filter != NULL)
+				break;
+			p->caoc_filter = ofono_prop_watch (p, NULL, "CallMeter",
+			                                   "CallMeter", DBUS_TYPE_UINT32,
+			                                   ccm_callback, m);
 			if (p->caoc_filter == NULL)
-			{
-				p->caoc_filter = ofono_signal_watch (p, NULL, "CallMeter",
-					"PropertyChanged", "CallMeter", cmm_callback, m);
-				if (p->caoc_filter == NULL)
-					return AT_CME_ENOMEM;
-			}
+				return AT_CME_ENOMEM;
 			break;
-#else
-			(void) p;
-			return AT_CME_ENOTSUP;
-#endif
 
 		default:
 			return AT_CME_EINVAL;
@@ -108,20 +110,15 @@ static at_error_t set_aoc (at_modem_t *m, const char *req, void *data)
 
 static at_error_t get_aoc (at_modem_t *m, void *data)
 {
-#if 0
 	plugin_t *p = data;
 
 	return at_intermediate (m, "\r\n+CAOC: %u", p->caoc_filter ? 2 : 1);
-#else
-	(void) data;
-	return at_intermediate (m, "\r\n+CAOC: 1");
-#endif
 }
 
 static at_error_t list_aoc (at_modem_t *m, void *data)
 {
 	(void) data;
-	return at_intermediate (m, "\r\n+CAOC: (0-1)" /* 2 */);
+	return at_intermediate (m, "\r\n+CAOC: (0-2)");
 }
 
 
@@ -315,9 +312,7 @@ static at_error_t list_cwe (at_modem_t *m, void *data)
 
 void call_meter_register (at_commands_t *set, plugin_t *p)
 {
-#if 0
 	p->caoc_filter = NULL;
-#endif
 	at_register_ext (set, "+CAOC", set_aoc, get_aoc, list_aoc, p);
 	at_register_ext (set, "+CACM", reset_acm, get_acm, NULL, p);
 	at_register_ext (set, "+CAMM", set_amm, get_amm, NULL, p);
@@ -330,8 +325,6 @@ void call_meter_unregister (plugin_t *p)
 {
 	if (p->ccwe_filter != NULL)
 		ofono_signal_unwatch (p->ccwe_filter);
-#if 0
 	if (p->caoc_filter != NULL)
-		ofono_signal_unwatch (p->caoc_filter);
-#endif
+		ofono_prop_unwatch (p->caoc_filter);
 }
