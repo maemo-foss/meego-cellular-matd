@@ -332,6 +332,82 @@ static at_error_t list_ring (at_modem_t *modem, void *data)
 }
 
 
+/*** AT+CSSN ***/
+
+static void report_ssi (at_modem_t *m, unsigned i)
+{
+	at_unsolicited (m, "\r\n+CSSI: %u\r\n", i);
+}
+
+static void barring_callback (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	const char *type;
+
+	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &type,
+	                            DBUS_TYPE_INVALID))
+		return;
+
+	if (!strcmp (type, "local"))
+		report_ssi (m, 5);
+	if (!strcmp (type, "remote"))
+		report_ssi (m, 6);
+	(void) p;
+}
+
+static at_error_t set_ssn (at_modem_t *modem, const char *req, void *data)
+{
+	plugin_t *p = data;
+	unsigned n, m;
+
+	switch (sscanf (req, " %u , %u", &n, &m))
+	{
+		case 0:
+			n = 0;
+		case 1:
+			m = 0;
+		case 2:
+			break;
+		default:
+			return AT_CME_EINVAL;
+	}
+
+	if (n > 1 || m > 0)
+		return AT_CME_EINVAL;
+
+	if (p->barring_filter != NULL)
+	{
+		ofono_signal_unwatch (p->barring_filter);
+		p->barring_filter = NULL;
+	}
+
+	if (n)
+	{
+		p->barring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
+		                                        "BarringActive", NULL,
+		                                        barring_callback, modem);
+		if (p->barring_filter == NULL)
+			return AT_CME_ENOMEM;
+	}
+
+	return AT_OK;
+}
+
+static at_error_t get_ssn (at_modem_t *modem, void *data)
+{
+	plugin_t *p = data;
+
+	return at_intermediate (modem, "\r\n+CSSN: %u,%u",
+	                        p->barring_filter != NULL, 0);
+}
+
+static at_error_t list_ssn (at_modem_t *modem, void *data)
+{
+	(void) data;
+	return at_intermediate (modem, "\r\n+CSSN: (0-1),(0)");
+}
+
+
 /*** AT+CLCC ***/
 
 static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
@@ -900,6 +976,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CHLD", set_chld, NULL, list_chld, p);
 	p->cring = false;
 	at_register_ext (set, "+CRC", set_ring, get_ring, list_ring, p);
+	p->barring_filter = NULL;
+	at_register_ext (set, "+CSSN", set_ssn, get_ssn, list_ssn, p);
 	p->vhu = 0;
 	at_register_ext (set, "+CVHU", set_cvhu, get_cvhu, list_cvhu, &p->vhu);
 	at_register_ext (set, "+VTS", set_vts, NULL, list_vts, p);
@@ -917,6 +995,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 
 void voicecallmanager_unregister (plugin_t *p)
 {
+	if (p->barring_filter != NULL)
+		ofono_signal_unwatch (p->barring_filter);
 	ofono_signal_unwatch (p->ring_filter);
 	if (p->vhu == 2)
 		handle_hangup (NULL, 'H', p);
