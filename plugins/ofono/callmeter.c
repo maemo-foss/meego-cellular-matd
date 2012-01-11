@@ -95,7 +95,7 @@ static at_error_t set_aoc (at_modem_t *m, const char *req, void *data)
 		case 2:
 			if (p->caoc_filter != NULL)
 				break;
-			p->caoc_filter = ofono_prop_watch (p, NULL, "CallMeter",
+			p->caoc_filter = ofono_prop_watch (p, OFONO_MODEM, "CallMeter",
 			                                   "CallMeter", DBUS_TYPE_UINT32,
 			                                   ccm_callback, m);
 			if (p->caoc_filter == NULL)
@@ -255,7 +255,7 @@ static void cwv_callback (plugin_t *p, DBusMessage *msg, void *data)
 	(void) msg;
 }
 
-static at_error_t set_cwe (at_modem_t *modem, const char *req, void *data)
+static at_error_t set_cwe (at_modem_t *m, const char *req, void *data)
 {
 	plugin_t *p = data;
 	unsigned mode;
@@ -281,8 +281,8 @@ static at_error_t set_cwe (at_modem_t *modem, const char *req, void *data)
 		case 1:
 			if (p->ccwe_filter == NULL)
 			{
-				p->ccwe_filter = ofono_signal_watch (p, NULL, "CallMeter",
-			    	"NearMaximumWarning", NULL, cwv_callback, modem);
+				p->ccwe_filter = ofono_signal_watch (p, OFONO_MODEM,
+					"CallMeter", "NearMaximumWarning", NULL, cwv_callback, m);
 				if (p->ccwe_filter == NULL)
 					return AT_CME_ENOMEM;
 			}

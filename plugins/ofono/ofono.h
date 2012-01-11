@@ -236,16 +236,22 @@ int ofono_prop_find_array (DBusMessage *msg, const char *name,
 
 
 /* D-Bus oFono signal handling */
+typedef enum
+{
+	OFONO_ANY, /**< any oFono object */
+	OFONO_MODEM, /**< selected oFono modem object */
+} ofono_obj_t;
+
 typedef void (*ofono_signal_t) (plugin_t *, DBusMessage *, void *);
 typedef struct ofono_watch ofono_watch_t;
-ofono_watch_t *ofono_signal_watch (plugin_t *, const char *, const char *,
+ofono_watch_t *ofono_signal_watch (plugin_t *, ofono_obj_t, const char *,
 				   const char *, const char *, ofono_signal_t,
 				   void *);
 void ofono_signal_unwatch (ofono_watch_t *);
 
 typedef void (*ofono_prop_t) (plugin_t *, DBusMessageIter *, void *);
 typedef struct ofono_prop_watch ofono_prop_watch_t;
-ofono_prop_watch_t *ofono_prop_watch (plugin_t *, const char *, const char *,
+ofono_prop_watch_t *ofono_prop_watch (plugin_t *, ofono_obj_t, const char *,
                                       const char *, int, ofono_prop_t, void *);
 void ofono_prop_unwatch (ofono_prop_watch_t *);
 

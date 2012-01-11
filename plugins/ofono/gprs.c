@@ -151,10 +151,11 @@ static at_error_t set_cgreg (at_modem_t *modem, const char *req, void *data)
 	if (n == 0)
 		return AT_OK;
 
-	p->cgatt_filter = ofono_prop_watch (p, NULL, "ConnectionManager",
+	p->cgatt_filter = ofono_prop_watch (p, OFONO_MODEM, "ConnectionManager",
 	                                    "Attached", DBUS_TYPE_BOOLEAN,
 	                                    gprs_att_cb, modem);
-	p->cgreg_filter = ofono_signal_watch (p, NULL, "NetworkRegistration",
+	p->cgreg_filter = ofono_signal_watch (p, OFONO_MODEM,
+	                                      "NetworkRegistration",
 		                                  "PropertyChanged",
 	                                      (n == 1) ? "Status" : NULL,
 		                                  gprs_reg_cb, modem);

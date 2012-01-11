@@ -383,7 +383,8 @@ static at_error_t set_ssn (at_modem_t *modem, const char *req, void *data)
 
 	if (n)
 	{
-		p->barring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
+		p->barring_filter = ofono_signal_watch (p, OFONO_MODEM,
+		                                        "VoiceCallManager",
 		                                        "BarringActive", NULL,
 		                                        barring_callback, modem);
 		if (p->barring_filter == NULL)
@@ -988,7 +989,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	at_register_s (set, 0, set_auto_answer, get_auto_answer, p);
 	at_register_ext (set, "+BLDN", handle_redial, NULL, NULL, p);
 
-	p->ring_filter = ofono_signal_watch (p, NULL, "VoiceCallManager",
+	p->ring_filter = ofono_signal_watch (p, OFONO_MODEM, "VoiceCallManager",
 	                                     "CallAdded", NULL, ring_callback,
 	                                     AT_COMMANDS_MODEM(set));
 }

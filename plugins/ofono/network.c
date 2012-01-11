@@ -644,14 +644,16 @@ static at_error_t set_creg (at_modem_t *modem, const char *req, void *data)
 	case 0:
 		break;
 	case 1:
-		p->creg_filter = ofono_signal_watch (p, NULL, "NetworkRegistration",
+		p->creg_filter = ofono_signal_watch (p, OFONO_MODEM,
+		                                     "NetworkRegistration",
 		                                     "PropertyChanged", "Status",
 		                                     unsoli_creg, modem);
 		break;
 	case 2:
 		/* FIXME: This will catch changes in Strength, which may
 		 * cause some unnecessary wakeups. */
-		p->creg_filter = ofono_signal_watch (p, NULL, "NetworkRegistration",
+		p->creg_filter = ofono_signal_watch (p, OFONO_MODEM,
+		                                     "NetworkRegistration",
 		                                     "PropertyChanged", NULL,
 		                                     unsoli_creg, modem);
 		break;

@@ -487,7 +487,7 @@ static char *manager_find (char ***modemlist, unsigned *modemcount)
 struct ofono_watch
 {
 	char *rule;
-	char *path;
+	ofono_obj_t object;
 	char *interface;
 	char *signal;
 	char *arg0;
@@ -524,10 +524,19 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	  || strcmp (s->arg0, data)))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	pthread_mutex_lock (&p->modem_lock);
-	if (dbus_message_has_path (msg, s->path ? s->path : p->modemv[p->modem]))
-		s->cb (p, msg, s->cbdata);
-	pthread_mutex_unlock (&p->modem_lock);
+	switch (s->object)
+	{
+		case OFONO_ANY:
+			s->cb (p, msg, s->cbdata);
+			break;
+
+		case OFONO_MODEM:
+			pthread_mutex_lock (&p->modem_lock);
+			if (dbus_message_has_path (msg, p->modemv[p->modem]))
+				s->cb (p, msg, s->cbdata);
+			pthread_mutex_unlock (&p->modem_lock);
+			break;
+	}
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
@@ -536,7 +545,6 @@ static void ofono_free_sigdata (void *data)
 	ofono_watch_t *s = data;
 
 	free (s->rule);
-	free (s->path);
 	free (s->interface);
 	free (s->signal);
 	free (s->arg0);
@@ -544,7 +552,7 @@ static void ofono_free_sigdata (void *data)
 	free (s);
 }
 
-ofono_watch_t *ofono_signal_watch (plugin_t *p, const char *path,
+ofono_watch_t *ofono_signal_watch (plugin_t *p, ofono_obj_t obj,
                                    const char *subif, const char *signal,
                                    const char *arg0, ofono_signal_t cb,
                                    void *data)
@@ -571,16 +579,9 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p, const char *path,
 
 	fprintf (rule, "type='signal',interface='org.ofono.%s'", subif);
 
+	s->object = obj;
 	s->interface = malloc (strlen (subif) + 11);
 	sprintf (s->interface, "org.ofono.%s", subif);
-
-	if (path)
-	{
-		fprintf (rule, ",path='%s'", path);
-		s->path = strdup (path);
-	}
-	else
-		s->path = NULL;
 
 	if (signal)
 	{
@@ -651,7 +652,7 @@ static void ofono_prop_matcher (plugin_t *p, DBusMessage *msg, void *data)
 	w->cb (p, &value, w->cbdata);
 }
 
-ofono_prop_watch_t *ofono_prop_watch (plugin_t *p, const char *path,
+ofono_prop_watch_t *ofono_prop_watch (plugin_t *p, ofono_obj_t obj,
                                       const char *subif, const char *prop,
                                       int type, ofono_prop_t cb, void *data)
 {
@@ -662,7 +663,7 @@ ofono_prop_watch_t *ofono_prop_watch (plugin_t *p, const char *path,
 	w->type = type;
 	w->cb = cb;
 	w->cbdata = data;
-	w->watch = ofono_signal_watch (p, path, subif, "PropertyChanged", prop,
+	w->watch = ofono_signal_watch (p, obj, subif, "PropertyChanged", prop,
 	                               ofono_prop_matcher, w);
 	if (w->watch == NULL)
 	{
