@@ -92,15 +92,12 @@ static at_error_t list_attach (at_modem_t *modem, void *data)
 
 
 /*** AT+CGREG ***/
-static void gprs_att_cb (plugin_t *p, DBusMessage *msg, void *data)
+static void gprs_att_cb (plugin_t *p, DBusMessageIter *value, void *data)
 {
 	at_modem_t *m = data;
-	const char *prop;
 	dbus_bool_t attach;
 
-	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &prop,
-	                            DBUS_TYPE_BOOLEAN, &attach, DBUS_TYPE_INVALID))
-		return;
+	dbus_message_iter_get_basic (value, &attach);
 
 	if (attach)
 		ofono_netreg_print (m, p, "+CGREG", -1);
@@ -147,16 +144,16 @@ static at_error_t set_cgreg (at_modem_t *modem, const char *req, void *data)
 	}
 	if (p->cgatt_filter != NULL)
 	{
-		ofono_signal_unwatch (p->cgatt_filter);
+		ofono_prop_unwatch (p->cgatt_filter);
 		p->cgatt_filter = NULL;
 	}
 
 	if (n == 0)
 		return AT_OK;
 
-	p->cgatt_filter = ofono_signal_watch (p, NULL, "ConnectionManager",
-	                                      "PropertyChanged", "Attached",
-	                                      gprs_att_cb, modem);
+	p->cgatt_filter = ofono_prop_watch (p, NULL, "ConnectionManager",
+	                                    "Attached", DBUS_TYPE_BOOLEAN,
+	                                    gprs_att_cb, modem);
 	p->cgreg_filter = ofono_signal_watch (p, NULL, "NetworkRegistration",
 		                                  "PropertyChanged",
 	                                      (n == 1) ? "Status" : NULL,
@@ -195,5 +192,5 @@ void gprs_unregister (plugin_t *p)
 	if (p->cgreg_filter)
 		ofono_signal_unwatch (p->cgreg_filter);
 	if (p->cgatt_filter)
-		ofono_signal_unwatch (p->cgatt_filter);
+		ofono_prop_unwatch (p->cgatt_filter);
 }

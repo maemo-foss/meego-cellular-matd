@@ -63,7 +63,7 @@ struct plugin
 
 	unsigned char cgreg; /**< AT+CGREG */
 	ofono_watch_t *cgreg_filter;
-	ofono_watch_t *cgatt_filter;
+	ofono_prop_watch_t *cgatt_filter;
 
 	ofono_prop_watch_t *caoc_filter; /**< AT+CAOC */
 	ofono_watch_t *ccwe_filter; /**< AT+CCWE */
