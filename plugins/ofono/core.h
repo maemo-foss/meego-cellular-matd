@@ -59,6 +59,7 @@ struct plugin
 	ofono_watch_t *barring_filter; /**< AT+CSSN: +CSSI */
 	ofono_prop_watch_t *hold_filter;
 	ofono_prop_watch_t *mpty_filter;
+	ofono_watch_t *fwd_filter;
 
 	unsigned char cops; /**< AT+COPS */
 	unsigned char creg; /**< AT+CREG */

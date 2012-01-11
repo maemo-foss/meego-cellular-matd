@@ -381,6 +381,21 @@ static void mpty_callback (plugin_t *p, DBusMessageIter *value, void *data)
 	(void) p;
 }
 
+static void forwarded_callback (plugin_t *p, DBusMessage *msg, void *data)
+{
+	at_modem_t *m = data;
+	const char *type;
+
+	if (!dbus_message_get_args (msg, NULL, DBUS_TYPE_STRING, &type,
+	                                       DBUS_TYPE_INVALID))
+		return;
+
+	if (!strcmp (type, "outgoing") && p->barring_filter != NULL)
+		report_ssi (m, 2);
+	if (!strcmp (type, "incoming") && p->hold_filter != NULL)
+		report_ssu (m, 0);
+}
+
 static at_error_t set_ssn (at_modem_t *m, const char *req, void *data)
 {
 	plugin_t *p = data;
@@ -401,6 +416,11 @@ static at_error_t set_ssn (at_modem_t *m, const char *req, void *data)
 	if (ssi > 1 || ssu > 1)
 		return AT_CME_EINVAL;
 
+	if (p->fwd_filter != NULL) // The forwarded filter checks barring and hold
+	{	// filters for NULLity. It must be removed first for thread-safety.
+		ofono_signal_unwatch (p->fwd_filter);
+		p->fwd_filter = NULL;
+	}
 	if (p->barring_filter != NULL)
 	{
 		ofono_signal_unwatch (p->barring_filter);
@@ -435,6 +455,13 @@ static at_error_t set_ssn (at_modem_t *m, const char *req, void *data)
 			return AT_CME_ENOMEM;
 		p->mpty_filter = ofono_prop_watch (p, OFONO_ANY, "VoiceCall",
 			"RemoteMultiparty", DBUS_TYPE_BOOLEAN, mpty_callback, m);
+	}
+
+	if (ssi || ssu)
+	{
+		p->fwd_filter = ofono_signal_watch (p, OFONO_MODEM, "VoiceCallManager",
+		                                    "Forwarded", NULL,
+		                                    forwarded_callback, m);
 	}
 
 	return AT_OK;
@@ -1026,6 +1053,7 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	p->barring_filter = NULL;
 	p->hold_filter = NULL;
 	p->mpty_filter = NULL;
+	p->fwd_filter = NULL;
 	at_register_ext (set, "+CSSN", set_ssn, get_ssn, list_ssn, p);
 	p->vhu = 0;
 	at_register_ext (set, "+CVHU", set_cvhu, get_cvhu, list_cvhu, &p->vhu);
@@ -1050,6 +1078,8 @@ void voicecallmanager_unregister (plugin_t *p)
 		ofono_prop_unwatch (p->hold_filter);
 	if (p->mpty_filter != NULL)
 		ofono_prop_unwatch (p->mpty_filter);
+	if (p->fwd_filter != NULL)
+		ofono_signal_unwatch (p->fwd_filter);
 	ofono_signal_unwatch (p->ring_filter);
 	if (p->vhu == 2)
 		handle_hangup (NULL, 'H', p);
