@@ -544,26 +544,21 @@ static void ofono_free_sigdata (void *data)
 	free (s);
 }
 
-ofono_watch_t *ofono_signal_watch (plugin_t *p,
-				   const char *path,
-				   const char *subif,
-				   const char *signal,
-				   const char *arg0,
-				   ofono_signal_t cb,
-				   void *data)
+ofono_watch_t *ofono_signal_watch (plugin_t *p, const char *path,
+                                   const char *subif, const char *signal,
+                                   const char *arg0, ofono_signal_t cb,
+                                   void *data)
 {
-	if (!subif)
+	ofono_watch_t *s = malloc (sizeof (*s));
+	if (s == NULL)
 		return NULL;
-
-	ofono_watch_t *s = calloc (1, sizeof(ofono_watch_t));
-	if (!s)
-		return NULL;
+	assert (subif != NULL);
 
 	int canc = at_cancel_disable ();
 	size_t len;
 	FILE *rule = open_memstream (&s->rule, &len);
 
-	if (!rule)
+	if (rule == NULL)
 	{
 		at_cancel_enable (canc);
 		free (s);
@@ -584,16 +579,24 @@ ofono_watch_t *ofono_signal_watch (plugin_t *p,
 		fprintf (rule, ",path='%s'", path);
 		s->path = strdup (path);
 	}
+	else
+		s->path = NULL;
+
 	if (signal)
 	{
 		fprintf (rule, ",member='%s'", signal);
 		s->signal = strdup (signal);
 	}
+	else
+		s->signal = NULL;
+
 	if (arg0)
 	{
 		fprintf (rule, ",arg0='%s'", arg0);
 		s->arg0 = strdup (arg0);
 	}
+	else
+		s->arg0 = NULL;
 
 	fclose (rule);
 
