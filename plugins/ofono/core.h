@@ -57,6 +57,8 @@ struct plugin
 	bool ccwa; /**< AT+CCWA */
 	ofono_watch_t *ring_filter; /**< RING */
 	ofono_watch_t *barring_filter; /**< AT+CSSN: +CSSI */
+	ofono_prop_watch_t *hold_filter;
+	ofono_prop_watch_t *mpty_filter;
 
 	unsigned char cops; /**< AT+COPS */
 	unsigned char creg; /**< AT+CREG */

@@ -339,6 +339,11 @@ static void report_ssi (at_modem_t *m, unsigned i)
 	at_unsolicited (m, "\r\n+CSSI: %u\r\n", i);
 }
 
+static void report_ssu (at_modem_t *m, unsigned i)
+{
+	at_unsolicited (m, "\r\n+CSSU: %u\r\n", i);
+}
+
 static void barring_callback (plugin_t *p, DBusMessage *msg, void *data)
 {
 	at_modem_t *m = data;
@@ -355,24 +360,45 @@ static void barring_callback (plugin_t *p, DBusMessage *msg, void *data)
 	(void) p;
 }
 
-static at_error_t set_ssn (at_modem_t *modem, const char *req, void *data)
+static void hold_callback (plugin_t *p, DBusMessageIter *value, void *data)
+{
+	at_modem_t *m = data;
+	dbus_bool_t held;
+
+	dbus_message_iter_get_basic (value, &held);
+	report_ssu (m, held ? 2 : 3);
+	(void) p;
+}
+
+static void mpty_callback (plugin_t *p, DBusMessageIter *value, void *data)
+{
+	at_modem_t *m = data;
+	dbus_bool_t mpty;
+
+	dbus_message_iter_get_basic (value, &mpty);
+	if (mpty)
+		report_ssu (m, 4);
+	(void) p;
+}
+
+static at_error_t set_ssn (at_modem_t *m, const char *req, void *data)
 {
 	plugin_t *p = data;
-	unsigned n, m;
+	unsigned ssi, ssu;
 
-	switch (sscanf (req, " %u , %u", &n, &m))
+	switch (sscanf (req, " %u , %u", &ssi, &ssu))
 	{
 		case 0:
-			n = 0;
+			ssi = 0;
 		case 1:
-			m = 0;
+			ssu = 0;
 		case 2:
 			break;
 		default:
 			return AT_CME_EINVAL;
 	}
 
-	if (n > 1 || m > 0)
+	if (ssi > 1 || ssu > 1)
 		return AT_CME_EINVAL;
 
 	if (p->barring_filter != NULL)
@@ -380,15 +406,35 @@ static at_error_t set_ssn (at_modem_t *modem, const char *req, void *data)
 		ofono_signal_unwatch (p->barring_filter);
 		p->barring_filter = NULL;
 	}
+	if (p->hold_filter != NULL)
+	{
+		ofono_prop_unwatch (p->hold_filter);
+		p->hold_filter = NULL;
+	}
+	if (p->mpty_filter != NULL)
+	{
+		ofono_prop_unwatch (p->mpty_filter);
+		p->mpty_filter = NULL;
+	}
 
-	if (n)
+	if (ssi)
 	{
 		p->barring_filter = ofono_signal_watch (p, OFONO_MODEM,
 		                                        "VoiceCallManager",
 		                                        "BarringActive", NULL,
-		                                        barring_callback, modem);
+		                                        barring_callback, m);
 		if (p->barring_filter == NULL)
 			return AT_CME_ENOMEM;
+	}
+
+	if (ssu)
+	{
+		p->hold_filter = ofono_prop_watch (p, OFONO_ANY /* FIXME modem! */,
+			"VoiceCall", "RemoteHeld", DBUS_TYPE_BOOLEAN, hold_callback, m);
+		if (p->hold_filter == NULL)
+			return AT_CME_ENOMEM;
+		p->mpty_filter = ofono_prop_watch (p, OFONO_ANY, "VoiceCall",
+			"RemoteMultiparty", DBUS_TYPE_BOOLEAN, mpty_callback, m);
 	}
 
 	return AT_OK;
@@ -399,13 +445,13 @@ static at_error_t get_ssn (at_modem_t *modem, void *data)
 	plugin_t *p = data;
 
 	return at_intermediate (modem, "\r\n+CSSN: %u,%u",
-	                        p->barring_filter != NULL, 0);
+	                        p->barring_filter != NULL, p->hold_filter != 0);
 }
 
 static at_error_t list_ssn (at_modem_t *modem, void *data)
 {
 	(void) data;
-	return at_intermediate (modem, "\r\n+CSSN: (0-1),(0)");
+	return at_intermediate (modem, "\r\n+CSSN: (0-1),(0-1)");
 }
 
 
@@ -978,6 +1024,8 @@ void voicecallmanager_register (at_commands_t *set, plugin_t *p)
 	p->cring = false;
 	at_register_ext (set, "+CRC", set_ring, get_ring, list_ring, p);
 	p->barring_filter = NULL;
+	p->hold_filter = NULL;
+	p->mpty_filter = NULL;
 	at_register_ext (set, "+CSSN", set_ssn, get_ssn, list_ssn, p);
 	p->vhu = 0;
 	at_register_ext (set, "+CVHU", set_cvhu, get_cvhu, list_cvhu, &p->vhu);
@@ -998,6 +1046,10 @@ void voicecallmanager_unregister (plugin_t *p)
 {
 	if (p->barring_filter != NULL)
 		ofono_signal_unwatch (p->barring_filter);
+	if (p->hold_filter != NULL)
+		ofono_prop_unwatch (p->hold_filter);
+	if (p->mpty_filter != NULL)
+		ofono_prop_unwatch (p->mpty_filter);
 	ofono_signal_unwatch (p->ring_filter);
 	if (p->vhu == 2)
 		handle_hangup (NULL, 'H', p);
