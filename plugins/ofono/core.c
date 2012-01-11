@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <at_command.h>
 #include <at_log.h>
@@ -481,6 +482,8 @@ static char *manager_find (char ***modemlist, unsigned *modemcount)
 	return name;
 }
 
+/*** oFono signal handling ***/
+
 struct ofono_watch
 {
 	char *rule;
@@ -607,6 +610,72 @@ void ofono_signal_unwatch (ofono_watch_t *s)
 	at_dbus_remove_filter (DBUS_BUS_SYSTEM,
 			       ofono_signal_matcher, s);
 }
+
+/*** oFono property change handling */
+
+struct ofono_prop_watch
+{
+	int type;
+	ofono_prop_t cb;
+	void *cbdata;
+	ofono_watch_t *watch;
+};
+
+static void ofono_prop_matcher (plugin_t *p, DBusMessage *msg, void *data)
+{
+	ofono_prop_watch_t *w = data;
+	DBusMessageIter it, value;
+
+	dbus_message_iter_init (msg, &it);
+	assert (dbus_message_iter_get_arg_type (&it) == DBUS_TYPE_STRING);
+
+	dbus_message_iter_next (&it);
+	if (dbus_message_iter_get_arg_type (&it) != DBUS_TYPE_VARIANT)
+	{
+		error ("Property change malformatted");
+		return;
+	}
+
+	dbus_message_iter_recurse (&it, &value);
+	if (dbus_message_iter_get_arg_type (&value) != w->type)
+	{
+		error ("oFono \"%s.%s\" property type mismatch: wanted %d, got %d",
+		       w->watch->interface, w->watch->arg0, w->type,
+		       dbus_message_iter_get_arg_type (&it));
+		return;
+	}
+
+	w->cb (p, &value, w->cbdata);
+}
+
+ofono_prop_watch_t *ofono_prop_watch (plugin_t *p, const char *path,
+                                      const char *subif, const char *prop,
+                                      int type, ofono_prop_t cb, void *data)
+{
+	ofono_prop_watch_t *w = malloc (sizeof (*w));
+	if (w == NULL)
+		return NULL;
+
+	w->type = type;
+	w->cb = cb;
+	w->cbdata = data;
+	w->watch = ofono_signal_watch (p, path, subif, "PropertyChanged", prop,
+	                               ofono_prop_matcher, w);
+	if (w->watch == NULL)
+	{
+		free (w);
+		w = NULL;
+	}
+
+	return w;
+}
+
+void ofono_prop_unwatch (ofono_prop_watch_t *w)
+{
+	ofono_signal_unwatch (w->watch);
+	free (w);
+}
+
 
 /*** Plugin registration ***/
 
