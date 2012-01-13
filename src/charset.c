@@ -268,7 +268,7 @@ char *at_from_utf8 (at_modem_t *m, const char *in)
 
 /* The following standard commands use AT+CSCS.
  *  +CPBF, +CPBR, +CPBW
- *  +CPUC
+ *  +CPUC, +CUSD
  *  +CMGS (text mode)
  *
  * The following commands have unimplemented parameters using AT+CSCS:
@@ -277,7 +277,7 @@ char *at_from_utf8 (at_modem_t *m, const char *in)
  *
  * The following commands are not implemented at all yet:
  *  +CDIS, +CMER (display events)
- *  +CUSD, +CUUS1
+ *  +CUUS1
  *  +CNMI, +CMGR, +CMGW
  *
  * The following commands use the HEX format regardless of AT+CSCS:
