@@ -712,6 +712,7 @@ void *at_plugin_register (at_commands_t *set)
 	network_register (set, p);
 	sim_register (set, p);
 	sms_register (set, p);
+	ss_register (set, p);
 	voicecallmanager_register (set, p);
 	at_register_ext (set, "*CNTI", set_cnti, NULL, list_cnti, p);
 	return p;
@@ -726,6 +727,7 @@ void at_plugin_unregister (void *opaque)
 	call_meter_unregister (p);
 	gprs_unregister (p);
 	network_unregister (p);
+	ss_unregister (p);
 	voicecallmanager_unregister (p);
 	pthread_mutex_destroy (&p->modem_lock);
 	for (unsigned i = 0; i < p->modemc; i++)

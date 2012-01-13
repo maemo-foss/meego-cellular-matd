@@ -73,4 +73,6 @@ struct plugin
 	ofono_watch_t *ccwe_filter; /**< AT+CCWE */
 
 	bool text_mode; /**< AT+CGMF */
+
+	ofono_watch_t *ussd_filter; /**< AT+CUSD */
 };

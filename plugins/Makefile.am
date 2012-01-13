@@ -94,6 +94,7 @@ libofono_at_la_SOURCES = \
 	ofono/network.c \
 	ofono/sim.c \
 	ofono/sms.c \
+	ofono/ss.c \
 	ofono/voicecall.c \
 	ofono/charset.c \
 	ofono/core.c
