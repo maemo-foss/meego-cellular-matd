@@ -75,6 +75,23 @@ static at_error_t handle_cimi (at_modem_t *modem, const char *req, void *data)
 }
 
 
+/*** AT@ICCID ***/
+
+static at_error_t handle_iccid (at_modem_t *modem, const char *req, void *data)
+{
+	if (*req)
+		return AT_CME_EINVAL;
+
+	char *id = modem_prop_get_string (data, "SimManager", "CardIdentifier");
+	if (id == NULL)
+		return AT_CME_UNKNOWN;
+
+	at_intermediate (modem, "\r\n%s\r\n", id);
+	free (id);
+	return AT_OK;
+}
+
+
 /*** AT+CNUM ***/
 
 typedef at_error_t (*msisdn_cb) (const char *, void *);
@@ -593,6 +610,7 @@ static at_error_t list_csus (at_modem_t *modem, void *data)
 void sim_register (at_commands_t *set, plugin_t *p)
 {
 	at_register_ext (set ,"+CIMI", handle_cimi, NULL, NULL, p);
+	at_register_ext (set, "@ICCID", handle_iccid, NULL, NULL, p);
 	at_register_ext (set ,"+CNUM", handle_cnum, NULL, NULL, p);
 	at_register_pb (set, "ON", NULL, read_on, NULL, NULL, count_on, p);
 	at_register_ext (set, "+CLCK", set_clck, NULL, list_clck, p);
