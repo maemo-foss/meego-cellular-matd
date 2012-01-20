@@ -188,7 +188,7 @@ static at_error_t set_cmgf (at_modem_t *m, const char *req, void *data)
 	unsigned mode;
 
 	if (sscanf (req, " %u", &mode) != 1)
-		return AT_ERROR;
+		mode = 0;
 	if (mode > 1)
 		return AT_CMS_ENOTSUP;
 
