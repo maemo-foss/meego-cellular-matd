@@ -418,7 +418,7 @@ void sms_register (at_commands_t *set, plugin_t *p)
 	at_register_ext (set, "+CGSMS", set_cgsms, get_cgsms, list_cgsms, p);
 	at_register_ext (set, "+CSMS", set_csms, get_csms, list_csms, p);
 	at_register_ext (set, "+CSCA", set_csca, get_csca, NULL, p);
-	p->text_mode = true;
+	p->text_mode = false;
 	at_register_ext (set, "+CMGF", set_cmgf, get_cmgf, list_cmgf, p);
 	at_register_ext (set, "+CMGS", set_cmgs, NULL, NULL, p);
 	at_register_ext (set, "+CMMS", set_mms, get_mms, list_mms, p);
