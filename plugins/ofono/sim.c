@@ -589,19 +589,24 @@ static at_error_t get_csus (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
 
-	at_intermediate (modem, "\r\n+CSUS: %u", p->modem);
-	return AT_OK;
+	if (p->modem >= p->modemc)
+		return AT_CME_ERROR_0;
+	return at_intermediate (modem, "\r\n+CSUS: %u", p->modem);
 }
 
 static at_error_t list_csus (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
 
-	if (p->modemc > 1)
-		at_intermediate (modem, "\r\n+CSUS: (0-%u)", p->modemc);
-	else
-		at_intermediate (modem, "\r\n+CSUS: (0)");
-	return AT_OK;
+	switch (p->modemc)
+	{
+		case 0:
+			return AT_CME_ERROR_0;
+		case 1:
+			return at_intermediate (modem, "\r\n+CSUS: (0)");
+		default:
+			return at_intermediate (modem, "\r\n+CSUS: (0-%u)", p->modemc);
+	}
 }
 
 

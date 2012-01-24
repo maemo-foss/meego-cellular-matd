@@ -657,7 +657,8 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 				char *call;
 				at_error_t ret;
 
-				if (asprintf (&call, "%s/voicecall%u", p->modemv[p->modem],
+				if (p->modem >= p->modemc
+				 || asprintf (&call, "%s/voicecall%u", p->modemv[p->modem],
 				              id) == -1)
 					return AT_CME_ENOMEM;
 
