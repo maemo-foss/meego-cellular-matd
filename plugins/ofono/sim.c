@@ -605,7 +605,7 @@ static at_error_t list_csus (at_modem_t *modem, void *data)
 		case 1:
 			return at_intermediate (modem, "\r\n+CSUS: (0)");
 		default:
-			return at_intermediate (modem, "\r\n+CSUS: (0-%u)", p->modemc);
+			return at_intermediate (modem, "\r\n+CSUS: (0-%u)", p->modemc - 1);
 	}
 }
 
