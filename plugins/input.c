@@ -197,7 +197,6 @@ static void *cmer_thread (void *opaque)
 				report_tscrn (cmer);
 			n++;
 		}
-			
 	}
 	return NULL;
 }
