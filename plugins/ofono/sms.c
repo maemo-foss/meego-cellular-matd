@@ -265,19 +265,16 @@ static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 		goto out;
 
 	const char *path;
-	uint8_t mr;
 	if (!dbus_message_get_args (msg, NULL,
-	                            DBUS_TYPE_OBJECT_PATH, &path,
+	                            DBUS_TYPE_STRING, &path,
 	                            DBUS_TYPE_INVALID))
 	{
 		dbus_message_unref (msg);
 		ret = AT_CMS_UNKNOWN;
 		goto out;
 	}
-	/* This message reference is totally fake. FIXME? */
-	if (sscanf (path, "%*[^_]_%2"SCNx8, &mr) != 1)
-		mr = 0;
-	at_intermediate (m, "\r\n+CMGS: %"PRIu8, mr);
+	/* Message reference is unavailable at the time of sending */
+	at_intermediate (m, "\r\n+CMGS: 0");
 out:
 	at_cancel_enable (canc);
 	return ret;
@@ -354,20 +351,17 @@ static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
 		goto out;
 
 	const char *path;
-	uint8_t mr;
 	if (!dbus_message_get_args (msg, NULL,
-	                            DBUS_TYPE_OBJECT_PATH, &path,
+	                            DBUS_TYPE_STRING, &path,
 	                            DBUS_TYPE_INVALID))
 	{
 		dbus_message_unref (msg);
 		ret = AT_CMS_UNKNOWN;
 		goto out;
 	}
-	/* This message reference is totally fake. FIXME? */
-	if (sscanf (path, "%*[^_]_%2"SCNx8, &mr) != 1)
-		mr = 0;
+	/* Message reference is not available at the time of sending */
 	dbus_message_unref (msg);
-	ret = at_intermediate (m, "\r\n+CMGS: %"PRIu8, mr);
+	ret = at_intermediate (m, "\r\n+CMGS: 0");
 out:
 	at_cancel_enable (canc);
 	return ret;
