@@ -523,7 +523,7 @@ static at_error_t set_cpwd (at_modem_t *modem, const char *req, void *data)
 {
 	char fac[3], oldpwd[9], newpwd[9];
 
-	if (sscanf (req, "\"%[A-Z0-9]\" , \"%8[0-9]\" , \"%8[0-9]\"",
+	if (sscanf (req, "\"%2[A-Z0-9]\" , \"%8[0-9]\" , \"%8[0-9]\"",
 	            fac, oldpwd, newpwd) != 3
 	 || !fac[0])
 		return AT_CME_EINVAL;
