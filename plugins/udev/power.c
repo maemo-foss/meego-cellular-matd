@@ -157,7 +157,7 @@ static at_error_t do_cbc (at_modem_t *m, const char *req, void *data)
 		at_intermediate (m, "\r\n+CBC: 2,0");
 	else
 		at_intermediate (m, "\r\n+CBC: %u,%lu", !discharging,
-		                 capacity ? (100 * charge / capacity) : 0);
+		                 100 * charge / capacity);
 end:
 	at_cancel_enable (canc);
 	return ret;
