@@ -364,6 +364,7 @@ static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
 	ret = at_intermediate (m, "\r\n+CMGS: 0");
 out:
 	at_cancel_enable (canc);
+	free (pdu);
 	return ret;
 }
 
