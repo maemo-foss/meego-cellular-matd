@@ -124,26 +124,26 @@ static char *sms16_decode (const char *str)
 		/* Convert 4 nibbles to a code point */
 		v = hexdigit (str[i]);
 		if (v < 0)
-			return NULL;
+			goto err;
 		cp |= v << 12;
 		v = hexdigit (str[i + 1]);
 		if (v < 0)
-			return NULL;
+			goto err;
 		cp |= v << 8;
 		v = hexdigit (str[i + 2]);
 		if (v < 0)
-			return NULL;
+			goto err;
 		cp |= v << 4;
 		v = hexdigit (str[i + 2]);
 		if (v < 0)
-			return NULL;
+			goto err;
 		cp |= v;
 
 		/* Convert the code point to 1-3 UTF-8 bytes */
 		if (cp < 0x80)
 		{
 			if (cp == 0)
-				return NULL;
+				goto err;
 			*(p++) = cp; /* ASCII */
 		}
 		else if (cp < 0x800)
@@ -162,6 +162,9 @@ static char *sms16_decode (const char *str)
 	}
 	*p = '\0';
 	return out;
+err:
+	free (out);
+	return NULL;
 }
 
 /** Decodes to UTF-8. */
