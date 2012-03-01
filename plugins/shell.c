@@ -129,7 +129,9 @@ static at_error_t shell (at_modem_t *modem, const char *req, void *data)
 		return AT_CME_ENOTSUP;
 
 	at_error_t ret = AT_NO_CARRIER;
-	size_t buflen = sysconf (_SC_GETPW_R_SIZE_MAX);
+	long buflen = sysconf (_SC_GETPW_R_SIZE_MAX);
+	if (buflen == -1)
+		return AT_CME_ENOMEM;
 	char *buf = malloc (buflen);
 	if (buf == NULL)
 		return AT_CME_ENOMEM;
