@@ -64,7 +64,7 @@
 
 typedef struct at_handler
 {
-	char name[15];
+	char name[AT_NAME_MAX];
 	at_set_cb set;
 	at_get_cb get, test;
 	void *opaque;
