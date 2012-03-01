@@ -842,7 +842,7 @@ static at_error_t do_ctfr (at_modem_t *modem, const char *req, void *data)
 		case 3:
 			return AT_CME_ENOTSUP;
 		case 2:
-			if (type != (number[0] == '+') ? 145 : 129)
+			if (type != ((number[0] == '+') ? 145 : 129))
 				return AT_CME_ENOTSUP;
 		case 1:
 			break;

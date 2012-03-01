@@ -151,7 +151,7 @@ static at_error_t set_csca (at_modem_t *modem, const char *req, void *data)
 	switch (sscanf (req, " \"%255[^\"]\" , %u", number, &type))
 	{
 		case 2:
-			if (type != (*number == '+') ? 145 : 129)
+			if (type != ((*number == '+') ? 145 : 129))
 				return AT_CMS_ENOTSUP;
 			/* fallthrough */
 		case 1:
@@ -221,7 +221,7 @@ static at_error_t send_text (at_modem_t *m, const char *req, void *data)
 	switch (sscanf (req, " \"%20[^\"]\" , %u", number, &type))
 	{
 		case 2:
-			if (type != (*number == '+') ? 145 : 129)
+			if (type != ((*number == '+') ? 145 : 129))
 				return AT_CMS_ENOTSUP;
 			/* fallthrough */
 		case 1:
