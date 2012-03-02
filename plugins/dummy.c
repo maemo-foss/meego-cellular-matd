@@ -337,6 +337,8 @@ void *at_plugin_register (at_commands_t *set)
 	at_register_zero (set, "+CVMOD");
 	at_register_zero (set, "+CSNS");
 	at_register_zero (set, "+CPNET");
+	at_register_zero (set, "+VGR");
+	at_register_zero (set, "+VGT");
 
 	if (d != NULL)
 	{
