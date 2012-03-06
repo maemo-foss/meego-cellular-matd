@@ -26,13 +26,13 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = matd.pc
 
 .pc.in.pc: config.status
-	$(SHELL) ./config.status --file=$@
+	$(AM_V_GEN)$(SHELL) ./config.status --file=$@
 
 ### Doxygen documentation ###
 DOXYGEN = doxygen
 
 Doxyfile: Doxyfile.in
-	$(SHELL) ./config.status --file=Doxyfile
+	$(AM_V_GEN)$(SHELL) ./config.status --file=Doxyfile
 
 doc: Doxyfile
 	cd "$(top_srcdir)" && $(DOXYGEN) "$(abs_top_builddir)/Doxyfile"
