@@ -293,9 +293,10 @@ static int hexdigit (char c)
 
 static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
 {
-	unsigned len;
+	at_error_t ret = AT_CMS_ENOMEM;
+	uint16_t len;
 
-	if (sscanf (req, " %u", &len) != 1)
+	if (sscanf (req, " %"SCNu16, &len) != 1)
 		return AT_CMS_PDU_EINVAL;
 
 	plugin_t *p = data;
@@ -304,25 +305,32 @@ static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
 	if (pdu == NULL)
 		return AT_OK;
 
+	ret = AT_CMS_PDU_EINVAL;
 	/* Convert to binary */
 	dbus_uint32_t bytes = 0;
-	for (char *in = pdu, *out = pdu; bytes < len; bytes++)
+	for (char *in = pdu, *out = pdu; *in; bytes++)
 	{
 		int hinib = hexdigit (*(in++));
+		if (hinib < 0)
+			break;
 		int lonib = hexdigit (*(in++));
 
-		if (hinib < 0 || lonib < 0)
-		{
-			free (pdu);
-			return AT_CMS_PDU_EINVAL;
-		}
+		if (lonib < 0)
+			goto err;
 
 		*(out++) = (hinib << 4) | lonib;
 	}
 
+	if (bytes < 1u || bytes != 1u + pdu[0] + len)
+	{
+		warning ("discarded invalid SMS PDU (%u bytes)", (unsigned)bytes);
+		goto err;
+	}
+
 	debug ("sending SMS PDU (%u bytes)", (unsigned)bytes);
 
-	at_error_t ret = AT_CMS_ENOMEM;
+	ret = AT_CME_ENOMEM;
+	/* Send PDU */
 	int canc = at_cancel_disable ();
 
 	DBusMessage *msg = modem_req_new (p, "MessageManager", "SendMessagePDU");
@@ -364,6 +372,7 @@ static at_error_t send_pdu (at_modem_t *m, const char *req, void *data)
 	ret = at_intermediate (m, "\r\n+CMGS: 0");
 out:
 	at_cancel_enable (canc);
+err:
 	free (pdu);
 	return ret;
 }
