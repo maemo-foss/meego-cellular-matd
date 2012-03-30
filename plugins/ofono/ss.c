@@ -154,7 +154,7 @@ static char *sms16_decode (const char *str)
 		else
 		{
 			if (0xD800 <= cp && cp < 0xE000)
-				return NULL; /* surrogate!? */
+				goto err; /* surrogate!? */
 			*(p++) = 0xE0 | (cp >> 12);
 			*(p++) = 0x80 | ((cp >> 6) & 0x3F);
 			*(p++) = 0x80 | (cp & 0x3F);
