@@ -508,14 +508,11 @@ at_error_t ofono_netreg_print (at_modem_t *modem, plugin_t *p,
                                const char *prefix, int n)
 {
 	int canc = at_cancel_disable ();
-	at_error_t ret = AT_OK;
+	unsigned status = 4; /* default to unknown status */
 
 	DBusMessage *msg = modem_props_get (p, "NetworkRegistration");
 	if (!msg)
-	{
-		ret = AT_CME_UNKNOWN;
-		goto end;
-	}
+		goto unknown;
 
 	static const char sts[][13] = {
 		"unregistered",
@@ -526,32 +523,14 @@ at_error_t ofono_netreg_print (at_modem_t *modem, plugin_t *p,
 		"roaming"
 	};
 
-	const char *st;
-
-	if (!(st = ofono_prop_find_string (msg, "Status")))
-	{
-		dbus_message_unref (msg);
-		ret = AT_ERROR;
-		goto end;
-	}
-
-	int status = -1;
-
-	for (size_t i = 0; i < sizeof (sts) / sizeof (*sts); i++)
-	{
-		if (!strcmp (st, sts[i]))
-		{
-			status = i;
-			break;
-		}
-	}
-
-	if (status == -1)
-	{
-		dbus_message_unref (msg);
-		ret = AT_ERROR;
-		goto end;
-	}
+	const char *st = ofono_prop_find_string (msg, "Status");
+	if (st != NULL)
+		for (size_t i = 0; i < sizeof (sts) / sizeof (*sts); i++)
+			if (!strcmp (st, sts[i]))
+			{
+				status = i;
+				break;
+			}
 
 	if (p->creg == 2 && (status == 1 || status == 5))
 	{
@@ -578,26 +557,25 @@ at_error_t ofono_netreg_print (at_modem_t *modem, plugin_t *p,
 		}
 
 		if (n >= 0)
-			at_intermediate (modem, "\r\n%s: %d,%d,\"%04X\",\"%X\",%u", prefix,
+			at_intermediate (modem, "\r\n%s: %d,%u,\"%04X\",\"%X\",%u", prefix,
 			                 n, status, lac, cellid, tech);
 		else
-			at_unsolicited (modem, "\r\n%s: %d,\"%04X\",\"%X\",%u\r\n", prefix,
+			at_unsolicited (modem, "\r\n%s: %u,\"%04X\",\"%X\",%u\r\n", prefix,
 			                status, lac, cellid, tech);
 	}
 	else
 	{
+	unknown:
 		if (n >= 0)
-			at_intermediate (modem, "\r\n%s: %d,%d", prefix, n, status);
+			at_intermediate (modem, "\r\n%s: %d,%u", prefix, n, status);
 		else
 			at_unsolicited (modem, "\r\n%s: %u\r\n", prefix, status);
 	}
 
-	dbus_message_unref (msg);
-
-
-end:
+	if (msg != NULL)
+		dbus_message_unref (msg);
 	at_cancel_enable (canc);
-	return ret;
+	return AT_OK;
 }
 
 static void unsoli_creg (plugin_t *p, DBusMessage *msg, void *data)
