@@ -1,5 +1,5 @@
 AC_COPYRIGHT([Copyright (C) 2009-2012 Nokia Corporation])
-AC_INIT([matd], [0.7.6], [remi.denis-courmont@nokia.com])
+AC_INIT([matd], [0.7.7], [remi.denis-courmont@nokia.com])
 AC_PREREQ(2.60)
 
 AC_CONFIG_SRCDIR(configure.ac)
