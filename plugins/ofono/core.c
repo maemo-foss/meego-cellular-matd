@@ -48,6 +48,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <at_command.h>
 #include <at_log.h>
@@ -489,6 +492,73 @@ static char *manager_find (char ***modemlist, unsigned *modemcount)
 	*modemlist = tab;
 	*modemcount = i;
 	return name;
+}
+
+static const char csus_path[] = STATEDIR"/csus";
+
+static unsigned modem_read_current (const plugin_t *p)
+{
+	int fd = open (csus_path, O_RDONLY | O_CLOEXEC);
+	if (fd == -1)
+	{
+		warning ("Cannot %s current modem setting (%s): %m", "access",
+		         csus_path);
+		return 0;
+	}
+
+	char buf[64];
+	ssize_t val = read (fd, buf, sizeof (buf) - 1);
+	close (fd);
+	if (val < 0)
+	{
+		error ("Cannot %s current modem setting (%s): %m", "read", csus_path);
+		return 0;
+	}
+
+	buf[val] = '\0';
+	for (unsigned id = 0; id < p->modemc; id++)
+		if (!strcmp (buf, p->modemv[id]))
+		{
+			debug ("Saved modem %s found (AT+CSUS=%u)", buf, id);
+			return id;
+		}
+
+	warning ("Saved modem %s not found", buf);
+	return 0;
+}
+
+void modem_write_current (const plugin_t *p)
+{
+	assert (p->modem < p->modemc);
+
+	int fd = open (csus_path, O_CREAT | O_WRONLY | O_CLOEXEC, 0666);
+	if (fd == -1)
+	{
+		warning ("Cannot %s current modem setting (%s): %m", "access",
+		         csus_path);
+		return;
+	}
+
+	const char *str = p->modemv[p->modem];
+	size_t len = strlen (str);
+	ssize_t val;
+
+	if (lockf (fd, F_LOCK, 0))
+	{
+		error ("Cannot %s current modem setting (%s): %m", "lock", csus_path);
+		goto error;
+	}
+
+	/* Include the trailing nul. This is a cheap trick to avoid races with
+	 * a process reading the file. */
+	val = write (fd, str, len);
+	if (val == -1 || ftruncate (fd, len))
+	{
+		error ("Cannot %s current modem setting (%s): %m", "write", csus_path);
+		unlink (csus_path);
+	}
+error:
+	close (fd);
 }
 
 /*** oFono signal handling ***/

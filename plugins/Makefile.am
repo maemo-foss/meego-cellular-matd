@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = subdir-objects
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -DSTATEDIR=\"$(statedir)\"
 AM_LIBADD = ../src/libmatd.la
 AM_LDFLAGS = \
 	-module \

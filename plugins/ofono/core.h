@@ -76,3 +76,5 @@ struct plugin
 
 	ofono_watch_t *ussd_filter; /**< AT+CUSD */
 };
+
+void modem_write_current (const plugin_t *);
