@@ -514,8 +514,13 @@ static unsigned modem_read_current (const plugin_t *p)
 		error ("Cannot %s current modem setting (%s): %m", "read", csus_path);
 		return 0;
 	}
-
+	if (val == 0)
+	{
+		debug ("No saved modem");
+		return 0;
+	}
 	buf[val] = '\0';
+
 	for (unsigned id = 0; id < p->modemc; id++)
 		if (!strcmp (buf, p->modemv[id]))
 		{
