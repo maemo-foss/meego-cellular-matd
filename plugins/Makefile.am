@@ -9,6 +9,7 @@ AM_LDFLAGS = \
 pluginsdir = $(pkglibdir)/plugins
 plugins_LTLIBRARIES =
 EXTRA_LTLIBRARIES =
+statedir = $(localstatedir)/lib/$(PACKAGE)
 
 .libs/yz .libs/noload.so:
 	mkdir -p .libs
@@ -101,6 +102,7 @@ libofono_at_la_SOURCES = \
 libofono_at_la_CFLAGS = $(DBUS_CFLAGS)
 libofono_at_la_LIBADD = $(AM_LIBADD) $(DBUS_LIBS)
 plugins_LTLIBRARIES += libofono_at.la
+dist_state_DATA = ofono/csus
 
 
 #
