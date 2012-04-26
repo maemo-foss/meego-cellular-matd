@@ -582,6 +582,7 @@ static at_error_t set_csus (at_modem_t *modem, const char *req, void *data)
 	pthread_mutex_lock (&p->modem_lock);
 	p->modem = slot;
 	pthread_mutex_unlock (&p->modem_lock);
+	modem_write_current (p);
 	return AT_OK;
 }
 

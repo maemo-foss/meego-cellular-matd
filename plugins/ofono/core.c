@@ -780,7 +780,7 @@ void *at_plugin_register (at_commands_t *set)
 	debug ("Using oFono %s", p->name);
 	for (unsigned i = 0; i < p->modemc; i++)
 		debug (" modem %u: %s", i, p->modemv[i]);
-	p->modem = 0;
+	p->modem = modem_read_current (p);
 	pthread_mutex_init (&p->modem_lock, NULL);
 
 	modem_register (set, p);
