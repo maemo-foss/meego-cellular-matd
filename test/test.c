@@ -475,7 +475,7 @@ CASE (cmee)
 {
 	REQUEST ("AT+CMEE?");
 	RESPONSE ();
-	if (strcmp ("+CMEE: 0\r\n", line))
+	if (strcmp ("+CMEE: 1\r\n", line))
 		return -1;
 	RESPONSE ();
 	CHECK_OK ();

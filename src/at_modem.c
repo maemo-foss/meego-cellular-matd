@@ -626,7 +626,7 @@ void at_reset (at_modem_t *m)
 	m->verbose = true;
 	m->rate_report = false;
 	m->data = false;
-	m->cmee = 0;
+	m->cmee = 1;
 	m->hungup = false;
 	m->reset = true;
 	m->charset = 0;
