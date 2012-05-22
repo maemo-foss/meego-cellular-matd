@@ -452,7 +452,8 @@ static char *manager_find (char ***modemlist, unsigned *modemcount)
 	}
 
 	/* Remember unique name of oFono service */
-	char *name = strdup (dbus_message_get_sender (msg));
+	const char *sender = dbus_message_get_sender (msg);
+	char *name = (sender != NULL) ? strdup (sender) : NULL;
 
 	DBusMessageIter args, array;
 
