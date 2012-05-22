@@ -84,7 +84,7 @@ static at_error_t set_cclk (at_modem_t *modem, const char *req, void *data)
 		case 7:
 			break;
 		default:
-			return AT_CME_EINVAL;
+			return AT_ERROR;
 	}
 
 	struct timeval tv;
