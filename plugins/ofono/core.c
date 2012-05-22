@@ -591,7 +591,7 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	const char *data;
 
 	if (dbus_message_get_type (msg) != DBUS_MESSAGE_TYPE_SIGNAL
-	 || strcmp (dbus_message_get_sender (msg), s->p->name))
+	 || !dbus_message_has_sender (msg, s->p->name))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	(void)conn;
