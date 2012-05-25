@@ -59,35 +59,6 @@
 #include "core.h"
 
 
-static DBusMessage *get_calls (plugin_t *p, at_error_t *ret,
-                               DBusMessageIter *calls)
-{
-	DBusMessage *msg = modem_req_new (p, "VoiceCallManager", "GetCalls");
-	if (msg == NULL)
-	{
-		*ret = AT_CME_ENOMEM;
-		return NULL;
-	}
-
-	msg = ofono_query (msg, ret);
-	if (msg == NULL)
-		return NULL;
-
-	DBusMessageIter args;
-
-	if (!dbus_message_iter_init (msg, &args)
-	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
-	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
-	{
-		dbus_message_unref (msg);
-		*ret = AT_CME_ERROR_0;
-		return NULL;
-	}
-
-	dbus_message_iter_recurse (&args, calls);
-	return msg;
-}
-
 static int get_call_id (const char *call)
 {
 	unsigned id;
@@ -100,42 +71,88 @@ static int get_call_id (const char *call)
 	return id;
 }
 
-static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
-{
-	int id = -1;
-	int canc = at_cancel_disable ();
-	DBusMessageIter calls;
+typedef int (*call_cb_t) (unsigned call_id, DBusMessageIter *dict, void *data);
 
-	DBusMessage *msg = get_calls (p, err, &calls);
+static at_error_t enum_calls (plugin_t *p, call_cb_t cb, void *opaque)
+{
+	at_error_t err;
+	int canc = at_cancel_disable ();
+
+	DBusMessage *msg = modem_req_new (p, "VoiceCallManager", "GetCalls");
+	if (msg == NULL)
+	{
+		err = AT_CME_ENOMEM;
+		goto out;
+	}
+
+	msg = ofono_query (msg, &err);
 	if (msg == NULL)
 		goto out;
 
-	for (;
+	DBusMessageIter args;
+	if (!dbus_message_iter_init (msg, &args)
+	 || dbus_message_iter_get_arg_type (&args) != DBUS_TYPE_ARRAY
+	 || dbus_message_iter_get_element_type (&args) != DBUS_TYPE_STRUCT)
+	{
+		dbus_message_unref (msg);
+		err = AT_CME_ERROR_0;
+		goto out;
+	}
+
+	DBusMessageIter calls;
+	for (dbus_message_iter_recurse (&args, &calls);
 		dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID;
 		dbus_message_iter_next (&calls))
 	{
-		const char *callpath, *callstate;
+		const char *callpath;
 		DBusMessageIter call;
+		int id = -1;
 
 		dbus_message_iter_recurse (&calls, &call);
 		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_OBJECT_PATH)
 			continue;
 		dbus_message_iter_get_basic (&call, &callpath);
 
+		id = get_call_id (callpath);
+		if (id == -1)
+			continue;
 		dbus_message_iter_next (&call);
-		callstate = ofono_dict_find_string (&call, "State");
-		if (callstate != NULL && !strcmp (state, callstate))
-		{
-			id = get_call_id (callpath);
+
+		if (cb (id, &call, opaque))
 			break;
-		}
 	}
 	dbus_message_unref (msg);
 
-	assert (*err == AT_OK);
+	assert (err == AT_OK);
 out:
 	at_cancel_enable (canc);
-	return id;
+	return err;
+}
+
+struct match_call_state_t
+{
+	const char *state;
+	unsigned id;
+};
+
+static int match_call_state (unsigned id, DBusMessageIter *props, void *data)
+{
+	struct match_call_state_t *st = data;
+	const char *callstate = ofono_dict_find_string (props, "State");
+
+	if (callstate == NULL || strcmp (st->state, callstate))
+		return 0;
+
+	st->id = id;
+	return 1;
+}
+
+static int find_call_by_state (plugin_t *p, const char *state, at_error_t *err)
+{
+	struct match_call_state_t st = { state, -1 };
+
+	*err = enum_calls (p, match_call_state, &st);
+	return st.id;
 }
 
 
@@ -483,78 +500,52 @@ static at_error_t list_ssn (at_modem_t *modem, void *data)
 
 
 /*** AT+CLCC ***/
+static const char call_states[][9] = {
+	"active", "held", "dialing", "alerting", "incoming", "waiting",
+};
+
+static int show_call (unsigned id, DBusMessageIter *call, void *data)
+{
+	at_modem_t *modem = data;
+
+	const char *number = ofono_dict_find_string (call, "LineIdentification");
+	const char *dir = ofono_dict_find_string (call, "Direction");
+	const char *state = ofono_dict_find_string (call, "State");
+	if (dir == NULL || state == NULL)
+		return 0;
+
+	int mpty = ofono_dict_find_bool (call, "Multiparty");
+	int stat = -1;
+
+	for (size_t i = 0; i < sizeof (call_states) / sizeof (*call_states); i++)
+		if (!strcmp (state, call_states[i]))
+		{
+			stat = i;
+			break;
+		}
+
+	if (stat == -1)
+	{
+		error ("Unknown call state \"%s\"", state);
+		return 0;
+	}
+
+	if (number != NULL && strcmp (number, "withheld"))
+		at_intermediate (modem, "\r\n+CLCC: %u,%u,%d,0,%u,\"%s\",%u", id,
+		                 !strcmp (dir, "mt"), stat, mpty > 0, number,
+		                 (number[0] == '+') ? 145 : 129);
+	else
+		at_intermediate (modem, "\r\n+CLCC: %u,%u,%u,0,%u", id,
+		                 !strcmp (dir, "mt"), stat, mpty > 0);
+	return 0;
+}
 
 static at_error_t handle_clcc (at_modem_t *modem, const char *req, void *data)
 {
 	if (*req)
 		return AT_CME_EINVAL;
 
-	plugin_t *p = data;
-	at_error_t ret;
-	int canc = at_cancel_disable ();
-	DBusMessageIter array;
-
-	DBusMessage *msg = get_calls (p, &ret, &array);
-	if (msg == NULL)
-		goto out;
-
-	static const char states[][9] = {
-		"active", "held", "dialing", "alerting", "incoming", "waiting",
-	};
-
-	for (;
-		dbus_message_iter_get_arg_type (&array) != DBUS_TYPE_INVALID;
-		dbus_message_iter_next (&array))
-	{
-		const char *path, *dir, *number, *state;
-		unsigned id;
-		int stat = -1, mpty;
-
-		DBusMessageIter call;
-		dbus_message_iter_recurse (&array, &call);
-		if (dbus_message_iter_get_arg_type (&call) != DBUS_TYPE_OBJECT_PATH)
-			continue;
-		dbus_message_iter_get_basic (&call, &path);
-		id = get_call_id (path);
-
-		dbus_message_iter_next (&call);
-		number = ofono_dict_find_string (&call, "LineIdentification");
-		dir = ofono_dict_find_string (&call, "Direction");
-		mpty = ofono_dict_find_bool (&call, "Multiparty");
-		state = ofono_dict_find_string (&call, "State");
-		if (dir == NULL || mpty == -1 || state == NULL)
-		{
-			ret = AT_CME_UNKNOWN;
-			goto out;
-		}
-
-		for (size_t i = 0; i < sizeof (states) / sizeof (*states); i++)
-			if (!strcmp (state, states[i]))
-			{
-				stat = 0;
-				break;
-			}
-
-		if (stat == -1)
-		{
-			error ("Unknown call state \"%s\"", state);
-			ret = AT_CME_UNKNOWN;
-			goto out;
-		}
-
-		if (number != NULL && strcmp (number, "withheld"))
-			at_intermediate (modem, "\r\n+CLCC: %u,%u,%d,0,%u,\"%s\",%u", id,
-			                 !strcmp (dir, "mt"), stat, mpty, number,
-			                 (number[0] == '+') ? 145 : 129);
-		else
-			at_intermediate (modem, "\r\n+CLCC: %u,%u,%u,0,%u", id,
-			                 !strcmp (dir, "mt"), stat, mpty);
-	}
-
-	ret = AT_OK;
-out:
-	at_cancel_enable (canc);
-	return ret;
+	return enum_calls (data, show_call, modem);
 }
 
 
@@ -863,57 +854,45 @@ static at_error_t do_ctfr (at_modem_t *modem, const char *req, void *data)
 
 /*** AT+CPAS ***/
 
+static int simple_call_state (unsigned id, DBusMessageIter *call, void *data)
+{
+	unsigned *restrict pas = data;
+	const char *state = ofono_dict_find_string (call, "State");
+
+	if (state == NULL)
+		return 0;
+	if (!strcmp (state, "incoming"))
+	{
+		*pas = 3; /* ringing */
+		return 1;
+	}
+	if (!strcmp (state, "active") || !strcmp (state, "alerting"))
+	{
+		*pas = 4; /* call in progress */
+		return 1;
+	}
+	(void) id;
+	return 0;
+}
+
 static at_error_t show_cpas (at_modem_t *modem, const char *req, void *data)
 {
 	plugin_t *p = data;
-	unsigned pas = 2; /* unknown */
-	at_error_t dummy;
 
 	if (*req)
 		return AT_CME_ENOTSUP;
 
-	int canc = at_cancel_disable ();
+	unsigned pas = 0; /* ready */
 
-	DBusMessageIter calls;
-	DBusMessage *msg = get_calls (p, &dummy, &calls);
-	if (msg == NULL)
+	at_error_t err = enum_calls (p, simple_call_state, &pas);
+	if (err != AT_OK)
 	{
 		if (modem_prop_get_bool (p, "Modem", "Powered") == 0)
 			pas = 5; /* asleep */
+		else
+			pas = 2; /* unknown */
 	}
-	else
-	{
-		pas = 0; /* ready */
-
-		for (;
-			dbus_message_iter_get_arg_type (&calls) != DBUS_TYPE_INVALID;
-			dbus_message_iter_next (&calls))
-		{
-			const char *state;
-			DBusMessageIter call;
-
-			dbus_message_iter_recurse (&calls, &call);
-			dbus_message_iter_next (&call);
-			state = ofono_dict_find_string (&call, "State");
-			if (state == NULL)
-				continue;
-			if (!strcmp (state, "ringing"))
-			{
-				pas = 3; /* ringing */
-				break;
-			}
-			if (!strcmp (state, "active") || !strcmp (state, "alerting"))
-			{
-				pas = 4; /* call in progress */
-				break;
-			}
-		}
-		dbus_message_unref (msg);
-	}
-	at_cancel_enable (canc);
-
-	at_intermediate (modem, "\r\n+CPAS: %u", pas);
-	return AT_OK;
+	return at_intermediate (modem, "\r\n+CPAS: %u", pas);
 }
 
 static at_error_t list_cpas (at_modem_t *modem, void *data)
