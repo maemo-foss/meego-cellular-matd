@@ -585,6 +585,34 @@ static at_error_t handle_hangup (at_modem_t *modem, unsigned val, void *data)
 
 /*** AT+CHLD ***/
 
+struct release_held_t
+{
+	plugin_t *plugin;
+	at_error_t result;
+};
+
+static int release_held (unsigned id, DBusMessageIter *call, void *data)
+{
+	struct release_held_t *restrict st = data;
+	plugin_t *p = st->plugin;
+
+	const char *state = ofono_dict_find_string (call, "State");
+	if (state == NULL)
+		return 0;
+
+	if (!strcmp (state, "held"))
+	{
+		st->result = voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
+		return st->result != AT_OK;
+	}
+	if (!strcmp (state, "waiting"))
+	{
+		st->result = voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
+		return 1;
+	}
+	return 0;
+}
+
 static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 {
 	plugin_t *p = data;
@@ -606,18 +634,12 @@ static at_error_t set_chld (at_modem_t *modem, const char *value, void *data)
 		{
 			case '0':
 			{
-				/* XXX: race-prone. Use a single call list */
-				at_error_t ret;
-				int id = find_call_by_state (p, "waiting", &ret);
-				if (id != -1)
-					return voicecall_request (p, id, "Hangup",
-					                         DBUS_TYPE_INVALID);
-
-				while ((id = find_call_by_state (p, "held", &ret)) != -1)
-					voicecall_request (p, id, "Hangup", DBUS_TYPE_INVALID);
-				return AT_OK;
+				struct release_held_t st = { p, AT_OK };
+				at_error_t err = enum_calls (p, release_held, &st);
+				if (err != AT_OK)
+					return err;
+				return st.result;
 			}
-
 			case '1':
 				method = "ReleaseAndAnswer";
 				break;
