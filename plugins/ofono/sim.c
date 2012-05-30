@@ -590,7 +590,7 @@ static at_error_t get_csus (at_modem_t *modem, void *data)
 {
 	plugin_t *p = data;
 
-	if (p->modem >= p->modemc)
+	if (!p->modemc)
 		return AT_CME_ERROR_0;
 	return at_intermediate (modem, "\r\n+CSUS: %u", p->modem);
 }

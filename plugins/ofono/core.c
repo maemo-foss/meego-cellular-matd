@@ -213,7 +213,7 @@ at_error_t ofono_request (const plugin_t *p, const char *path,
 DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
                             const char *method)
 {
-	if (p->modem >= p->modemc)
+	if (!p->modemc)
 		return NULL;
 
 	return ofono_req_new (p, p->modemv[p->modem], subif, method);
@@ -225,7 +225,7 @@ at_error_t modem_request (const plugin_t *p, const char *subif,
 	at_error_t ret;
 	va_list ap;
 
-	if (p->modem >= p->modemc)
+	if (!p->modemc)
 		return AT_CME_ERROR_0;
 
 	va_start (ap, first);
@@ -395,7 +395,7 @@ out:
 at_error_t voicecall_request (const plugin_t *p, unsigned callid,
                               const char *method, int first, ...)
 {
-	if (p->modem >= p->modemc)
+	if (!p->modemc)
 		return AT_CME_ERROR_0;
 
 	const char *modem = p->modemv[p->modem];
@@ -617,8 +617,7 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 
 		case OFONO_MODEM:
 			pthread_mutex_lock (&p->modem_lock);
-			if (p->modem < p->modemc
-			 && dbus_message_has_path (msg, p->modemv[p->modem]))
+			if (p->modemc && dbus_message_has_path (msg, p->modemv[p->modem]))
 				s->cb (p, msg, s->cbdata);
 			pthread_mutex_unlock (&p->modem_lock);
 			break;
