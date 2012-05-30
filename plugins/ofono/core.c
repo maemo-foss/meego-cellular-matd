@@ -777,7 +777,6 @@ void *at_plugin_register (at_commands_t *set)
 	p->name = manager_find (&p->modemv, &p->modemc);
 	if (p->name == NULL)
 	{
-		free (p->name);
 		free (p);
 		return NULL;
 	}
