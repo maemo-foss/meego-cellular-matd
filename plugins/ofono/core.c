@@ -159,8 +159,8 @@ int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
 	return 0;
 }
 
-DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
-				const char *subif, const char *method)
+static DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
+                                   const char *subif, const char *method)
 {
 	size_t len = strlen (subif);
 	char iface[11 + len];

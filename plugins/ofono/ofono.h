@@ -119,8 +119,6 @@ at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
 
 /* D-Bus oFono generic helpers */
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
-DBusMessage *ofono_req_new (const plugin_t *, const char *,
-				const char *, const char *);
 at_error_t ofono_request (const plugin_t *, const char *,
 			      const char *, const char *,
 			      int, ...);
