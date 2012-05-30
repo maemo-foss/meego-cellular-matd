@@ -165,6 +165,8 @@ static DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
 	size_t len = strlen (subif);
 	char iface[11 + len];
 
+	if (p->name == NULL)
+		return NULL;
 	memcpy (iface, "org.ofono.", 10);
 	strcpy (iface + 10, subif);
 	return dbus_message_new_method_call (p->name, path, iface, method);
@@ -397,6 +399,7 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 {
 	if (!p->modemc)
 		return AT_CME_ERROR_0;
+	assert (p->name != NULL);
 
 	const char *modem = p->modemv[p->modem];
 	size_t len = strlen (modem) + sizeof ("/voicecall99");
@@ -436,6 +439,9 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 static char *manager_find (char ***modemlist, unsigned *modemcount)
 {
 	DBusMessage *msg;
+
+	*modemlist = NULL;
+	*modemcount = 0;
 
 	/* list oFono modems */
 	msg = dbus_message_new_method_call ("org.ofono", "/",
@@ -591,6 +597,7 @@ static DBusHandlerResult ofono_signal_matcher (DBusConnection *conn,
 	const char *data;
 
 	if (dbus_message_get_type (msg) != DBUS_MESSAGE_TYPE_SIGNAL
+	 || p->name == NULL
 	 || !dbus_message_has_sender (msg, s->p->name))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
@@ -777,11 +784,15 @@ void *at_plugin_register (at_commands_t *set)
 	p->name = manager_find (&p->modemv, &p->modemc);
 	if (p->name == NULL)
 	{
+#if 0
 		free (p);
 		return NULL;
+#else
+		error ("Not using oFono");
+#endif
 	}
-
-	debug ("Using oFono %s", p->name);
+	else
+		debug ("Using oFono %s", p->name);
 	for (unsigned i = 0; i < p->modemc; i++)
 		debug (" modem %u: %s", i, p->modemv[i]);
 	p->modem = modem_read_current (p);
