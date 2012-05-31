@@ -119,9 +119,7 @@ at_error_t voicecall_request (const plugin_t *, unsigned, const char *,
 
 /* D-Bus oFono generic helpers */
 DBusMessage *ofono_query (DBusMessage *, at_error_t *);
-at_error_t ofono_request (const plugin_t *, const char *,
-			      const char *, const char *,
-			      int, ...);
+at_error_t ofono_request (const char *, const char *, const char *, int, ...);
 
 /* Finds one entry in a string-indexed dictionary */
 int ofono_dict_find (DBusMessageIter *, const char *, int, DBusMessageIter *);

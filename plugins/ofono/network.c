@@ -241,8 +241,8 @@ static at_error_t change_oper (unsigned format, const char *data, plugin_t *p)
 		}
 	}
 
-	ret = ofono_request (p, oper_path, "NetworkOperator", "Register",
-				 DBUS_TYPE_INVALID);
+	ret = ofono_request (oper_path, "NetworkOperator", "Register",
+	                     DBUS_TYPE_INVALID);
 
 	/* FIXME: We should wait for actual result of the selection. */
 

@@ -159,27 +159,24 @@ int ofono_dict_find_basic (DBusMessageIter *dict, const char *name,
 	return 0;
 }
 
-static DBusMessage *ofono_req_new (const plugin_t *p, const char *path,
-                                   const char *subif, const char *method)
+static DBusMessage *ofono_req_new (const char *path, const char *subif,
+                                   const char *method)
 {
 	size_t len = strlen (subif);
 	char iface[11 + len];
 
-	if (p->name == NULL)
-		return NULL;
 	memcpy (iface, "org.ofono.", 10);
 	strcpy (iface + 10, subif);
-	return dbus_message_new_method_call (p->name, path, iface, method);
+	return dbus_message_new_method_call ("org.ofono", path, iface, method);
 }
 
-static at_error_t ofono_request_va (const plugin_t *p, const char *path,
-					const char *subif, const char *method,
-					int first, va_list ap)
+static at_error_t ofono_request_va (const char *path, const char *subif,
+                                    const char *method, int first, va_list ap)
 {
 	at_error_t ret;
 	int canc = at_cancel_disable ();
 
-	DBusMessage *msg = ofono_req_new (p, path, subif, method);
+	DBusMessage *msg = ofono_req_new (path, subif, method);
 	if (msg != NULL)
 	{
 		if (dbus_message_append_args_valist (msg, first, ap))
@@ -196,15 +193,14 @@ static at_error_t ofono_request_va (const plugin_t *p, const char *path,
 	return ret;
 }
 
-at_error_t ofono_request (const plugin_t *p, const char *path,
-			      const char *subif, const char *method,
-			      int first, ...)
+at_error_t ofono_request (const char *path, const char *subif,
+                          const char *method, int first, ...)
 {
 	at_error_t ret;
 	va_list ap;
 
 	va_start (ap, first);
-	ret = ofono_request_va (p, path, subif, method, first, ap);
+	ret = ofono_request_va (path, subif, method, first, ap);
 	va_end (ap);
 
 	return ret;
@@ -218,7 +214,7 @@ DBusMessage *modem_req_new (const plugin_t *p, const char *subif,
 	if (!p->modemc)
 		return NULL;
 
-	return ofono_req_new (p, p->modemv[p->modem], subif, method);
+	return ofono_req_new (p->modemv[p->modem], subif, method);
 }
 
 at_error_t modem_request (const plugin_t *p, const char *subif,
@@ -231,7 +227,7 @@ at_error_t modem_request (const plugin_t *p, const char *subif,
 		return AT_CME_ERROR_0;
 
 	va_start (ap, first);
-	ret = ofono_request_va (p, p->modemv[p->modem], subif, method, first, ap);
+	ret = ofono_request_va (p->modemv[p->modem], subif, method, first, ap);
 	va_end (ap);
 
 	return ret;
@@ -399,7 +395,6 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 {
 	if (!p->modemc)
 		return AT_CME_ERROR_0;
-	assert (p->name != NULL);
 
 	const char *modem = p->modemv[p->modem];
 	size_t len = strlen (modem) + sizeof ("/voicecall99");
@@ -413,8 +408,7 @@ at_error_t voicecall_request (const plugin_t *p, unsigned callid,
 	at_error_t ret;
 	int canc = at_cancel_disable ();
 
-	msg = dbus_message_new_method_call (p->name, path,
-	                                    "org.ofono.VoiceCall", method);
+	msg = ofono_req_new (path, "VoiceCall", method);
 	if (msg != NULL)
 	{
 		va_list ap;
@@ -444,8 +438,7 @@ static char *manager_find (char ***modemlist, unsigned *modemcount)
 	*modemcount = 0;
 
 	/* list oFono modems */
-	msg = dbus_message_new_method_call ("org.ofono", "/",
-	                                    "org.ofono.Manager", "GetModems");
+	msg = ofono_req_new ("/", "Manager", "GetModems");
 	if (msg == NULL)
 		return NULL;
 
