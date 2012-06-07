@@ -277,6 +277,9 @@ static at_error_t set_cops (at_modem_t *modem, const char *req, void *data)
 		if (c < 3)
 			return AT_CME_EINVAL;
 		return change_oper (format, buf, p);
+	case 2:
+		return modem_request (p, "NetworkRegistration", "Deregister",
+		                      DBUS_TYPE_INVALID);
 	case 3:
 		if (c < 2)
 			return AT_CME_EINVAL;
@@ -490,7 +493,7 @@ static at_error_t list_cops (at_modem_t *modem, void *data)
 			}
 		}
 	}
-	fputs (",(0,1,3),(0,2)", out);
+	fputs (",(0-3),(0,2)", out);
 	fclose (out);
 	at_intermediate_blob (modem, buf, len);
 	free (buf);
